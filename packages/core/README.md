@@ -23,7 +23,7 @@
   <a href="https://www.npmjs.com/package/@flattype/ai"><img src="https://img.shields.io/npm/v/@flattype/ai?label=%40flattype%2Fai&color=8b6cff" alt="npm @flattype/ai"></a>
   <a href="https://www.npmjs.com/package/@flattype/cli"><img src="https://img.shields.io/npm/v/@flattype/cli?label=%40flattype%2Fcli&color=8b6cff" alt="npm @flattype/cli"></a>
   <a href="https://github.com/karammm/flattype/actions/workflows/ci.yml"><img src="https://github.com/karammm/flattype/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/core-3.7_KB_min%2Bgz-2fd4b2" alt="3.7 KB min+gz">
+  <img src="https://img.shields.io/badge/core-4.7_KB_min%2Bgz-2fd4b2" alt="4.7 KB min+gz">
   <img src="https://img.shields.io/badge/dependencies-0-2fd4b2" alt="No third-party dependencies">
   <a href="https://github.com/karammm/flattype/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
@@ -72,6 +72,15 @@ encode({ name: "John", age: 30, city: "New York" });
 // city: New York
 
 decode("name: John\nage: 30"); // { name: "John", age: 30 }
+```
+
+No bundler? One script tag puts everything on a `FlatType` global:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@flattype/core@1"></script>
+<script>
+  FlatType.encode({ name: "John" }); // "name: John"
+</script>
 ```
 
 Lists, the shape of most API responses, become tables. Keys are written once, and nested objects become dot paths:
@@ -133,13 +142,19 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 - **Typed models without boilerplate.** Declare the fields you want and get full TypeScript types. snake_case keys, numeric strings, ISO dates, defaults and nullable fields are handled for you, and every problem is reported with its path.
 - **Drop-in for your API.** One middleware for Express, Fastify, Hono or any fetch-API server. Clients that ask get Flat Notation, everyone else still gets JSON, and big lists can be streamed row by row.
 - **Lossless.** `decode(encode(x))` always equals `JSON.parse(JSON.stringify(x))`. Thousands of random values check this on every test run.
-- **Small and safe.** The core is 3.7 KB min+gz, with no third-party dependencies. It's ESM + CJS with full types, works in the browser and Node 18+, and guards against `__proto__` pollution.
+- **Small and safe.** The core is 4.7 KB min+gz, with no third-party dependencies. It's ESM + CJS with full types, works in the browser and Node 18+, and guards against `__proto__` pollution.
+
+### When JSON is the better choice
+
+- **One small object per request.** Gzip already removes most of JSON's overhead on the wire, so a three-field object saves only a few bytes. The savings come from lists.
+- **Data that only machines read and you don't control both ends.** Every JSON tool understands JSON. Flat Notation pays off where you own the client and server, or where the text goes to an LLM.
+- **Mixing the two formats in one value.** Decode Flat Notation with `decode` and JSON with `JSON.parse`; a JSON string inside a Flat Notation value is just a string.
 
 ## Packages
 
 | Package | What it does | Size (min+gz) |
 | --- | --- | ---: |
-| [`@flattype/core`](https://github.com/karammm/flattype/blob/main/packages/core) | `encode`, `decode`, `createDecoder`, `flatten`, `unflatten`, `stats` | 3.7 KB |
+| [`@flattype/core`](https://github.com/karammm/flattype/blob/main/packages/core) | `encode`, `decode`, `createDecoder`, `flatten`, `unflatten`, `stats`, and a `<script>` build for CDNs | 4.7 KB |
 | [`@flattype/models`](https://github.com/karammm/flattype/blob/main/packages/models) | `defineModel`, `infer`, `toSource`: typed models from JSON or Flat Notation | +3.2 KB |
 | [`@flattype/http`](https://github.com/karammm/flattype/blob/main/packages/http) | `flatFetch`, `createClient`, `flatAxios`, `streamRows`, and `flatExpress` / `flatFastify` / `flatHono` | +2.3 KB |
 | [`@flattype/react`](https://github.com/karammm/flattype/blob/main/packages/react) | `useFlat`, `useFlatSuspense`, `useFlatStream`, `useModel`, `FlatProvider` | +1.4 KB |
@@ -183,6 +198,45 @@ users[2]{id,name}:
 | Lines starting with `#` are comments | `# generated 2026-10-16` |
 
 Other delimiters are written into the brackets, as `tags[|]:` and `users[2|]{id|name}:`, so `decode` needs no options.
+
+### Shared objects and cycles
+
+JSON can't describe the same object in two places, or an object that contains itself. With `refs: true`, FlatType can: the object is written once, and `path = first.path` everywhere else (`~` is the root).
+
+```ts
+const alice = { id: 1, name: "Alice" };
+const team = { lead: alice, members: [alice, { id: 2, name: "Bob" }] };
+alice.team = team; // a cycle
+
+const text = encode(team, { refs: true });
+// lead.id: 1
+// lead.name: Alice
+// lead.team = ~
+// members[0] = lead
+// members[1].id: 2
+// members[1].name: Bob
+
+const back = decode(text, { refs: true });
+back.members[0] === back.lead; // true: the same object, not a copy
+back.lead.team === back; // true
+```
+
+References are **off by default on both ends**. Without `refs`, shared objects are written out in full each time and a cycle throws, exactly like `JSON.stringify`. The decoder rejects reference lines unless you pass `refs: true`, because a few such lines can describe a graph that is endless (a cycle) or enormous when another tool walks it. Only turn it on for text you trust, read by code that expects shared objects.
+
+### The same hooks as JSON
+
+`encode` takes a `replacer` and `decode` takes a `reviver`, with the same signatures and call order as `JSON.stringify` and `JSON.parse`, so existing code moves over unchanged:
+
+```ts
+encode(user, { replacer: (key, value) => (key === "password" ? undefined : value) });
+encode(user, { replacer: ["id", "name"] }); // keep only these keys
+
+const order = decode(text, {
+  reviver: (key, value) => (key.endsWith("At") ? new Date(value) : value),
+});
+```
+
+For typed results with validation, [`@flattype/models`](#typed-models) is usually the better fit.
 
 ## Typed models
 

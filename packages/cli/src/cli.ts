@@ -32,6 +32,7 @@ Options
   --no-tables           encode: never write arrays as tables
   --compact             decode: minified JSON
   --lenient             decode: recover from malformed input instead of failing
+  --refs                decode: accept "a = b" references (shared objects are repeated in the JSON)
   -h, --help            Show this help
   -v, --version         Show the version
 
@@ -56,6 +57,7 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         "no-tables": { type: "boolean" },
         compact: { type: "boolean" },
         lenient: { type: "boolean" },
+        refs: { type: "boolean" },
         sample: { type: "string" },
         openapi: { type: "string" },
         name: { type: "string" },
@@ -109,8 +111,14 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         return 0;
       }
       case "decode": {
-        const value = decode(await input(), { strict: !values.lenient });
-        await output(JSON.stringify(value, null, values.compact ? undefined : Number(values.indent ?? 2)));
+        const value = decode(await input(), { strict: !values.lenient, refs: values.refs });
+        let text: string;
+        try {
+          text = JSON.stringify(value, null, values.compact ? undefined : Number(values.indent ?? 2));
+        } catch {
+          throw new Error("The references form a cycle, which JSON can't represent");
+        }
+        await output(text);
         return 0;
       }
       case "stats": {

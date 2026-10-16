@@ -2,6 +2,30 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.10.0
+
+### Shared objects and cycles (`@flattype/core`)
+
+- `encode(value, { refs: true })` writes an object that appears more than once in full the first time and as `path = first.path` after that (`~` is the root). Cycles no longer have to throw
+- `decode(text, { refs: true })` rebuilds the same object graph: `back.members[0] === back.lead`
+- Off by default on both ends. Without `refs`, encoding works as before (shared objects repeated, cycles throw) and the decoder rejects reference lines, so nothing that reads untrusted text gets a cyclic result. See the [security page](https://karammm.github.io/flattype/docs/guide/security)
+
+### JSON hooks (`@flattype/core`)
+
+- `encode(value, { replacer })` takes a function or a key list, exactly like `JSON.stringify`
+- `decode(text, { reviver })` works like `JSON.parse`'s reviver, with the same call order (checked against `JSON.parse` on random values). The walk is iterative, so deep documents can't overflow the stack
+
+### Browser build
+
+- `@flattype/core` ships `dist/flattype.min.js`, a `<script>` build with a `FlatType` global, and points `unpkg` and `jsdelivr` at it: `<script src="https://cdn.jsdelivr.net/npm/@flattype/core@1"></script>`
+
+### Other
+
+- `@flattype/cli`: `flattype decode --refs`
+- The cycle check in `encode` and `flatten` uses a `Set` instead of scanning the current path
+- `pnpm check:size` fails if the README or docs state a different core size than the real bundle, and `--write` updates them
+- The core grows from 3.7 to 4.7 KB min+gz for these features; its budget is now 5 KB, like the other packages
+
 ## 1.9.0
 
 ### Docs and playground

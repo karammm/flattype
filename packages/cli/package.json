@@ -1,6 +1,6 @@
 {
   "name": "@flattype/cli",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "The flattype command: convert JSON and Flat Notation, compare sizes, and generate typed models from API samples or OpenAPI specs.",
   "license": "MIT",
   "type": "module",

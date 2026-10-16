@@ -49,6 +49,7 @@ An empty document decodes to `{}`.
 
 ```text
 entry   = path ":" [ value ]
+        | path "=" ( path | "~" )                 (* reference, needs refs: true *)
         | path "[" mark "]" ":" cells            (* inline array *)
         | path "[" count mark "]" "{" fields "}" ":"  (* table header *)
 path    = [ ( key | index ) { "." key | index } ]
@@ -113,7 +114,24 @@ Entries are applied in order, creating objects and arrays along their paths.
 - **Duplicates and conflicts are errors:** setting the same leaf twice, or using one path as both a value and a container.
 - **Keys are own properties,** including `__proto__`. Nothing is ever assigned to a prototype.
 
-Whatever `JSON.stringify` can write, `encode` writes as well, with the same rules: `toJSON` is called, `undefined` and functions are dropped (or become `null` in arrays), `NaN` and `Infinity` become `null`, and cycles and BigInt throw. **`decode(encode(x))` deep-equals `JSON.parse(JSON.stringify(x))`** for every value. Property-based tests check this on every change.
+Whatever `JSON.stringify` can write, `encode` writes as well, with the same rules: `toJSON` is called, then the `replacer` if there is one, `undefined` and functions are dropped (or become `null` in arrays), `NaN` and `Infinity` become `null`, and BigInt throws. Cycles throw too, unless `refs` is on. **`decode(encode(x))` deep-equals `JSON.parse(JSON.stringify(x))`** for every value. Property-based tests check this on every change.
+
+A `reviver` passed to `decode` runs on the finished value, children before parents, in the order `JSON.parse` uses. A random-value test checks that the two call the reviver with the same keys and values in the same order.
+
+## References
+
+```text
+lead.id: 1
+lead.team = ~
+members[0] = lead
+```
+
+A line `path = target` puts the object or array found at `target` at `path` as well. Both are the same object, not copies. `~` is the root.
+- **Only with `refs: true`.** Without it, a reference is an error, or skipped in lenient mode.
+- **Resolved at the end:** references are filled in once the whole document has been read, in document order. That's how a cycle can point at a parent that is still being written.
+- **The target must exist and be an object or array.** It may pass through a reference that appears earlier, but not through one that appears later. A missing or primitive target is an error (lenient mode: `null`).
+- **The reference owns its path:** nothing can be written below it (`b = a` then `b.x: 1` is a path conflict).
+- **What the encoder writes:** with `refs: true`, the first time it meets an object it writes it in full, and every later time it writes a reference to that first path. A table is only used when none of its rows (or objects inside them) appears anywhere else. A row can still be the target of a reference: `admin = users[1]`.
 
 ## Errors and lenient mode
 
@@ -129,6 +147,8 @@ Malformed input throws `FlatDecodeError`, which has a 1-based `line` and `column
 | Fewer table rows than declared | error | the rows that are there |
 | Wrong number of cells in a row | error | missing cells are `null` |
 | Unterminated quoted string | error | the raw text |
+| Reference without `refs: true` | error | skipped |
+| Reference to a missing path | error | `null` |
 
 A line that isn't an entry at all is an error in both modes. `fromModelOutput` skips such lines, for example prose around the data.
 

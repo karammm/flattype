@@ -36,3 +36,24 @@ describe("decoding is linear", () => {
       d.end();
     }));
 });
+
+const deep = (n: number): unknown => {
+  let v: unknown = 1;
+  for (let i = 0; i < n; i++) v = { a: v };
+  return v;
+};
+
+describe("encoding is linear", () => {
+  it("deeply nested objects", () => expectLinear("deep encode", (n) => encode(deep(n)), 250));
+  it("deeply nested objects with refs", () => expectLinear("deep refs", (n) => encode(deep(n), { refs: true }), 250));
+  it("many shared objects", () =>
+    expectLinear("shared", (n) => {
+      const s = { id: 1 };
+      encode({ list: Array.from({ length: n }, () => s) }, { refs: true });
+    }));
+});
+
+describe("references and revivers are linear", () => {
+  it("many references", () => expectLinear("refs", (n) => decode(`a.x: 1\n${Array.from({ length: n }, (_, i) => `b[${i}] = a`).join("\n")}`, { refs: true })));
+  it("a reviver on a deep document", () => expectLinear("revive", (n) => decode(`${"a.".repeat(n)}b: 1`, { reviver: (_k, v) => v }), 5_000));
+});

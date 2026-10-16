@@ -1,5 +1,5 @@
 import type { Delimiter } from "@flattype/shared";
-import { FlatDecodeError, isKeyChar, scanString } from "./syntax.js";
+import { FlatDecodeError, formatKey, isKeyChar, scanString } from "./syntax.js";
 
 /** A key (string) or an array index (number). */
 export type Segment = string | number;
@@ -124,6 +124,15 @@ function readFields(
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
+/** Placeholder for a `path = target` line until the whole document has been read. */
+export class Ref {
+  constructor(
+    readonly segments: Segment[],
+    readonly target: Segment[],
+    readonly line: number,
+  ) {}
+}
+
 /** The most nulls lenient decoding inserts for a skipped index range. */
 export const MAX_GAP = 1000;
 
@@ -188,11 +197,41 @@ export function assign(
   for (const seg of segments) {
     const wantArray = typeof seg === "number";
     const cur = slot(() => (wantArray ? [] : {}), false);
-    if (wantArray ? !Array.isArray(cur) : !isObject(cur)) {
+    if (wantArray ? !Array.isArray(cur) : !isObject(cur) || cur instanceof Ref) {
       fail(`Path conflict at ${typeof key === "number" ? `[${key}]` : `'${key}'`}`);
     }
     parent = cur as Record<string, unknown> | unknown[];
     key = seg;
   }
   slot(() => value, true);
+}
+
+const show = (segments: Segment[]): string =>
+  segments.length === 0 ? "~" : segments.map((s, i) => (typeof s === "number" ? `[${s}]` : i === 0 ? formatKey(s) : `.${formatKey(s)}`)).join("");
+
+/**
+ * Replaces each reference placeholder with the object or array its target path points to, in document order.
+ * A target may pass through a reference resolved before it, but not through one still waiting.
+ */
+export function resolveRefs(holder: { root?: unknown }, refs: Ref[], strict: boolean): void {
+  const isContainer = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !(v instanceof Ref);
+  for (const ref of refs) {
+    // Lenient decoding may have overwritten the placeholder (or a parent) with a later line; that line wins.
+    let parent: unknown = holder.root;
+    const last = ref.segments.length - 1;
+    for (let i = 0; i < last && isContainer(parent); i++) parent = parent[ref.segments[i] as string];
+    if (!isContainer(parent) || parent[ref.segments[last] as string] !== ref) continue;
+
+    let cur: unknown = holder.root;
+    for (const seg of ref.target) {
+      cur = isContainer(cur) && hasOwn.call(cur, seg) ? cur[seg as string] : undefined;
+    }
+    let value: unknown = cur;
+    if (cur === null || typeof cur !== "object" || cur instanceof Ref) {
+      const why = cur instanceof Ref ? "is a reference that comes later" : cur === undefined ? "doesn't exist" : "isn't an object or array";
+      if (strict) throw new FlatDecodeError(`Reference target '${show(ref.target)}' ${why}`, ref.line, 1);
+      value = null;
+    }
+    setOwn(parent, ref.segments[last] as string, value);
+  }
 }

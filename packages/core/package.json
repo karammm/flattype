@@ -1,6 +1,6 @@
 {
   "name": "@flattype/core",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Flatten JSON into Flat Notation: compact, LLM-friendly key: value text. No third-party dependencies.",
   "license": "MIT",
   "type": "module",
@@ -8,12 +8,15 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "unpkg": "./dist/flattype.min.js",
+  "jsdelivr": "./dist/flattype.min.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./flattype.min.js": "./dist/flattype.min.js",
     "./package.json": "./package.json"
   },
   "files": [

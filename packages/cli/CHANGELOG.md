@@ -1,5 +1,18 @@
 # @flattype/cli
 
+## 1.10.0
+
+### Minor Changes
+
+- References for shared objects and cycles (`refs: true`), `replacer` and `reviver` like JSON, a `<script>` build for CDNs, and `flattype decode --refs`.
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/core@1.10.0
+  - @flattype/shared@1.10.0
+  - @flattype/models@1.10.0
+
 ## 1.9.0
 
 ### Minor Changes

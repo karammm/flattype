@@ -10,7 +10,7 @@ import { FlatDecodeError, joinKey } from "./syntax.js";
  */
 export function flatten(value: unknown): FlatRecord {
   const out: FlatRecord = {};
-  const stack: object[] = [];
+  const stack = new Set<object>();
   const put = (path: string, leaf: FlatRecord[string]): void => {
     // A plain assignment to "__proto__" would replace the prototype instead of adding a key.
     Object.defineProperty(out, path, { value: leaf, writable: true, enumerable: true, configurable: true });
@@ -27,8 +27,8 @@ export function flatten(value: unknown): FlatRecord {
       put(path, skip ? null : (leaf as FlatRecord[string]));
       return;
     }
-    if (stack.includes(v)) throw new TypeError("Converting circular structure to a flat record");
-    stack.push(v);
+    if (stack.has(v)) throw new TypeError("Converting circular structure to a flat record");
+    stack.add(v);
     if (Array.isArray(v)) {
       if (v.length === 0) put(path, []);
       v.forEach((x, i) => visit(path + "[" + i + "]", x));
@@ -42,7 +42,7 @@ export function flatten(value: unknown): FlatRecord {
       }
       if (empty && path !== "") put(path, {});
     }
-    stack.pop();
+    stack.delete(v);
   };
 
   visit("", value);

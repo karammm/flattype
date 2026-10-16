@@ -54,6 +54,15 @@ describe("encode / decode", () => {
     expect(JSON.parse((await cli(["decode", "--lenient"], { stdin: "a: 1\na: 2" })).out)).toEqual({ a: 2 });
     expect((await cli(["encode", "missing.json"])).err).toMatch(/ENOENT/);
   });
+
+  it("decodes references only with --refs", async () => {
+    const text = "a.x: 1\nb = a";
+    expect((await cli(["decode"], { stdin: text })).err).toMatch(/References need/);
+    expect(JSON.parse((await cli(["decode", "--refs"], { stdin: text })).out)).toEqual({ a: { x: 1 }, b: { x: 1 } });
+    const cycle = await cli(["decode", "--refs"], { stdin: "a.x: 1\na.me = a" });
+    expect(cycle.code).toBe(1);
+    expect(cycle.err).toMatch(/cycle/);
+  });
 });
 
 describe("stats", () => {

@@ -8,7 +8,7 @@ const RUNS = Number(process.env.FUZZ_RUNS ?? 1500);
 const flatish = fc
   .array(
     fc.oneof(
-      fc.constantFrom("a", "b.c", "__proto__", "constructor", "prototype", "[0]", "[1]", "[]", "[2]{x,y}", "{", "}", ":", ": ", ", ", "|", "\t", '"', '\\"', "\\", "#", " ", "\n", "\r\n", "null", "true", "1", "-0.5e3", "[", "]", "."),
+      fc.constantFrom("a", "b.c", "__proto__", "constructor", "prototype", "[0]", "[1]", "[]", "[2]{x,y}", "{", "}", ":", ": ", ", ", "|", "\t", '"', '\\"', "\\", "#", " ", "\n", "\r\n", "null", "true", "1", "-0.5e3", "[", "]", ".", " = ", "=", "~", "a = b", "b = ~"),
       fc.string({ maxLength: 4 }),
     ),
     { maxLength: 40 },
@@ -18,9 +18,9 @@ const flatish = fc
 describe("decoder robustness", () => {
   it("only ever throws FlatDecodeError, strict or lenient", () => {
     fc.assert(
-      fc.property(flatish, fc.boolean(), (text, strict) => {
+      fc.property(flatish, fc.boolean(), fc.boolean(), (text, strict, refs) => {
         try {
-          decode(text, { strict });
+          decode(text, { strict, refs });
         } catch (e) {
           if (!(e instanceof FlatDecodeError)) throw e;
         }
@@ -33,7 +33,7 @@ describe("decoder robustness", () => {
     fc.assert(
       fc.property(flatish, (text) => {
         try {
-          decode(text, { strict: false });
+          decode(text, { strict: false, refs: true });
         } catch {
           // fine
         }

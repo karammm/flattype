@@ -8,7 +8,7 @@ Each release is built, tested, tagged, and published on its own before work on t
 - **Minor `1.x.0`:** new packages or features, no breaking changes.
 - **Patch `1.x.y`:** bug fixes, any time.
 - **Breaking changes** wait for `2.0.0`. Nothing in this roadmap plans one.
-- **The Flat Notation format is frozen at 1.0.** Later versions only add tooling around it, so text written by 1.0 still decodes in every 1.x.
+- **The Flat Notation format is stable since 1.0.** Text written by 1.0 decodes the same way in every 1.x. The only syntax added since (references, 1.10) is opt-in on both ends and was an error before.
 
 ## Release checklist (every version)
 
@@ -102,11 +102,24 @@ New package: `@flattype/cli`
 - `flattype gen --openapi spec.yaml` (OpenAPI 3.0/3.1, Swagger 2, JSON or YAML) and `flattype gen --sample response.json` generate models
 - `toSource({ ...models })` in `@flattype/models` for multi-model files
 
-## v1.9.0: Docs, playground, hardening
+## v1.9.0: Docs, playground, hardening ✅
 
 - VitePress docs and a GitHub Pages playground with a live savings meter
 - Fuzzing in CI and published benchmarks
 
+
+## v1.10.0: References, JSON hooks, CDN build ✅
+Ideas from comparing with [flatted](https://github.com/WebReflection/flatted).
+- `encode(x, { refs: true })` writes a shared object once and `path = first.path` after that, so shared objects and cycles survive. `decode(text, { refs: true })` rebuilds the same object graph. Off by default on both ends
+- `replacer` for `encode` and `reviver` for `decode`, matching `JSON.stringify` / `JSON.parse`
+- A `<script>` build (`FlatType` global) for jsDelivr and unpkg
+- The README's core size is checked against the real bundle by `pnpm check:size`
+- `flattype decode --refs`
+
+## v1.11.0: Python
+- `flattype` on PyPI: `encode`, `decode` (strict and lenient), the same options as `@flattype/core`
+- Shared fixtures run against both implementations in CI, so the two can't disagree on the format
+- A FastAPI / Starlette response class that answers in Flat Notation when the client asks
 ---
 
 Have an idea or a use case that isn't covered? [Open an issue](https://github.com/karammm/flattype/issues).

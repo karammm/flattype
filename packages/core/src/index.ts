@@ -4,6 +4,8 @@ export type {
   DecodeOptions,
   Delimiter,
   EncodeOptions,
+  Replacer,
+  Reviver,
   FlatLeaf,
   FlatRecord,
   JsonPrimitive,

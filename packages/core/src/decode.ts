@@ -1,8 +1,12 @@
 import type { Decoder, DecoderOptions, DecodeOptions, Delimiter, JsonValue } from "@flattype/shared";
-import { assign, parsePath, type Segment, type Terminal } from "./path.js";
+import { assign, parsePath, Ref, resolveRefs, type Segment, type Terminal } from "./path.js";
+import { revive } from "./revive.js";
 import { FlatDecodeError, formatKey, parseScalar, scanString } from "./syntax.js";
 
-/** Decodes Flat Notation back into the JSON value it came from. An empty document is `{}`. */
+/**
+ * Decodes Flat Notation back into the JSON value it came from. An empty document is `{}`.
+ * With a `reviver`, the result is whatever the reviver returns for the root (cast it to your type).
+ */
 export function decode(text: string, options: DecodeOptions = {}): JsonValue {
   const decoder = createDecoder(options);
   decoder.write(text);
@@ -20,7 +24,10 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   const strict = options.strict !== false;
   const keep = options.keepRows !== false;
   const onRow = options.onRow;
+  const refs = options.refs === true;
   const holder: { root?: unknown } = {};
+  // Reference lines, resolved once the whole document has been read (a cycle points at a parent).
+  const pending: Ref[] = [];
   let lineNo = 0;
   let rest = "";
   // The table whose rows are being read.
@@ -53,6 +60,12 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     if (pos === text.length || text.charCodeAt(pos) === 35) return; // blank or # comment
 
     const { segments, terminal, end } = parsePath(text, pos, lineNo);
+    let eq = end;
+    while (text.charCodeAt(eq) === 32) eq++;
+    if (terminal.kind === "value" && text.charCodeAt(eq) === 61) {
+      reference(segments, text, eq);
+      return;
+    }
     if (text.charCodeAt(end) !== 58) {
       throw new FlatDecodeError("Expected ':' after path", lineNo, end + 1);
     }
@@ -68,6 +81,35 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
       table = { at: lineNo, segments, t: terminal, path: formatPath(segments), rows: [], read: 0 };
       if (terminal.count === 0) closeTable();
     }
+  };
+
+  /** `path = target` (`~` is the root). */
+  const reference = (segments: Segment[], text: string, eq: number): void => {
+    if (!refs) {
+      if (strict) throw new FlatDecodeError("References need { refs: true }", lineNo, eq + 1);
+      return;
+    }
+    if (segments.length === 0) throw new FlatDecodeError("The root can't be a reference", lineNo, eq + 1);
+    let pos = eq + 1;
+    while (text.charCodeAt(pos) === 32) pos++;
+    let target: Segment[];
+    let end: number;
+    if (text.charCodeAt(pos) === 126) {
+      target = [];
+      end = pos + 1;
+    } else {
+      const p = parsePath(text, pos, lineNo);
+      if (p.terminal.kind !== "value" || p.segments.length === 0) {
+        throw new FlatDecodeError("Expected a path or '~' after '='", lineNo, pos + 1);
+      }
+      target = p.segments;
+      end = p.end;
+    }
+    while (text.charCodeAt(end) === 32) end++;
+    if (end !== text.length) throw new FlatDecodeError("Unexpected text after reference", lineNo, end + 1);
+    const ref = new Ref(segments, target, lineNo);
+    assign(holder, segments, ref, strict, lineNo);
+    pending.push(ref);
   };
 
   return {
@@ -93,7 +135,9 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
         if (strict) throw new FlatDecodeError(`Expected ${table.t.count} rows, got ${table.read}`, table.at, 1);
         closeTable();
       }
-      return ("root" in holder ? holder.root : {}) as JsonValue;
+      if (pending.length > 0) resolveRefs(holder, pending, strict);
+      const value = "root" in holder ? holder.root : {};
+      return (options.reviver ? revive(value, options.reviver) : value) as JsonValue;
     },
   };
 }

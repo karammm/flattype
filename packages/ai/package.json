@@ -1,6 +1,6 @@
 {
   "name": "@flattype/ai",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Flat Notation for LLMs: compact prompts, tolerant parsing of model output, token counting with Claude, MCP and Claude tool results.",
   "license": "MIT",
   "type": "module",

@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.10.0
+
+### Minor Changes
+
+- References for shared objects and cycles (`refs: true`), `replacer` and `reviver` like JSON, a `<script>` build for CDNs, and `flattype decode --refs`.
+
 ## 1.9.0
 
 ### Minor Changes
