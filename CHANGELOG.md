@@ -2,6 +2,24 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.2.0
+
+### New: `@flattype/http`
+
+- `flatFetch(url, { model, list })` asks for Flat Notation with JSON as the fallback, decodes either, maps to a model, and throws `HttpError` (with the decoded body) on non-2xx responses
+- `createClient({ baseURL, headers })` with `get` / `post` / `put` / `patch` / `delete`, query strings and JSON request bodies
+- `flatAxios(instance)` does the same for axios
+- Server side: `flatExpress()`, `flatFastify`, `flatHono()` and `negotiate(request, response)` for any fetch-API server. JSON responses are re-encoded only when the client asks (`Accept: text/x-flat`), and `Vary: Accept` is always set
+- `streamRows(urlOrResponse)` yields table rows while a large response is still downloading
+
+### `@flattype/core`
+
+- `createDecoder({ onRow, keepRows })` decodes chunk by chunk and reports each table row as soon as its line arrives. `decode` now uses it
+
+### Releases
+
+- Publishing is automatic: a version bump pushed to `main` builds, tests, publishes to npm with provenance, tags and creates the GitHub release
+
 ## 1.1.0
 
 ### New: `@flattype/models`

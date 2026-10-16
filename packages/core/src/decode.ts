@@ -1,58 +1,97 @@
-import type { DecodeOptions, Delimiter, JsonValue } from "@flattype/shared";
-import { assign, parsePath } from "./path.js";
-import { FlatDecodeError, parseScalar, scanString } from "./syntax.js";
+import type { Decoder, DecoderOptions, DecodeOptions, Delimiter, JsonValue } from "@flattype/shared";
+import { assign, parsePath, type Segment, type Terminal } from "./path.js";
+import { FlatDecodeError, formatKey, parseScalar, scanString } from "./syntax.js";
 
 /** Decodes Flat Notation back into the JSON value it came from. An empty document is `{}`. */
 export function decode(text: string, options: DecodeOptions = {}): JsonValue {
+  const decoder = createDecoder(options);
+  decoder.write(text);
+  return decoder.end();
+}
+
+type Table = Extract<Terminal, { kind: "table" }>;
+
+/**
+ * Incremental decoder: `write` chunks as they arrive (any split, even mid-line), then `end()`.
+ * `onRow` is called for every table row as soon as its line is complete. With `keepRows: false`,
+ * rows are only passed to `onRow` and their tables stay empty, so memory stays flat for huge lists.
+ */
+export function createDecoder(options: DecoderOptions = {}): Decoder {
   const strict = options.strict !== false;
-  const lines = text.split("\n");
+  const keep = options.keepRows !== false;
+  const onRow = options.onRow;
   const holder: { root?: unknown } = {};
+  let lineNo = 0;
+  let rest = "";
+  // The table whose rows are being read.
+  let table: { at: number; segments: Segment[]; t: Table; path: string; rows: unknown[]; read: number } | undefined;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = stripCR(lines[i]!);
-    const lineNo = i + 1;
+  const closeTable = (): void => {
+    assign(holder, table!.segments, table!.rows, strict, table!.at);
+    table = undefined;
+  };
+
+  const line = (raw: string): void => {
+    lineNo++;
+    const text = stripCR(raw);
+    if (table) {
+      const { t } = table;
+      const width = t.fields.length;
+      const row = cells(text, t.delimiter, strict, lineNo, 1);
+      if (row.length !== width && strict) {
+        throw new FlatDecodeError(`Expected ${width} values, got ${row.length}`, lineNo, 1);
+      }
+      const obj: { root?: unknown } = { root: {} };
+      for (let f = 0; f < width; f++) assign(obj, t.fields[f]!, f < row.length ? row[f] : null, strict, lineNo);
+      if (keep) table.rows.push(obj.root);
+      onRow?.({ path: table.path, index: table.read, value: obj.root as JsonValue });
+      if (++table.read === t.count) closeTable();
+      return;
+    }
     let pos = 0;
-    while (line.charCodeAt(pos) === 32 || line.charCodeAt(pos) === 9) pos++;
-    if (pos === line.length || line.charCodeAt(pos) === 35) continue; // blank or # comment
+    while (text.charCodeAt(pos) === 32 || text.charCodeAt(pos) === 9) pos++;
+    if (pos === text.length || text.charCodeAt(pos) === 35) return; // blank or # comment
 
-    const { segments, terminal, end } = parsePath(line, pos, lineNo);
-    if (line.charCodeAt(end) !== 58) {
+    const { segments, terminal, end } = parsePath(text, pos, lineNo);
+    if (text.charCodeAt(end) !== 58) {
       throw new FlatDecodeError("Expected ':' after path", lineNo, end + 1);
     }
-    const rest = line.slice(end + 1);
-    let value: unknown;
-
+    const value = text.slice(end + 1);
     if (terminal.kind === "value") {
-      value = scalar(rest.trim(), strict, lineNo, end + 2);
+      assign(holder, segments, scalar(value.trim(), strict, lineNo, end + 2), strict, lineNo);
     } else if (terminal.kind === "inline") {
-      value = cells(rest, terminal.delimiter, strict, lineNo, end + 2);
+      assign(holder, segments, cells(value, terminal.delimiter, strict, lineNo, end + 2), strict, lineNo);
     } else {
-      if (rest.trim() !== "" && strict) {
+      if (value.trim() !== "" && strict) {
         throw new FlatDecodeError("Table rows go on the following lines", lineNo, end + 2);
       }
-      const rows: unknown[] = [];
-      const width = terminal.fields.length;
-      for (let r = 0; r < terminal.count; r++) {
-        if (i + 1 >= lines.length) {
-          if (strict) throw new FlatDecodeError(`Expected ${terminal.count} rows, got ${r}`, lineNo, 1);
-          break;
-        }
-        i++;
-        const row = cells(stripCR(lines[i]!), terminal.delimiter, strict, i + 1, 1);
-        if (row.length !== width && strict) {
-          throw new FlatDecodeError(`Expected ${width} values, got ${row.length}`, i + 1, 1);
-        }
-        const obj: { root?: unknown } = { root: {} };
-        for (let f = 0; f < width; f++) {
-          assign(obj, terminal.fields[f]!, f < row.length ? row[f] : null, strict, i + 1);
-        }
-        rows.push(obj.root);
-      }
-      value = rows;
+      table = { at: lineNo, segments, t: terminal, path: formatPath(segments), rows: [], read: 0 };
+      if (terminal.count === 0) closeTable();
     }
-    assign(holder, segments, value, strict, lineNo);
-  }
-  return ("root" in holder ? holder.root : {}) as JsonValue;
+  };
+
+  return {
+    write(chunk) {
+      const parts = (rest + chunk).split("\n");
+      rest = parts.pop()!;
+      for (const part of parts) line(part);
+    },
+    end() {
+      line(rest);
+      rest = "";
+      if (table) {
+        if (strict) throw new FlatDecodeError(`Expected ${table.t.count} rows, got ${table.read}`, table.at, 1);
+        closeTable();
+      }
+      return ("root" in holder ? holder.root : {}) as JsonValue;
+    },
+  };
+}
+
+function formatPath(segments: Segment[]): string {
+  let out = "";
+  for (const s of segments) out += typeof s === "number" ? `[${s}]` : out === "" ? formatKey(s) : "." + formatKey(s);
+  return out;
 }
 
 function stripCR(line: string): string {

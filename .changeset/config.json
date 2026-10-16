@@ -12,6 +12,7 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@flattype/example-node-models"
+    "@flattype/example-node-models",
+    "@flattype/example-node-server"
   ]
 }

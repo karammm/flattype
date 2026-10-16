@@ -1,0 +1,13 @@
+{
+  "name": "@flattype/example-node-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@flattype/http": "workspace:*",
+    "@flattype/models": "workspace:*",
+    "express": "5.3.0"
+  }
+}

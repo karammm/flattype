@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const ORDER = ["shared", "core", "models"];
+const ORDER = ["shared", "core", "models", "http"];
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const passThrough = args.filter((a) => a.startsWith("--otp=") || a === "--provenance" || a.startsWith("--tag="));
@@ -69,7 +69,9 @@ for (const dir of ORDER) {
   }
 }
 if (skippedNew.length) {
-  console.log(`::warning::Not published (new packages need a manual first publish): ${skippedNew.join(", ")}`);
+  // Fail so the release isn't tagged without them. Reserve the name first: node scripts/reserve-names.mjs
+  console.log(`::error::Not published (not on npm yet, run scripts/reserve-names.mjs once): ${skippedNew.join(", ")}`);
+  process.exit(1);
 }
 if (failed.length) {
   console.log(`::error::Failed to publish: ${failed.join(", ")}`);

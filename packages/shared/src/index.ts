@@ -24,3 +24,25 @@ export type FlatLeaf = JsonPrimitive | Record<string, never> | never[];
 
 /** Path → leaf, e.g. `{ "user.name": "John", "tags[0]": "a" }`. */
 export type FlatRecord = Record<string, FlatLeaf>;
+
+/** One table row, passed to `onRow` as soon as its line has been read. */
+export interface TableRow {
+  /** Path of the table, e.g. `"users"` or `"data.items"`; `""` for a root table. */
+  path: string;
+  /** Row number within the table, from 0. */
+  index: number;
+  value: JsonValue;
+}
+
+export interface DecoderOptions extends DecodeOptions {
+  onRow?: (row: TableRow) => void;
+  /** Keep rows in the decoded result. `false` passes them only to `onRow`. Default `true`. */
+  keepRows?: boolean;
+}
+
+export interface Decoder {
+  /** Feeds the next chunk of text. Chunks may split lines anywhere. */
+  write(chunk: string): void;
+  /** Finishes decoding and returns the value. */
+  end(): JsonValue;
+}

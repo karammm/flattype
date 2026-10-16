@@ -1,4 +1,6 @@
 export type {
+  Decoder,
+  DecoderOptions,
   DecodeOptions,
   Delimiter,
   EncodeOptions,
@@ -6,9 +8,10 @@ export type {
   FlatRecord,
   JsonPrimitive,
   JsonValue,
+  TableRow,
 } from "@flattype/shared";
 export { encode } from "./encode.js";
-export { decode } from "./decode.js";
+export { createDecoder, decode } from "./decode.js";
 export { flatten, unflatten } from "./flatten.js";
 export { stats, type FlatStats } from "./stats.js";
 export { FlatDecodeError } from "./syntax.js";

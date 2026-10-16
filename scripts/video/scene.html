@@ -22,6 +22,7 @@
   .panel .bar b { color: var(--text); }
   pre { font: 15.5px/1.55 var(--mono); padding: 16px 18px; white-space: pre; height: 420px; overflow: hidden; }
   pre.short { height: auto; }
+  pre.mid { font-size: 14px; }
   .k { color: var(--accent); } .s { color: var(--teal); } .n { color: var(--amber); } .h { color: var(--pink); } .c { color: var(--muted); }
   .pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font: 700 14px var(--sans); }
   .good { background: rgba(47, 212, 178, .15); color: var(--teal); }
@@ -41,7 +42,7 @@
   .callout { font: 500 19px var(--mono); padding: 12px 18px; border-left: 3px solid var(--accent); background: var(--panel); border-radius: 0 10px 10px 0; }
   .callout b { color: var(--teal); font-weight: 600; }
   #s5 { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-  .cmd { margin-top: 34px; font: 500 26px var(--mono); background: var(--panel); border: 1px solid var(--line); padding: 18px 30px; border-radius: 12px; }
+  .cmd { margin-top: 34px; font: 500 22px var(--mono); background: var(--panel); border: 1px solid var(--line); padding: 18px 30px; border-radius: 12px; }
   .cmd .p { color: var(--teal); }
   .chips { display: flex; gap: 12px; margin-top: 30px; justify-content: center; }
   .chip { padding: 8px 18px; border: 1px solid var(--line); border-radius: 999px; font: 600 17px var(--sans); color: var(--muted); }
@@ -86,6 +87,16 @@
     </div>
   </section>
 
+  <!-- http -->
+  <section class="scene" id="sh">
+    <div class="kicker">Step 3 · @flattype/http</div>
+    <h1>One middleware. <em>JSON for everyone else.</em></h1>
+    <div class="row">
+      <div class="panel" style="flex:.85"><div class="bar"><span>server.ts</span></div><pre id="server" class="mid"></pre></div>
+      <div class="panel"><div class="bar"><span>terminal</span></div><pre id="term" class="mid"></pre></div>
+    </div>
+  </section>
+
   <!-- 4 LLM -->
   <section class="scene" id="s4">
     <div class="kicker">Built for Claude &amp; LLMs</div>
@@ -98,7 +109,7 @@
   <section class="scene" id="s5">
     <svg class="mark" viewBox="0 0 64 64" style="width:84px;height:84px"><rect width="64" height="64" rx="16" fill="#8b6cff"/><circle cx="17" cy="22" r="3.2" fill="#fff"/><rect x="25" y="19" width="24" height="6" rx="3" fill="#fff"/><circle cx="17" cy="32" r="3.2" fill="#fff"/><rect x="25" y="29" width="17" height="6" rx="3" fill="#fff" opacity=".85"/><circle cx="17" cy="42" r="3.2" fill="#fff"/><rect x="25" y="39" width="21" height="6" rx="3" fill="#2fd4b2"/></svg>
     <h1 style="margin-top:22px">Plain TypeScript. No third-party dependencies.</h1>
-    <div class="cmd"><span class="p">$</span> npm install @flattype/core @flattype/models</div>
+    <div class="cmd"><span class="p">$</span> npm install @flattype/core @flattype/models @flattype/http</div>
     <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React · Vue · Angular · Svelte packages <small>(roadmap)</small></span></div>
     <div class="url">github.com/karammm/flattype</div>
   </section>
@@ -133,14 +144,18 @@
       return at < 0 ? html : html + '<span class="c">' + esc(line.slice(at)) + "</span>";
     }).join("\n");
   }
+  function hlTerm(s) {
+    return s.split("\n").map((l) => (l.startsWith("$") ? '<span class="s">' + esc(l) + "</span>" : esc(l))).join("\n");
+  }
   /** Shows the first `frac` of the text, whole characters. */
   const typed = (text, frac) => text.slice(0, Math.round(text.length * Math.max(0, Math.min(1, frac))));
   const clamp = (x) => Math.max(0, Math.min(1, x));
   const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 
-  // [start, end] seconds of each scene.
-  const T = [[0, 4], [4, 13.5], [13.5, 20], [20, 30], [30, 37], [37, 42]];
-  window.DURATION = 42;
+  // [element id, start, end] in seconds.
+  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["s4", 40, 47], ["s5", 47, 52]];
+  const start = (id) => S.find((x) => x[0] === id)[1];
+  window.DURATION = 52;
 
   $("jsonBytes").textContent = D.jsonBytes + " bytes minified";
   $("flatBytes").textContent = D.flatBytes + " bytes";
@@ -155,23 +170,26 @@
   $("llm").innerHTML = D.llm.map((l) => '<div class="callout">' + l + "</div>").join("");
 
   window.render = function (t) {
-    T.forEach(([a, b], i) => {
-      const fadeIn = clamp((t - a) / 0.5), fadeOut = i === T.length - 1 ? 1 : clamp((b - t) / 0.5);
-      const el = $("s" + i);
+    S.forEach(([id, a, b], i) => {
+      const fadeIn = i === 0 ? 1 : clamp((t - a) / 0.5), fadeOut = i === S.length - 1 ? 1 : clamp((b - t) / 0.5);
+      const el = $(id);
       el.style.opacity = Math.min(fadeIn, fadeOut);
       el.style.transform = "translateY(" + (1 - ease((t - a) / 0.6)) * 18 + "px)";
     });
-    const l1 = t - T[1][0];
+    const l1 = t - start("s1");
     $("json").innerHTML = hlJson(typed(D.json, l1 / 3.2));
     $("json").scrollTop = $("json").scrollHeight; // follow the typing, like a terminal
     $("flat").innerHTML = hlFlat(typed(D.flat, (l1 - 3.8) / 2.2));
     $("flatBytes").style.opacity = l1 > 6 ? 1 : 0;
-    const l3 = t - T[3][0];
+    const l3 = t - start("s3");
     $("code").innerHTML = hlTs(typed(D.code, l3 / 3.5));
     $("out").innerHTML = hlJson(typed(D.out, (l3 - 4) / 1.6));
-    const l2 = t - T[2][0];
+    const l2 = t - start("s2");
     document.querySelectorAll("#rules .callout").forEach((c, i) => { c.style.opacity = clamp((l2 - 1.5 - i * 0.7) / 0.4); });
-    const l4 = t - T[4][0];
+    const lh = t - start("sh");
+    $("server").innerHTML = hlTs(typed(D.server, lh / 2.5));
+    $("term").innerHTML = hlTerm(typed(D.term, (lh - 3) / 4));
+    const l4 = t - start("s4");
     document.querySelectorAll("#bars .fill").forEach((f, i) => { f.style.width = ease((l4 - 0.6 - i * 0.5) / 1.2) * Number(f.dataset.w) * 100 + "%"; });
     document.querySelectorAll("#llm .callout").forEach((c, i) => { c.style.opacity = clamp((l4 - 2.8 - i * 0.6) / 0.4); });
   };

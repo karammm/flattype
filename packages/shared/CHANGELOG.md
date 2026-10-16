@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.2.0
+
+### Minor Changes
+
+- New package `@flattype/http` (`flatFetch`, `createClient`, `flatAxios`, `flatExpress`, `flatFastify`, `flatHono`, `negotiate`, `streamRows`) and `createDecoder` in `@flattype/core` for incremental decoding.
+
 ## 1.1.0
 
 ### Minor Changes

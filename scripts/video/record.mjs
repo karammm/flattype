@@ -11,6 +11,8 @@ import { chromium } from "playwright-core";
 import { encode as toon } from "@toon-format/toon";
 import { encode, stats } from "../../packages/core/dist/index.js";
 import { defineModel } from "../../packages/models/dist/index.js";
+import { flatExpress } from "../../packages/http/dist/index.js";
+import express from "express";
 import { users } from "../../fixtures/index.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -41,6 +43,20 @@ const big = users(1000);
 const bigJson = JSON.stringify(big).length;
 const bigFlat = encode(big).length;
 
+// Two real requests to a real Express server using flatExpress().
+const app = express();
+app.use(flatExpress());
+const sample = { users: response.data.slice(0, 2).map(({ id, full_name, role }) => ({ id: Number(id), name: full_name, role })) };
+app.get("/users", (_req, res) => res.json(sample));
+const server = await new Promise((resolve) => {
+  const s = app.listen(0, () => resolve(s));
+});
+const base = `http://localhost:${server.address().port}`;
+const plain = await (await fetch(`${base}/users`)).text();
+const flatRes = await fetch(`${base}/users`, { headers: { accept: "text/x-flat" } });
+const flatText = await flatRes.text();
+server.close();
+
 const data = {
   json: JSON.stringify(response, null, 2),
   jsonBytes: small.jsonBytes,
@@ -68,6 +84,25 @@ const data = {
     "const users = User.parseList(res.data);",
   ].join("\n"),
   out,
+  server: [
+    'import express from "express";',
+    'import { flatExpress } from "@flattype/http";',
+    "",
+    "const app = express();",
+    "app.use(flatExpress());",
+    "",
+    'app.get("/users", (req, res) => {',
+    "  res.json({ users });",
+    "});",
+  ].join("\n"),
+  term: [
+    "$ curl localhost:3000/users",
+    plain.replace(/},{/g, "},\n  {"),
+    "",
+    '$ curl -H "Accept: text/x-flat" localhost:3000/users',
+    `# Content-Type: ${flatRes.headers.get("content-type")}`,
+    flatText,
+  ].join("\n"),
   bars: [
     { label: "JSON, 1,000 users (minified)", value: bigJson },
     { label: "TOON", value: toon(big).length },

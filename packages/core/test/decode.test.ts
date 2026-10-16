@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FlatDecodeError, decode } from "../src/index.js";
+import { FlatDecodeError, createDecoder, decode } from "../src/index.js";
 
 describe("decode", () => {
   it("reads key: value lines with typed scalars", () => {
@@ -86,5 +86,50 @@ describe("decode", () => {
       c: [null, null, "x"],
       t: [{ x: 1, y: null }],
     });
+  });
+});
+
+describe("createDecoder", () => {
+  const text = "page: 1\nusers[3]{id,name}:\n  1, Alice\n  2, Bob\n  3, \"Chen, W\"\nnext: null";
+
+  it("gives the same result as decode for every possible chunk split", () => {
+    const expected = decode(text);
+    for (let size = 1; size <= text.length; size++) {
+      const d = createDecoder();
+      for (let i = 0; i < text.length; i += size) d.write(text.slice(i, i + size));
+      expect(d.end()).toEqual(expected);
+    }
+  });
+
+  it("emits rows as soon as their line is complete", () => {
+    const seen: string[] = [];
+    const d = createDecoder({ onRow: (r) => seen.push(`${r.path}#${r.index}:${JSON.stringify(r.value)}`) });
+    d.write("page: 1\nusers[3]{id,name}:\n  1, Alice\n  2, B");
+    expect(seen).toEqual(['users#0:{"id":1,"name":"Alice"}']);
+    d.write("ob\n  3, \"Chen, W\"\n");
+    expect(seen).toHaveLength(3);
+    d.end();
+  });
+
+  it("names nested and root tables by path", () => {
+    const paths: string[] = [];
+    const d = createDecoder({ onRow: (r) => paths.push(r.path) });
+    d.write('a.b[1]{x}:\n  1\n"my list"[0][1]{x}:\n  2\n[1]{x}:\n  3');
+    expect(() => d.end()).toThrow(); // root table after keys is a path conflict
+    expect(paths).toEqual(["a.b", '"my list"[0]', ""]);
+  });
+
+  it("can drop rows after emitting them", () => {
+    let count = 0;
+    const d = createDecoder({ keepRows: false, onRow: () => count++ });
+    d.write(text);
+    expect(d.end()).toEqual({ page: 1, users: [], next: null });
+    expect(count).toBe(3);
+  });
+
+  it("reports a table cut short at the end", () => {
+    const d = createDecoder();
+    d.write("t[2]{a}:\n  1");
+    expect(() => d.end()).toThrow(/Expected 2 rows, got 1/);
   });
 });

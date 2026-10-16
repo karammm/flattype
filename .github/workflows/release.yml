@@ -1,16 +1,24 @@
 name: Release (npm)
 
-# Push a tag like v1.6.0 to publish every @flattype/* package.
-# Uses npm trusted publishing (OIDC): no npm token is stored in GitHub. Each package must have this
+# Fully automatic: when a push to main changes package versions (e.g. after `pnpm changeset version`),
+# this builds and tests, publishes every @flattype/* version not yet on npm, then tags vX.Y.Z and
+# creates the GitHub release from CHANGELOG.md. Pushes that don't change a version publish nothing.
+#
+# Uses npm trusted publishing (OIDC): no npm token is stored in GitHub. Every package must have this
 # workflow configured as its trusted publisher on npmjs.com (Settings -> Trusted publishing).
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths: ["packages/*/package.json"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -26,8 +34,21 @@ jobs:
           # No `registry-url` here: it makes setup-node inject a placeholder NODE_AUTH_TOKEN, which npm
           # would use instead of trusted publishing (OIDC) and fail with "401 token is invalid".
       - run: npm install -g npm@11
-      - run: npm --version
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build typecheck test --filter="./packages/*"
       - run: pnpm check:dist
+      - run: pnpm check:size
       - run: node scripts/publish-npm.mjs --provenance
+      - name: Tag and create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "Release v$version already exists"
+            exit 0
+          fi
+          node scripts/release-notes.mjs "$version" > notes.md
+          # Title from the roadmap heading, e.g. "## v1.2.0: HTTP integration"
+          title=$(grep -m1 "^## v$version:" ROADMAP.md | sed -E 's/^## //; s/ ✅.*$//; s/ 🚧.*$//')
+          gh release create "v$version" --target "$GITHUB_SHA" --title "${title:-v$version}" --notes-file notes.md

@@ -17,7 +17,7 @@ Each release is built, tested, tagged, and published on its own before work on t
 3. Add a changeset
 4. CI green on Node 18/20/22/24, under the size budget (`pnpm check:size`)
 5. Pack and install the tarballs in a clean project (ESM, CJS, types)
-6. Tag `vX.Y.Z`, publish to npm, create the GitHub release
+6. Run `pnpm changeset version` and push to `main`. The release workflow publishes to npm, tags `vX.Y.Z` and creates the GitHub release
 7. Install the published version from npm and smoke-test it
 
 ---
@@ -43,14 +43,16 @@ New package: `@flattype/models`
 - Works on decoded Flat Notation and on plain JSON
 - `toSource(model, name)` prints TypeScript for a model, and `examples/node-models` shows the whole flow
 
-## v1.2.0: HTTP integration
+## v1.2.0: HTTP integration ✅
 
 New package: `@flattype/http`
 
-- `flatFetch(url, { model })` with `Accept: text/x-flat, application/json` negotiation and JSON fallback
-- Axios interceptor
-- Express / Fastify / Hono middleware that serves `text/x-flat` when the client asks for it
-- Streaming decode for large tables (rows emitted as they arrive)
+- `flatFetch(url, { model })` and `createClient()` with `Accept: text/x-flat, application/json` negotiation and JSON fallback
+- `flatAxios()` interceptor
+- `flatExpress()`, `flatFastify` and `flatHono()`, plus `negotiate()` for any fetch-API server, serving `text/x-flat` only when the client asks for it
+- `streamRows()` for large tables (rows emitted as they arrive), built on the new `createDecoder()` in core
+- Tested against real Express, Fastify, Hono and axios, `examples/node-server`
+- Releases became fully automatic (version bump on `main` → npm + GitHub release)
 
 ## v1.3.0: React
 
