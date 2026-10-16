@@ -1,6 +1,6 @@
 {
   "name": "@flattype/svelte",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Svelte stores (and Solid resources) for FlatType.js: fetch Flat Notation or JSON into typed models, with streaming rows.",
   "license": "MIT",
   "type": "module",

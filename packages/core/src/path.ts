@@ -124,6 +124,9 @@ function readFields(
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
+/** The most nulls lenient decoding inserts for a skipped index range. */
+export const MAX_GAP = 1000;
+
 function isObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
@@ -163,6 +166,9 @@ export function assign(
       }
       if (key > arr.length) {
         if (strict) fail(`Index [${key}] skips [${arr.length}]`);
+        // Lenient mode fills small gaps with null, but a tiny line like `a[999999999]: 1` must not
+        // allocate a billion entries.
+        if (key - arr.length > MAX_GAP) fail(`Index [${key}] is too far past [${arr.length}]`);
         while (arr.length < key) arr.push(null);
       }
       const v = create();

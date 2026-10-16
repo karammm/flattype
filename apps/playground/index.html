@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FlatType Playground</title>
+    <meta name="description" content="Paste JSON and see it as Flat Notation: size and gzip savings, and the typed model FlatType generates for it." />
+    <link rel="icon" type="image/svg+xml" href="/flattype/mark.svg" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="./"><img src="/flattype/mark.svg" alt="" width="28" height="28" /> <span>Flat<em>Type</em> Playground</span></a>
+      <nav aria-label="Links">
+        <a href="./docs/">Docs</a>
+        <a href="https://github.com/karammm/flattype">GitHub</a>
+        <a href="https://www.npmjs.com/package/@flattype/core">npm</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="toolbar" role="group" aria-label="Options">
+        <div class="seg" role="radiogroup" aria-label="Direction">
+          <label><input type="radio" name="mode" value="encode" checked /> JSON → Flat</label>
+          <label><input type="radio" name="mode" value="decode" /> Flat → JSON</label>
+        </div>
+        <label>Delimiter
+          <select id="delimiter">
+            <option value=",">comma</option>
+            <option value="|">pipe</option>
+            <option value="&#9;">tab</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="tables" checked /> Tables</label>
+        <span class="samples">Try:
+          <button type="button" data-sample="list">API list</button>
+          <button type="button" data-sample="nested">Nested object</button>
+          <button type="button" data-sample="mixed">Mixed shapes</button>
+        </span>
+      </div>
+
+      <section class="meter" aria-live="polite" aria-label="Size comparison">
+        <div class="stat"><span class="k">JSON</span><b id="jsonBytes">–</b><small id="jsonGz"></small></div>
+        <div class="stat"><span class="k">Flat Notation</span><b id="flatBytes">–</b><small id="flatGz"></small></div>
+        <div class="stat big"><span class="k">Saved</span><b id="saved">–</b><small id="savedGz"></small></div>
+        <div class="bar" aria-hidden="true"><div id="barJson"></div><div id="barFlat"></div></div>
+      </section>
+
+      <div class="panes">
+        <section class="pane">
+          <div class="pane-head"><h2 id="inLabel">JSON input</h2></div>
+          <label class="sr-only" for="input">Input</label>
+          <textarea id="input" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <p id="error" class="error" role="alert" hidden></p>
+        </section>
+        <section class="pane">
+          <div class="pane-head">
+            <div class="tabs" role="tablist" aria-label="Output">
+              <button role="tab" id="tab-out" aria-controls="output" aria-selected="true">Flat Notation</button>
+              <button role="tab" id="tab-model" aria-controls="model" aria-selected="false" tabindex="-1">TypeScript model</button>
+            </div>
+            <button type="button" id="copy" class="copy">Copy</button>
+          </div>
+          <pre id="output" role="tabpanel" aria-labelledby="tab-out" tabindex="0"></pre>
+          <pre id="model" role="tabpanel" aria-labelledby="tab-model" tabindex="0" hidden></pre>
+        </section>
+      </div>
+      <p class="foot">Runs entirely in your browser: nothing you paste leaves this page. <a href="./docs/guide/format">How the format works</a> · <code>npm install @flattype/core @flattype/models</code></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 {
   "name": "@flattype/models",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Typed models for API data: key mapping, coercion and defaults, from JSON or Flat Notation.",
   "license": "MIT",
   "type": "module",
@@ -36,7 +36,8 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:perf": "vitest run --config vitest.perf.config.ts"
   },
   "dependencies": {
     "@flattype/core": "workspace:*",

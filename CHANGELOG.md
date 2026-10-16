@@ -2,6 +2,25 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.9.0
+
+### Docs and playground
+
+- Documentation site at [karammm.github.io/flattype/docs](https://karammm.github.io/flattype/docs/) (VitePress), with a full **format specification**, a **security** page and **benchmarks** measured on every build. The guide pages are generated from the README, so the two can't drift apart
+- [Playground](https://karammm.github.io/flattype/): paste JSON or Flat Notation and see the conversion, byte and gzip savings and the generated TypeScript model, all in the browser
+- Both are checked with axe-core (WCAG 2.2 AA, light and dark mode), for broken links, and on a phone layout
+
+### Hardening
+
+A review of every regular expression and loop that sees untrusted input:
+
+- `@flattype/core`: lenient decoding fills at most 1,000 skipped indexes with `null` (`a[999999999]: 1` could allocate a billion entries). `createDecoder()` stays linear for one long line streamed in small chunks
+- `@flattype/ai`: `fromModelOutput` extraction is linear on hostile text (many `<data` or fence openers without a closer)
+- `@flattype/models`: the numeric-string check no longer backtracks quadratically on long digit runs
+- `@flattype/http`: `streamRows` hands out large batches without quadratic `Array#shift`
+- New CI job: 50,000 fuzz runs per encode option, decoder fuzzing (only `FlatDecodeError`, no prototype pollution, streamed equals whole), and linear-time checks on hostile inputs
+- `SECURITY.md` with private vulnerability reporting
+
 ## 1.8.0
 
 ### New: `@flattype/cli`

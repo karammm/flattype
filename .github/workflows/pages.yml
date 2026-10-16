@@ -1,0 +1,45 @@
+name: Pages
+
+# One site: the playground at /flattype/ and the documentation at /flattype/docs/.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The docs build also runs the benchmarks, so the published numbers come from this machine.
+      - run: pnpm turbo run build --filter="./packages/*" --filter=@flattype/playground --filter=@flattype/docs
+      - name: Assemble the site
+        run: |
+          mkdir -p site
+          cp -R apps/playground/dist/. site/
+          cp -R apps/docs/.vitepress/dist site/docs
+          touch site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

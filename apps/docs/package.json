@@ -1,0 +1,23 @@
+{
+  "name": "@flattype/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync.mjs",
+    "bench": "node scripts/bench.mjs",
+    "dev": "node scripts/sync.mjs && vitepress dev",
+    "build": "node scripts/sync.mjs && node scripts/bench.mjs && vitepress build",
+    "preview": "vitepress preview --port 4174",
+    "e2e": "pnpm build && playwright test",
+    "typecheck": "node --check scripts/sync.mjs && node --check scripts/bench.mjs"
+  },
+  "dependencies": {
+    "@flattype/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.49.1",
+    "@toon-format/toon": "^2.1.0",
+    "vitepress": "1.6.4"
+  }
+}

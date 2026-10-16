@@ -1,0 +1,20 @@
+{
+  "name": "@flattype/playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "e2e": "vite build && playwright test"
+  },
+  "dependencies": {
+    "@flattype/core": "workspace:*",
+    "@flattype/models": "workspace:*"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.49.1",
+    "vite": "6.4.4"
+  }
+}

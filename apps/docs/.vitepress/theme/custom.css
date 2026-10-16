@@ -1,0 +1,25 @@
+/* Violet brand, tuned to WCAG AA contrast (checked by e2e/docs.spec.ts with axe-core). */
+:root {
+  --vp-c-brand-1: #4f33c7;
+  --vp-c-brand-2: #5b3fd6;
+  --vp-c-brand-3: #5b3fd6;
+  --vp-c-brand-soft: rgba(91, 63, 214, 0.14);
+  --vp-button-brand-bg: #5b3fd6;
+  --vp-button-brand-hover-bg: #4f33c7;
+  --vp-button-brand-active-bg: #4329b0;
+  --vp-code-lang-color: #5f5f66;
+}
+.dark {
+  --vp-c-brand-1: #b4a5ff;
+  --vp-c-brand-2: #a08cff;
+  --vp-c-brand-3: #a08cff;
+  --vp-c-brand-soft: rgba(160, 140, 255, 0.16);
+  --vp-button-brand-bg: #a08cff;
+  --vp-button-brand-text: #0d1020;
+  --vp-button-brand-hover-bg: #b4a5ff;
+  --vp-button-brand-hover-text: #0d1020;
+  --vp-button-brand-active-bg: #8b6cff;
+  --vp-button-brand-active-text: #0d1020;
+  --vp-code-lang-color: #98989f;
+}
+.intro-video { width: 100%; border-radius: 12px; border: 1px solid var(--vp-c-divider); margin: 24px 0 8px; }

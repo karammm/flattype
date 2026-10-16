@@ -12,6 +12,7 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
+    "@flattype/docs",
     "@flattype/example-ai-claude",
     "@flattype/example-angular-app",
     "@flattype/example-node-models",
@@ -19,6 +20,7 @@
     "@flattype/example-react-app",
     "@flattype/example-solid-app",
     "@flattype/example-svelte-app",
-    "@flattype/example-vue-app"
+    "@flattype/example-vue-app",
+    "@flattype/playground"
   ]
 }

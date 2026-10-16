@@ -1,0 +1,137 @@
+# Flat Notation format
+
+This page specifies Flat Notation as `@flattype/core` writes and reads it. **The format is stable:** text written by any 1.x version decodes the same way in every later 1.x version.
+
+- **Media type:** `text/x-flat` (send `charset=utf-8`)
+- **File extension:** `.flat`
+- **Encoding:** UTF-8
+
+## At a glance
+
+```
+# A comment
+name: John
+zip: "10001"
+user.address.city: Paris
+"first name": John
+tags[]: admin, editor
+items[0].id: 1
+items[1]: 2
+empty: {}
+none: []
+users[2]{id,name}:
+  1, Alice
+  2, Bob
+```
+
+decodes to
+
+```json
+{
+  "name": "John", "zip": "10001", "user": { "address": { "city": "Paris" } }, "first name": "John",
+  "tags": ["admin", "editor"], "items": [{ "id": 1 }, 2], "empty": {}, "none": [],
+  "users": [{ "id": 1, "name": "Alice" }, { "id": 2, "name": "Bob" }]
+}
+```
+
+## Lines
+
+A document is a sequence of lines separated by `\n`. A `\r` at the end of a line is ignored.
+
+- **Blank lines** are skipped, and so are lines whose first non-blank character is `#` (comments).
+- **Leading spaces and tabs** before an entry are ignored.
+- **Every other line is an entry:** a path, a colon, and then either a value, an inline array, or a table header.
+- **Table rows are the exception:** the *N* lines after a table header are its rows, read as they are, even if they are blank or start with `#`.
+
+An empty document decodes to `{}`.
+
+## Paths
+
+```text
+entry   = path ":" [ value ]
+        | path "[" mark "]" ":" cells            (* inline array *)
+        | path "[" count mark "]" "{" fields "}" ":"  (* table header *)
+path    = [ ( key | index ) { "." key | index } ]
+index   = "[" digits "]"
+key     = bare | json-string
+bare    = 1*( "A"–"Z" | "a"–"z" | "0"–"9" | "_" | "$" | "-" )
+mark    = "" | "|" | TAB          (* the delimiter: "" means "," *)
+fields  = field { mark-or-comma field }
+field   = key { "." key }
+```
+
+- **Path parts:** `a.b` is key `b` inside object `a`, and `a[0]` is the first element of array `a`. A key that isn't bare is written as a JSON string: `"first name"`, `"a.b"`, `"@type"`.
+- **The empty path** means the root. That's how non-object roots are written: `: 42`, `[]: 1, 2`, `[2]{id}:`.
+- **One space after the colon is written,** and whitespace around a value is ignored.
+
+## Values
+
+After the colon, the trimmed text is read as:
+
+| Text | Value |
+| --- | --- |
+| `null`, `true`, `false` | those literals |
+| JSON number syntax (`-12`, `0.5`, `1e21`) | a number |
+| `{}` / `[]` | an empty object / array |
+| `"…"` (a JSON string, with JSON escapes) | that string |
+| anything else | the text itself, as a string |
+
+So `zip: 10001` is a number and `zip: "10001"` is a string. `version: 1.0.0` and `id: 007` are strings, because they aren't JSON numbers.
+
+**When the encoder quotes a string.** Quoting is the only way to tell a string apart from the other values, so the encoder quotes a string when it:
+- is empty, or has leading or trailing whitespace
+- starts with `"`
+- contains a control character (newline, tab, …)
+- would read as something else: `null`, `true`, `false`, a JSON number, `{}` or `[]`
+- in an inline array or table row only: contains the delimiter
+
+Colons, `#` and other punctuation are fine unquoted in a value: `url: http://x.io/a#b`.
+
+## Inline arrays
+
+`path[]: v1, v2, v3` is an array of primitives. Cells are split on the delimiter outside quoted strings, and each cell is trimmed and read like a value.
+- **Other delimiters** are written inside the brackets: `tags[|]: a | b` or `tags[\t]: a⇥b`.
+- **An empty array** is `path: []`, never `path[]:`.
+
+## Tables
+
+```
+path[count]{field1,field2.sub}:
+  v1, v2
+  v1, v2
+```
+
+- **Shape:** an array of `count` objects. The next `count` lines are its rows, one object per row, with values in field order.
+- **Fields** are dot paths inside each row object, so nested objects flatten into the header.
+- **Indentation is cosmetic:** rows are counted, not detected by their indent. The default indent is 2 spaces.
+- **When the encoder writes a table:** for an array of objects that all have the same leaf paths in the same order, with only primitive values, at least one key, and no arrays or empty objects inside. Any other array is written with indexed paths (`items[0].id: 1`).
+
+## Building the value
+
+Entries are applied in order, creating objects and arrays along their paths.
+- **Arrays fill in order:** an index must be the array's current length (append), or an existing element (when descending into it).
+- **Duplicates and conflicts are errors:** setting the same leaf twice, or using one path as both a value and a container.
+- **Keys are own properties,** including `__proto__`. Nothing is ever assigned to a prototype.
+
+Whatever `JSON.stringify` can write, `encode` writes as well, with the same rules: `toJSON` is called, `undefined` and functions are dropped (or become `null` in arrays), `NaN` and `Infinity` become `null`, and cycles and BigInt throw. **`decode(encode(x))` deep-equals `JSON.parse(JSON.stringify(x))`** for every value. Property-based tests check this on every change.
+
+## Errors and lenient mode
+
+Malformed input throws `FlatDecodeError`, which has a 1-based `line` and `column`.
+
+`decode(text, { strict: false })` instead recovers what it can. That's what `fromModelOutput` and `flattype decode --lenient` use.
+
+| Problem | Strict | Lenient |
+| --- | --- | --- |
+| Missing value (`a:`) | error | `null` |
+| Duplicate key or index | error | the last one wins |
+| Skipped index (`a[2]` before `a[0]`) | error | filled with `null`, up to 1,000 entries; a bigger gap is still an error |
+| Fewer table rows than declared | error | the rows that are there |
+| Wrong number of cells in a row | error | missing cells are `null` |
+| Unterminated quoted string | error | the raw text |
+
+A line that isn't an entry at all is an error in both modes. `fromModelOutput` skips such lines, for example prose around the data.
+
+## Streaming
+
+`createDecoder()` reads the same format chunk by chunk, with chunks split anywhere, even inside a line or a character. It reports each table row as soon as its line is complete. The result is exactly what `decode` gives for the whole text.

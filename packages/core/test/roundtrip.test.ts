@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { Delimiter, EncodeOptions } from "../src/index.js";
 import { decode, encode, flatten, unflatten } from "../src/index.js";
 
+/** CI runs a deeper pass with FUZZ_RUNS=50000. */
+const RUNS = Number(process.env.FUZZ_RUNS ?? 1500);
+
 const asJson = (v: unknown): unknown => JSON.parse(JSON.stringify(v));
 
 const options: EncodeOptions[] = [
@@ -44,7 +47,7 @@ describe("round trip", () => {
         fc.property(value, (v) => {
           expect(decode(encode(v, opts))).toEqual(asJson(v));
         }),
-        { numRuns: 1500 },
+        { numRuns: RUNS },
       );
     });
   }
@@ -54,7 +57,7 @@ describe("round trip", () => {
       fc.property(value, (v) => {
         expect(unflatten(flatten(v))).toEqual(asJson(v));
       }),
-      { numRuns: 1500 },
+      { numRuns: RUNS },
     );
   });
 });

@@ -1,5 +1,18 @@
 # @flattype/svelte
 
+## 1.9.0
+
+### Minor Changes
+
+- Hardening: bounded lenient index gaps, linear-time streaming, `fromModelOutput` extraction, numeric coercion and `streamRows` batches. Docs site and playground.
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/http@1.9.0
+  - @flattype/core@1.9.0
+  - @flattype/shared@1.9.0
+
 ## 1.8.0
 
 ### Minor Changes

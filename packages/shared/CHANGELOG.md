@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.9.0
+
+### Minor Changes
+
+- Hardening: bounded lenient index gaps, linear-time streaming, `fromModelOutput` extraction, numeric coercion and `streamRows` batches. Docs site and playground.
+
 ## 1.8.0
 
 ### Minor Changes

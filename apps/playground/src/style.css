@@ -1,0 +1,54 @@
+:root {
+  --bg: #f7f7fb; --panel: #ffffff; --line: #dcdcea; --text: #15172b; --muted: #55597a;
+  --accent: #5b3fd6; --accent-text: #ffffff; --good: #08795f; --err: #b3261e; --code: #f1f0fa;
+  --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1020; --panel: #151a30; --line: #2a3156; --text: #e7e9f5; --muted: #a3a8c8;
+    --accent: #a08cff; --accent-text: #0d1020; --good: #2fd4b2; --err: #ff8a80; --code: #10142a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+a { color: var(--accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; color: var(--text); text-decoration: none; }
+.brand em { color: var(--accent); font-style: normal; }
+.top nav { display: flex; gap: 16px; }
+main { max-width: 1240px; margin: 0 auto; padding: 16px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-bottom: 12px; }
+.toolbar label { display: inline-flex; gap: 6px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg label { padding: 6px 10px; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--accent); color: var(--accent-text); }
+.seg input { accent-color: var(--accent); }
+select, button, textarea { font: inherit; color: inherit; }
+select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.samples { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; color: var(--muted); }
+.meter { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; }
+.stat { display: flex; flex-direction: column; }
+.stat .k { color: var(--muted); font-size: 13px; }
+.stat b { font-size: 22px; }
+.stat.big b { color: var(--good); }
+.stat small { color: var(--muted); }
+.bar { grid-column: 1 / -1; display: grid; gap: 4px; }
+.bar div { height: 8px; border-radius: 4px; background: var(--muted); opacity: .5; width: 100%; transition: width .2s; }
+.bar #barFlat { background: var(--good); opacity: 1; }
+.panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .panes, .meter { grid-template-columns: minmax(0, 1fr); } }
+.pane { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-width: 0; }
+.pane-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); gap: 8px; }
+.pane-head h2 { font-size: 14px; margin: 0; color: var(--muted); }
+.tabs { display: flex; gap: 4px; }
+.tabs [aria-selected="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+textarea, pre { margin: 0; padding: 12px; font: 13.5px/1.55 var(--mono); background: var(--code); color: var(--text); border: 0; border-radius: 0 0 12px 12px; min-height: 420px; height: 52vh; resize: vertical; overflow: auto; white-space: pre; tab-size: 4; }
+.error { margin: 0; padding: 8px 12px; color: var(--err); border-top: 1px solid var(--line); font-size: 13.5px; }
+.foot { color: var(--muted); font-size: 13.5px; margin-top: 14px; }
+code { font-family: var(--mono); font-size: 13px; background: var(--code); padding: 1px 5px; border-radius: 4px; }

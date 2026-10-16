@@ -72,9 +72,19 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
 
   return {
     write(chunk) {
-      const parts = (rest + chunk).split("\n");
-      rest = parts.pop()!;
-      for (const part of parts) line(part);
+      // Only the new chunk is searched for newlines, so a long line streamed in small chunks stays linear.
+      let nl = chunk.indexOf("\n");
+      if (nl < 0) {
+        rest += chunk;
+        return;
+      }
+      line(rest + chunk.slice(0, nl));
+      let start = nl + 1;
+      while ((nl = chunk.indexOf("\n", start)) >= 0) {
+        line(chunk.slice(start, nl));
+        start = nl + 1;
+      }
+      rest = chunk.slice(start);
     },
     end() {
       line(rest);

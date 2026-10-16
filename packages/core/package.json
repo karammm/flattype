@@ -1,6 +1,6 @@
 {
   "name": "@flattype/core",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Flatten JSON into Flat Notation: compact, LLM-friendly key: value text. No third-party dependencies.",
   "license": "MIT",
   "type": "module",
@@ -37,7 +37,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
     "test": "vitest run",
-    "bench": "vitest bench --run"
+    "bench": "vitest bench --run",
+    "test:perf": "vitest run --config vitest.perf.config.ts"
   },
   "dependencies": {
     "@flattype/shared": "workspace:*"

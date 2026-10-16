@@ -21,7 +21,8 @@ interface Field {
 
 const PRIMITIVES = new Set(["string", "number", "integer", "boolean", "date", "any"]);
 const FAIL = Symbol("fail");
-const NUMERIC = /^\s*[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?\s*$/;
+// No overlapping quantifiers (`\d+\.?\d*` would backtrack quadratically on long digit runs).
+const NUMERIC = /^\s*[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\s*$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
 
 export function isModel(v: unknown): v is Model<unknown> {

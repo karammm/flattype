@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/karammm/flattype">
+  <a href="https://karammm.github.io/flattype/docs/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
       <img src="docs/assets/logo-light.svg" alt="FlatType.js" width="300">
@@ -29,6 +29,8 @@
 </p>
 
 <p align="center">
+  <a href="https://karammm.github.io/flattype/docs/"><b>Documentation</b></a> ·
+  <a href="https://karammm.github.io/flattype/"><b>Playground</b></a> ·
   <a href="#quick-start"><b>Quick start</b></a> ·
   <a href="#the-format"><b>Format</b></a> ·
   <a href="#typed-models"><b>Models</b></a> ·
@@ -148,7 +150,7 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 | [`@flattype/cli`](packages/cli) | The `flattype` command: `encode`, `decode`, `stats`, and `gen` (models from samples or OpenAPI) | Node tool |
 | [`@flattype/shared`](packages/shared) | Shared TypeScript types | types only |
 
-Docs, a playground and published benchmarks are next on the [roadmap](ROADMAP.md). See the [roadmap](ROADMAP.md).
+Everything is documented at [karammm.github.io/flattype/docs](https://karammm.github.io/flattype/docs/), and you can try the format on your own data in the [playground](https://karammm.github.io/flattype/). See the [roadmap](ROADMAP.md).
 
 ## The format
 
@@ -565,7 +567,7 @@ It handles `$ref` between schemas, `allOf`, `required` (other fields become opti
 | **FlatType `decode`** | **0.73 ms** |
 | TOON `decode` | 5.9 ms |
 
-Some honest notes on these numbers:
+Numbers measured on every docs build are on the [benchmarks page](https://karammm.github.io/flattype/docs/guide/benchmarks). Some honest notes on them:
 
 - **The savings come from lists.** A single small object is about the same size as JSON.
 - **Gzip already removes most of JSON's repeated keys,** so gzipped network sizes come out close. FlatType makes the biggest difference where text isn't compressed: LLM prompts and tool results, logs, caches and local storage.
@@ -579,10 +581,18 @@ pnpm build && pnpm typecheck && pnpm test
 pnpm bench        # encode/decode vs JSON
 pnpm compare      # size and parse time vs JSON and TOON
 pnpm check:size   # bundle budgets
+pnpm --filter @flattype/core test:perf                        # linear-time checks on hostile input
+FUZZ_RUNS=50000 pnpm --filter @flattype/core exec vitest run  # deep fuzzing, as in CI
+pnpm --filter @flattype/docs dev                              # docs site (VitePress)
+pnpm --filter @flattype/playground dev                        # playground
 pnpm video        # re-render docs/assets/flattype-intro.{mp4,gif} (needs ffmpeg and the Angular example built)
 ```
 
 This is a pnpm + Turborepo monorepo built with tsup and tested with Vitest and fast-check. Releases use Changesets, and all `@flattype/*` packages share one version number. Every release follows the checklist in [ROADMAP.md](ROADMAP.md).
+
+## Security
+
+The decoder is prototype-safe, runs in linear time on hostile input, and only ever throws `FlatDecodeError`. Deep fuzzing and timing tests check this on every push, as described on the [security page](https://karammm.github.io/flattype/docs/guide/security). Please report vulnerabilities privately, following [SECURITY.md](SECURITY.md).
 
 ## Contributing
 

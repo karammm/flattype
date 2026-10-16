@@ -68,12 +68,14 @@ export async function* streamRows(
   const queue: TableRow[] = [];
   const decoder = createDecoder({ strict: options.strict, keepRows: false, onRow: (row) => queue.push(row) });
   const text = new TextDecoder();
+  // Hand over the whole batch at once (Array#shift per row would be quadratic on big chunks).
+  const drain = (): TableRow[] => queue.splice(0, queue.length);
   for await (const chunk of chunks(body)) {
     decoder.write(typeof chunk === "string" ? chunk : text.decode(chunk, { stream: true }));
-    while (queue.length) yield queue.shift()!;
+    yield* drain();
   }
   decoder.write(text.decode());
   const rest = decoder.end();
-  while (queue.length) yield queue.shift()!;
+  yield* drain();
   return rest;
 }

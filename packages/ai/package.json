@@ -1,6 +1,6 @@
 {
   "name": "@flattype/ai",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Flat Notation for LLMs: compact prompts, tolerant parsing of model output, token counting with Claude, MCP and Claude tool results.",
   "license": "MIT",
   "type": "module",
@@ -36,7 +36,8 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:perf": "vitest run --config vitest.perf.config.ts"
   },
   "dependencies": {
     "@flattype/core": "workspace:*",

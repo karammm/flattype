@@ -28,6 +28,25 @@ jobs:
       - run: pnpm check:dist
       - run: pnpm check:size
 
+  hardening:
+    name: deep fuzzing + linear-time checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter="./packages/*"
+      # 50,000 random values per encode option, 200,000 random documents through the decoder.
+      - run: pnpm --filter @flattype/core exec vitest run test/roundtrip.test.ts test/security.test.ts
+        env:
+          FUZZ_RUNS: "50000"
+      # Timing tests run alone so nothing else competes for the CPU.
+      - run: pnpm --filter @flattype/core --filter @flattype/models --filter @flattype/ai --workspace-concurrency=1 test:perf
+
   browsers:
     name: examples + real browsers
     runs-on: ubuntu-latest
@@ -40,9 +59,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build --filter="./packages/*"
-      - run: pnpm --filter "./examples/*" typecheck
+      - run: pnpm --filter "./examples/*" --filter "./apps/*" typecheck
       - run: pnpm --filter @flattype/example-react-app exec playwright install --with-deps chromium firefox webkit
-      - run: pnpm --filter "./examples/*" --workspace-concurrency=1 e2e
+      - run: pnpm --filter "./examples/*" --filter "./apps/*" --workspace-concurrency=1 e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

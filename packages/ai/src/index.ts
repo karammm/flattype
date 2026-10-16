@@ -53,17 +53,32 @@ export function outputInstructions(example?: unknown): string {
   return lines.join("\n");
 }
 
-const TAGGED = /<data\b[^>]*>([\s\S]*?)<\/data>/gi;
-const FENCE = /```([\w-]*)[^\n]*\n([\s\S]*?)```/g;
-
-/** Finds the data in a model reply: the last `<data>` block, else a fenced block, else the whole text. */
+/**
+ * Finds the data in a model reply: the last `<data>…</data>` block, else the last fenced block, else the
+ * whole text. Plain `indexOf` scans, so it stays linear even on hostile input (many openers, no closer).
+ */
 function extract(text: string): { body: string; json: boolean } {
-  const tagged = [...text.matchAll(TAGGED)];
-  if (tagged.length) return { body: tagged.at(-1)![1]!, json: false };
-  const fences = [...text.matchAll(FENCE)];
-  if (fences.length) {
-    const [, lang = "", body = ""] = fences.at(-1)!;
-    return { body, json: /^json/i.test(lang) };
+  const lower = text.toLowerCase();
+  const close = lower.lastIndexOf("</data>");
+  if (close >= 0) {
+    let open = lower.lastIndexOf("<data", close);
+    // `<data` must be the tag itself, not e.g. `<database>`.
+    while (open >= 0 && /[\w-]/.test(lower[open + 5] ?? "")) open = lower.lastIndexOf("<data", open - 1);
+    const gt = open >= 0 ? text.indexOf(">", open) : -1;
+    if (gt >= 0 && gt < close) return { body: text.slice(gt + 1, close), json: false };
+  }
+  const fences: number[] = [];
+  for (let i = text.indexOf("```"); i >= 0; i = text.indexOf("```", i + 3)) fences.push(i);
+  if (fences.length >= 2) {
+    // Fences pair up in order; use the last complete pair.
+    const last = fences.length % 2 === 0 ? fences.length - 2 : fences.length - 3;
+    const start = fences[last]!;
+    const end = fences[last + 1]!;
+    const nl = text.indexOf("\n", start);
+    if (nl >= 0 && nl < end) {
+      const lang = text.slice(start + 3, nl).trim();
+      return { body: text.slice(nl + 1, end), json: /^json/i.test(lang) };
+    }
   }
   return { body: text, json: false };
 }
