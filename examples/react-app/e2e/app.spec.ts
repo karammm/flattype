@@ -1,11 +1,18 @@
 import { expect, test } from "@playwright/test";
 
 test("lists users fetched as Flat Notation and mapped to models", async ({ page }) => {
-  const response = page.waitForResponse((r) => r.url().endsWith("/api/users"));
+  // Check the app's request rather than its response: React StrictMode (dev) mounts twice, so the first
+  // request is aborted on purpose and its response body may already be gone.
+  const request = page.waitForRequest((r) => r.url().endsWith("/api/users"));
   await page.goto("/");
-  const res = await response;
-  expect(res.headers()["content-type"]).toMatch(/^text\/x-flat/);
-  expect(await res.text()).toContain("data[8]{id,full_name,created_at,address.city}:");
+  expect((await request).headers()["accept"]).toMatch(/^text\/x-flat/);
+  // And what the server sends for that Accept header:
+  const [type, body] = await page.evaluate(async (accept) => {
+    const r = await fetch("/api/users", { headers: { accept } });
+    return [r.headers.get("content-type"), await r.text()];
+  }, (await request).headers()["accept"]!);
+  expect(type).toMatch(/^text\/x-flat/);
+  expect(body).toContain("data[8]{id,full_name,created_at,address.city}:");
   const users = page.getByTestId("users").locator("li");
   await expect(users).toHaveCount(8);
   await expect(users.first()).toHaveText("Alice Martin · Paris · joined 01/01/2026");
