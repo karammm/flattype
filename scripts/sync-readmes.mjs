@@ -7,5 +7,5 @@ const readme = readFileSync("README.md", "utf8")
   .replace(/(src|srcset)="(?!https?:|#)([^"]+)"/g, (_, attr, path) => `${attr}="${RAW}${path}"`)
   .replace(/href="(?!https?:|#)([^"]+)"/g, (_, path) => `href="${BLOB}${path}"`)
   .replace(/\]\((?!https?:|#)([^)]+)\)/g, (_, path) => `](${BLOB}${path})`);
-for (const pkg of ["core", "models", "http", "react", "vue", "angular", "svelte"]) writeFileSync(`packages/${pkg}/README.md`, readme);
-console.log("Synced README into core, models, http, react, vue, angular, svelte");
+for (const pkg of ["core", "models", "http", "react", "vue", "angular", "svelte", "ai"]) writeFileSync(`packages/${pkg}/README.md`, readme);
+console.log("Synced README into core, models, http, react, vue, angular, svelte, ai");

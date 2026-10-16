@@ -1,6 +1,6 @@
 {
   "name": "@flattype/react",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "React hooks for FlatType.js: fetch Flat Notation or JSON into typed models, with Suspense and streaming rows.",
   "license": "MIT",
   "type": "module",

@@ -3,7 +3,7 @@
 import { build } from "esbuild";
 import { gzipSync } from "node:zlib";
 
-const budgets = { core: 4 * 1024, models: 5 * 1024, http: 5 * 1024, react: 5 * 1024, vue: 5 * 1024, angular: 5 * 1024, svelte: 5 * 1024, "svelte/solid": 5 * 1024 };
+const budgets = { core: 4 * 1024, models: 5 * 1024, http: 5 * 1024, react: 5 * 1024, vue: 5 * 1024, angular: 5 * 1024, svelte: 5 * 1024, "svelte/solid": 5 * 1024, ai: 5 * 1024 };
 // Angular is built by ng-packagr, which writes its bundle to fesm2022/.
 // "svelte/solid" is the package's second entry point.
 const entry = (pkg) =>

@@ -85,14 +85,14 @@ New package: `@flattype/svelte`
 - `@flattype/svelte/solid`: `createFlatResource` and `createFlatStream`
 - `examples/svelte-app` (Svelte 5) and `examples/solid-app`, each with Playwright tests in Chromium, Firefox and WebKit
 
-## v1.7.0: Claude and LLMs
+## v1.7.0: Claude and LLMs ✅
 
 New package: `@flattype/ai`
 
-- `toPrompt(data)`: Flat Notation plus a one-line legend so the model reads it reliably
-- `fromModelOutput(text)`: lenient decoding of model replies
-- Token-savings report through the Anthropic token-counting API
-- MCP tool-result formatter, `examples/ai-claude`
+- `toPrompt(data)`: Flat Notation plus a one-line legend so the model reads it reliably. `outputInstructions(example)` asks for answers in Flat Notation
+- `fromModelOutput(text)`: lenient decoding of model replies (tags, fences, prose, JSON fallback) into typed models
+- `countTokens()`: a token-savings report through the Anthropic token-counting API
+- `toolResult()` for MCP, `claudeToolResult()` for the Claude API, `examples/ai-claude` (tested over stdio with a real MCP client)
 
 ## v1.8.0: CLI and code generation
 

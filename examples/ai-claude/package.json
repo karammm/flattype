@@ -1,0 +1,20 @@
+{
+  "name": "@flattype/example-ai-claude",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tokens": "node tokens.mjs",
+    "ask": "node ask.mjs",
+    "mcp": "node mcp-server.mjs",
+    "typecheck": "node --check tokens.mjs && node --check ask.mjs && node --check mcp-server.mjs && node --check mcp-check.mjs",
+    "e2e": "node mcp-check.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.135.0",
+    "@flattype/ai": "workspace:*",
+    "@flattype/core": "workspace:*",
+    "@flattype/models": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.5"
+  }
+}

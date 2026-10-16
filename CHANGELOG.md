@@ -2,6 +2,21 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.7.0
+
+### New: `@flattype/ai`
+
+- `toPrompt(data, { name, legend })` formats data as Flat Notation inside `<data format="flat-notation">` tags, with a one-line legend. The legend is a `#` comment, so the block stays valid Flat Notation; put it in the system prompt once with `legend: false`
+- `outputInstructions(example)` asks a model to answer in Flat Notation and shows the expected shape
+- `fromModelOutput(reply, { model, list })` reads data out of what models actually send back: `<data>` tags, code fences, prose before or after, small slips, or plain JSON. With a model it maps and validates
+- `countTokens(client, data)` compares real Claude tokens for JSON and Flat Notation via the Messages API token-counting endpoint (pass `new Anthropic()`; the SDK isn't a dependency)
+- `toolResult(data)` returns an MCP `CallToolResult` with Flat Notation text (optionally `structuredContent`), and `claudeToolResult(id, data)` returns a Claude API `tool_result` block
+- No runtime dependencies besides `@flattype/core`. 1.3 KB min+gz
+
+### Examples
+
+- `examples/ai-claude`: `tokens.mjs` (real token counts), `ask.mjs` (Claude Opus 5.5 answers about Flat Notation data in Flat Notation, decoded into typed models) and `mcp-server.mjs`, an MCP server whose tool returns Flat Notation. CI calls it over stdio with a real MCP client
+
 ## 1.6.0
 
 ### New: `@flattype/svelte` (Svelte and Solid)

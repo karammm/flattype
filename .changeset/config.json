@@ -12,6 +12,7 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
+    "@flattype/example-ai-claude",
     "@flattype/example-angular-app",
     "@flattype/example-node-models",
     "@flattype/example-node-server",

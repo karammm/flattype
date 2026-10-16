@@ -203,8 +203,8 @@ const data = {
   ],
   llm: [
     `<b>${Math.round((1 - bigFlat / bigJson) * 100)}% fewer characters</b> than minified JSON for the same 1,000 users`,
-    "Readable by people and models alike: <b>key: value</b> lines and tables",
-    "decode(reply, { <b>strict: false</b> }) recovers data from model output",
+    "<b>toPrompt(data)</b> + <b>fromModelOutput(reply, { model })</b>: Flat Notation in, typed models out",
+    "<b>toolResult(data)</b> for MCP servers · <b>countTokens()</b> with Claude's token counter",
   ],
 };
 

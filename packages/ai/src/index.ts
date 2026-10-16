@@ -1,0 +1,199 @@
+import { decode, encode, FlatDecodeError, type EncodeOptions, type JsonValue } from "@flattype/core";
+
+/** Anything with `parse` / `parseList`, such as a model from `@flattype/models`. */
+export interface Parser<T> {
+  parse(input: unknown): T;
+  parseList(input: unknown): T[];
+}
+
+/**
+ * One line that teaches a model the format. It is a `#` comment, so a prompt block that includes it is
+ * still valid Flat Notation.
+ */
+export const LEGEND =
+  "# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. " +
+  "`t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.";
+
+export interface PromptOptions extends EncodeOptions {
+  /** Adds `name="…"` to the tag, so a prompt can refer to several data blocks. */
+  name?: string;
+  /** Include the one-line format legend. Default `true`; turn it off once a system prompt explains the format. */
+  legend?: boolean;
+  /** Wrap in `<data format="flat-notation">…</data>`. Default `true`. */
+  tag?: boolean;
+}
+
+const attr = (s: string): string => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+/**
+ * Formats data for an LLM prompt: Flat Notation inside a `<data>` tag, with a one-line legend.
+ *
+ * ```ts
+ * const content = `${toPrompt(orders, { name: "orders" })}\n\nWhich customer spent the most?`;
+ * ```
+ */
+export function toPrompt(value: unknown, options: PromptOptions = {}): string {
+  const { name, legend = true, tag = true, ...encodeOptions } = options;
+  const body = (legend ? LEGEND + "\n" : "") + encode(value, encodeOptions);
+  if (!tag) return body;
+  return `<data format="flat-notation"${name ? ` name="${attr(name)}"` : ""}>\n${body}\n</data>`;
+}
+
+/**
+ * Instructions that ask a model to answer in Flat Notation, with an example built from `example` so the
+ * model sees the exact shape (keys, tables) you expect. Pair with `fromModelOutput`.
+ */
+export function outputInstructions(example?: unknown): string {
+  const lines = [
+    "Reply with the data only, in Flat Notation, inside <data> and </data> tags.",
+    LEGEND.slice(2),
+    "Write a list of objects with the same keys as a table. Quote a string value if it contains a comma or could be read as a number, true, false or null.",
+  ];
+  if (example !== undefined) lines.push("Example of the expected shape:", toPrompt(example, { legend: false }));
+  return lines.join("\n");
+}
+
+const TAGGED = /<data\b[^>]*>([\s\S]*?)<\/data>/gi;
+const FENCE = /```([\w-]*)[^\n]*\n([\s\S]*?)```/g;
+
+/** Finds the data in a model reply: the last `<data>` block, else a fenced block, else the whole text. */
+function extract(text: string): { body: string; json: boolean } {
+  const tagged = [...text.matchAll(TAGGED)];
+  if (tagged.length) return { body: tagged.at(-1)![1]!, json: false };
+  const fences = [...text.matchAll(FENCE)];
+  if (fences.length) {
+    const [, lang = "", body = ""] = fences.at(-1)!;
+    return { body, json: /^json/i.test(lang) };
+  }
+  return { body: text, json: false };
+}
+
+/** Decodes leniently, dropping lines that aren't Flat Notation (prose like "Here are the results:"). */
+function lenient(body: string): JsonValue {
+  const lines = body.split("\n");
+  for (let attempt = 0; attempt <= lines.length; attempt++) {
+    try {
+      return decode(lines.join("\n"), { strict: false });
+    } catch (e) {
+      if (!(e instanceof FlatDecodeError) || e.line < 1 || e.line > lines.length) throw e;
+      lines[e.line - 1] = "";
+    }
+  }
+  return {};
+}
+
+/**
+ * Reads data out of an LLM reply, tolerating what models actually send back: `<data>` tags or code fences
+ * around it, a sentence before or after, small format slips, or plain JSON instead. With a model, the
+ * result is mapped and validated (throws `ModelError` with every problem).
+ *
+ * ```ts
+ * const rows = fromModelOutput(reply, { model: Row, list: true });
+ * ```
+ */
+export function fromModelOutput(text: string): JsonValue;
+export function fromModelOutput<T>(text: string, options: { model: Parser<T>; list?: false }): T;
+export function fromModelOutput<T>(text: string, options: { model: Parser<T>; list: true }): T[];
+export function fromModelOutput(text: string, options: { model?: Parser<unknown>; list?: boolean } = {}): unknown {
+  const { body, json } = extract(text);
+  const trimmed = body.trim();
+  let value: unknown;
+  if (json || /^[[{]/.test(trimmed)) {
+    try {
+      value = JSON.parse(trimmed);
+    } catch {
+      value = undefined;
+    }
+  }
+  if (value === undefined) value = lenient(body);
+  const { model, list } = options;
+  if (!model) return value;
+  return list ? model.parseList(value) : model.parse(value);
+}
+
+/** The part of an Anthropic client this needs, e.g. `new Anthropic()` from `@anthropic-ai/sdk`. */
+export interface TokenCounter {
+  messages: {
+    countTokens(params: { model: string; messages: Array<{ role: "user"; content: string }> }): PromiseLike<{ input_tokens: number }>;
+  };
+}
+
+export interface TokenReport {
+  model: string;
+  /** Tokens for minified `JSON.stringify(value)`. */
+  json: number;
+  /** Tokens for `toPrompt(value, options)` (tag and legend included unless turned off). */
+  flat: number;
+  /** Fraction saved, e.g. `0.4` for 40% fewer tokens. Negative if Flat Notation costs more. */
+  saved: number;
+}
+
+/**
+ * Counts real Claude tokens for the same data as JSON and as Flat Notation, with the Messages API's
+ * `count_tokens` endpoint (free to call, but needs API credentials). The fixed per-message overhead is
+ * subtracted, so the numbers are the data's own tokens.
+ *
+ * ```ts
+ * import Anthropic from "@anthropic-ai/sdk";
+ * const report = await countTokens(new Anthropic(), await res.json());
+ * ```
+ */
+export async function countTokens(
+  client: TokenCounter,
+  value: unknown,
+  options: PromptOptions & { model?: string } = {},
+): Promise<TokenReport> {
+  const { model = "claude-opus-5-5", ...prompt } = options;
+  const count = async (content: string): Promise<number> =>
+    (await client.messages.countTokens({ model, messages: [{ role: "user", content }] })).input_tokens;
+  const [overhead, json, flat] = await Promise.all([count("."), count(JSON.stringify(value)), count(toPrompt(value, prompt))]);
+  // "." itself is one token; what's left is the message framing both counts share.
+  const base = Math.max(0, overhead - 1);
+  const j = json - base;
+  const f = flat - base;
+  return { model, json: j, flat: f, saved: j === 0 ? 0 : 1 - f / j };
+}
+
+export interface McpToolResult {
+  [key: string]: unknown;
+  content: Array<{ type: "text"; text: string }>;
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+}
+
+/**
+ * Returns data from an MCP tool as Flat Notation text, which is what the model reads, so large results
+ * cost fewer tokens. Compatible with `CallToolResult` from `@modelcontextprotocol/sdk`.
+ * `structured: true` also attaches the object as `structuredContent` for clients that use it.
+ *
+ * ```ts
+ * server.registerTool("list_orders", { description: "…" }, async () => toolResult(await db.orders()));
+ * ```
+ */
+export function toolResult(value: unknown, options: PromptOptions & { isError?: boolean; structured?: boolean } = {}): McpToolResult {
+  const { isError, structured, ...prompt } = options;
+  const result: McpToolResult = { content: [{ type: "text", text: toPrompt(value, prompt) }] };
+  if (structured && typeof value === "object" && value !== null && !Array.isArray(value)) {
+    result.structuredContent = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+  }
+  if (isError) result.isError = true;
+  return result;
+}
+
+export interface ClaudeToolResult {
+  type: "tool_result";
+  tool_use_id: string;
+  content: string;
+  is_error?: boolean;
+}
+
+/**
+ * A Claude API `tool_result` block (assignable to `Anthropic.ToolResultBlockParam`) whose content is the
+ * data as Flat Notation. Return it in the next user message after a `tool_use` block.
+ */
+export function claudeToolResult(toolUseId: string, value: unknown, options: PromptOptions & { isError?: boolean } = {}): ClaudeToolResult {
+  const { isError, ...prompt } = options;
+  const block: ClaudeToolResult = { type: "tool_result", tool_use_id: toolUseId, content: toPrompt(value, prompt) };
+  if (isError) block.is_error = true;
+  return block;
+}

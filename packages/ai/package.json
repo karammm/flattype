@@ -1,0 +1,65 @@
+{
+  "name": "@flattype/ai",
+  "version": "1.7.0",
+  "description": "Flat Notation for LLMs: compact prompts, tolerant parsing of model output, token counting with Claude, MCP and Claude tool results.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "llm",
+    "claude",
+    "anthropic",
+    "mcp",
+    "prompt",
+    "tokens",
+    "token-count",
+    "tool-result",
+    "json",
+    "flattype"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@flattype/core": "workspace:*",
+    "@flattype/shared": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karammm/flattype.git",
+    "directory": "packages/ai"
+  },
+  "homepage": "https://github.com/karammm/flattype#readme",
+  "bugs": {
+    "url": "https://github.com/karammm/flattype/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "0.135.0",
+    "@flattype/models": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}

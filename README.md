@@ -20,6 +20,7 @@
   <a href="https://www.npmjs.com/package/@flattype/vue"><img src="https://img.shields.io/npm/v/@flattype/vue?label=%40flattype%2Fvue&color=8b6cff" alt="npm @flattype/vue"></a>
   <a href="https://www.npmjs.com/package/@flattype/angular"><img src="https://img.shields.io/npm/v/@flattype/angular?label=%40flattype%2Fangular&color=8b6cff" alt="npm @flattype/angular"></a>
   <a href="https://www.npmjs.com/package/@flattype/svelte"><img src="https://img.shields.io/npm/v/@flattype/svelte?label=%40flattype%2Fsvelte&color=8b6cff" alt="npm @flattype/svelte"></a>
+  <a href="https://www.npmjs.com/package/@flattype/ai"><img src="https://img.shields.io/npm/v/@flattype/ai?label=%40flattype%2Fai&color=8b6cff" alt="npm @flattype/ai"></a>
   <a href="https://github.com/karammm/flattype/actions/workflows/ci.yml"><img src="https://github.com/karammm/flattype/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/core-3.7_KB_min%2Bgz-2fd4b2" alt="3.7 KB min+gz">
   <img src="https://img.shields.io/badge/dependencies-0-2fd4b2" alt="No third-party dependencies">
@@ -35,6 +36,7 @@
   <a href="#vue"><b>Vue</b></a> ·
   <a href="#angular"><b>Angular</b></a> ·
   <a href="#svelte-and-solid"><b>Svelte &amp; Solid</b></a> ·
+  <a href="#claude-and-llms"><b>Claude &amp; LLMs</b></a> ·
   <a href="#benchmarks"><b>Benchmarks</b></a> ·
   <a href="CHANGELOG.md"><b>Changelog</b></a> ·
   <a href="ROADMAP.md"><b>Roadmap</b></a>
@@ -140,9 +142,10 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 | [`@flattype/vue`](packages/vue) | The same composables for Vue 3, with reactive URLs, plus the `createFlat()` plugin | +1.2 KB |
 | [`@flattype/angular`](packages/angular) | `flatInterceptor` for HttpClient, the signal-based `flatResource` / `flatStream`, the `flatModel` pipe | +1.8 KB |
 | [`@flattype/svelte`](packages/svelte) | Svelte stores (`flatStore`, `flatStreamStore`, `modelStore`), and `/solid` with `createFlatResource` / `createFlatStream` | +1.1 KB / +0.9 KB |
+| [`@flattype/ai`](packages/ai) | `toPrompt`, `fromModelOutput`, `countTokens`, and MCP / Claude tool results | +1.3 KB |
 | [`@flattype/shared`](packages/shared) | Shared TypeScript types | types only |
 
-Claude helpers and a CLI are planned. See the [roadmap](ROADMAP.md).
+A CLI with code generation is planned. See the [roadmap](ROADMAP.md).
 
 ## The format
 
@@ -435,6 +438,60 @@ const events = createFlatStream(() => "/api/export", { model: Row, table: "rows"
 | `createFlatStream(() => url, options)` | `rows`, `done` and `error` accessors plus `restart()` |
 
 The stores also work in Solid, or anywhere else, through the store contract: `from(flatStore(...))`. Runnable apps with Playwright tests in three browsers are in [`examples/svelte-app`](examples/svelte-app) and [`examples/solid-app`](examples/solid-app).
+
+## Claude and LLMs
+
+```bash
+npm install @flattype/ai
+```
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+import { countTokens, fromModelOutput, outputInstructions, toPrompt } from "@flattype/ai";
+
+const client = new Anthropic();
+
+// 1. Data in: Flat Notation inside <data> tags, with a one-line legend the model reads once.
+const response = await client.beta.messages.create({
+  model: "claude-opus-5-5",
+  max_tokens: 16000,
+  betas: ["server-side-fallback-2026-07-01"],
+  fallbacks: "default", // if a safety classifier declines, retry on the recommended fallback model
+  messages: [{
+    role: "user",
+    content: `${toPrompt(orders, { name: "orders" })}\n\nTotal spent per customer?\n\n${outputInstructions([{ customer: "Alice", spent: 120 }])}`,
+  }],
+});
+
+// 2. Data out: tolerant of tags, fences, prose and JSON, then validated into typed models.
+const reply = response.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+const totals = fromModelOutput(reply, { model: Total, list: true }); // Total[]
+
+// 3. Measure it with Claude's own tokenizer (count_tokens is free).
+const { json, flat, saved } = await countTokens(client, orders);
+```
+
+**Tool results** shrink too, which matters most for agents that call tools over and over:
+
+```ts
+import { claudeToolResult, toolResult } from "@flattype/ai";
+
+// MCP server (@modelcontextprotocol/sdk): returns a CallToolResult with Flat Notation text
+server.registerTool("list_orders", { description: "…" }, async () => toolResult(await db.orders()));
+
+// Claude API tool loop: a tool_result block for the next user message
+messages.push({ role: "user", content: [claudeToolResult(toolUse.id, await runTool(toolUse))] });
+```
+
+| API | What it does |
+| --- | --- |
+| `toPrompt(data, { name, legend })` | `<data format="flat-notation">` plus a one-line legend. The block is still valid Flat Notation; put the legend in your system prompt once with `legend: false` |
+| `outputInstructions(example)` | Asks the model to answer in Flat Notation and shows the exact shape you expect |
+| `fromModelOutput(reply, { model, list })` | Finds the data (last `<data>` block, code fence, or the text itself), skips prose lines, and accepts JSON too |
+| `countTokens(client, data, { model })` | `{ json, flat, saved }` in real Claude tokens, minus per-message overhead. Takes any client with `messages.countTokens` |
+| `toolResult(data, { structured })` / `claudeToolResult(id, data)` | MCP `CallToolResult` and Claude API `tool_result` blocks |
+
+See [`examples/ai-claude`](examples/ai-claude) for a token report, a full Claude round trip, and a runnable MCP server (`claude mcp add flattype-orders -- node mcp-server.mjs`).
 
 ## Benchmarks
 
