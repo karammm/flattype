@@ -1,4 +1,4 @@
-import { decode, encode, FlatDecodeError, type EncodeOptions, type JsonValue } from "@flattype/core";
+import { decode, encode, type EncodeOptions, type JsonValue } from "@flattype/core";
 
 /** Anything with `parse` / `parseList`, such as a model from `@flattype/models`. */
 export interface Parser<T> {
@@ -63,7 +63,8 @@ function extract(text: string): { body: string; json: boolean } {
   if (close >= 0) {
     let open = lower.lastIndexOf("<data", close);
     // `<data` must be the tag itself, not e.g. `<database>`.
-    while (open >= 0 && /[\w-]/.test(lower[open + 5] ?? "")) open = lower.lastIndexOf("<data", open - 1);
+    // (At index 0, lastIndexOf(…, -1) would find the same match again: stop instead of looping forever.)
+    while (open >= 0 && /[\w-]/.test(lower[open + 5] ?? "")) open = open > 0 ? lower.lastIndexOf("<data", open - 1) : -1;
     const gt = open >= 0 ? text.indexOf(">", open) : -1;
     if (gt >= 0 && gt < close) return { body: text.slice(gt + 1, close), json: false };
   }
@@ -81,20 +82,6 @@ function extract(text: string): { body: string; json: boolean } {
     }
   }
   return { body: text, json: false };
-}
-
-/** Decodes leniently, dropping lines that aren't Flat Notation (prose like "Here are the results:"). */
-function lenient(body: string): JsonValue {
-  const lines = body.split("\n");
-  for (let attempt = 0; attempt <= lines.length; attempt++) {
-    try {
-      return decode(lines.join("\n"), { strict: false });
-    } catch (e) {
-      if (!(e instanceof FlatDecodeError) || e.line < 1 || e.line > lines.length) throw e;
-      lines[e.line - 1] = "";
-    }
-  }
-  return {};
 }
 
 /**
@@ -120,7 +107,8 @@ export function fromModelOutput(text: string, options: { model?: Parser<unknown>
       value = undefined;
     }
   }
-  if (value === undefined) value = lenient(body);
+  // Lenient, and lines that aren't Flat Notation (prose like "Here are the results:") are dropped, in one pass.
+  if (value === undefined) value = decode(body, { strict: false, skipInvalidLines: true });
   const { model, list } = options;
   if (!model) return value;
   return list ? model.parseList(value) : model.parse(value);

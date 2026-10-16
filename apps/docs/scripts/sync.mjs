@@ -19,6 +19,7 @@ const PAGES = {
   "Svelte and Solid": "svelte-solid",
   "Claude and LLMs": "llms",
   CLI: "cli",
+  Python: "python",
 };
 /** README in-page anchors -> doc pages. */
 const ANCHORS = {
@@ -32,6 +33,7 @@ const ANCHORS = {
   "#svelte-and-solid": "/guide/svelte-solid",
   "#claude-and-llms": "/guide/llms",
   "#cli": "/guide/cli",
+  "#python": "/guide/python",
   "#benchmarks": "/guide/benchmarks",
 };
 

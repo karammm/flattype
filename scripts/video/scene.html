@@ -45,7 +45,7 @@
   .cmd { margin-top: 34px; font: 500 22px var(--mono); background: var(--panel); border: 1px solid var(--line); padding: 18px 30px; border-radius: 12px; }
   .cmd .p { color: var(--teal); }
   .chips { display: flex; gap: 12px; margin-top: 30px; justify-content: center; }
-  .chip { padding: 8px 18px; border: 1px solid var(--line); border-radius: 999px; font: 600 17px var(--sans); color: var(--muted); }
+  .chip { white-space: nowrap; padding: 8px 18px; border: 1px solid var(--line); border-radius: 999px; font: 600 17px var(--sans); color: var(--muted); }
   .url { margin-top: 34px; font: 600 22px var(--sans); color: var(--accent); }
 </style>
 </head>
@@ -116,6 +116,16 @@
     </div>
   </section>
 
+  <!-- python -->
+  <section class="scene" id="sp">
+    <div class="kicker">Step 6 · flattype on PyPI</div>
+    <h1>Python backends too. <em>Same format, byte for byte.</em></h1>
+    <div class="row">
+      <div class="panel" style="flex:.85"><div class="bar"><span>app.py</span></div><pre id="pyCode" class="mid"></pre></div>
+      <div class="panel"><div class="bar"><span>terminal</span><b>real output</b></div><pre id="pyTerm" class="mid"></pre></div>
+    </div>
+  </section>
+
   <!-- 4 LLM -->
   <section class="scene" id="s4">
     <div class="kicker">Built for Claude &amp; LLMs</div>
@@ -127,9 +137,10 @@
   <!-- 5 end -->
   <section class="scene" id="s5">
     <svg class="mark" viewBox="0 0 64 64" style="width:84px;height:84px"><rect width="64" height="64" rx="16" fill="#8b6cff"/><circle cx="17" cy="22" r="3.2" fill="#fff"/><rect x="25" y="19" width="24" height="6" rx="3" fill="#fff"/><circle cx="17" cy="32" r="3.2" fill="#fff"/><rect x="25" y="29" width="17" height="6" rx="3" fill="#fff" opacity=".85"/><circle cx="17" cy="42" r="3.2" fill="#fff"/><rect x="25" y="39" width="21" height="6" rx="3" fill="#2fd4b2"/></svg>
-    <h1 style="margin-top:22px">Plain TypeScript. No third-party dependencies.</h1>
+    <h1 style="margin-top:22px">Plain TypeScript and Python. No third-party dependencies.</h1>
     <div class="cmd"><span class="p">$</span> npm install @flattype/models @flattype/http @flattype/react</div>
-    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18 &amp; 19</span><span class="chip">Vue 3</span><span class="chip">Angular 19+</span><span class="chip">Svelte &amp; Solid</span></div>
+    <div class="cmd" style="margin-top:10px"><span class="p">$</span> pip install flattype</div>
+    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18+</span><span class="chip">Vue 3</span><span class="chip">Angular 19+</span><span class="chip">Svelte &amp; Solid</span><span class="chip">Python 3.9+</span></div>
     <div class="url">karammm.github.io/flattype · github.com/karammm/flattype</div>
   </section>
 
@@ -163,6 +174,18 @@
       return at < 0 ? html : html + '<span class="c">' + esc(line.slice(at)) + "</span>";
     }).join("\n");
   }
+  function hlPy(s) {
+    return s.split("\n").map((line) => {
+      const at = line.indexOf("#");
+      const code = at < 0 ? line : line.slice(0, at);
+      // A decorator name (`@app.get`) first, then strings and keywords in the rest.
+      const deco = (code.match(/^@[\w.]+/) || [""])[0];
+      const html = (deco ? '<span class="h">' + esc(deco) + "</span>" : "") + esc(code.slice(deco.length))
+        .replace(/("[^"]*")/g, '<span class="s">$1</span>')
+        .replace(/\b(import|from|def|return)\b/g, '<span class="k">$1</span>');
+      return at < 0 ? html : html + '<span class="c">' + esc(line.slice(at)) + "</span>";
+    }).join("\n");
+  }
   function hlTerm(s) {
     return s.split("\n").map((l) => (l.startsWith("$") ? '<span class="s">' + esc(l) + "</span>" : l.startsWith("warning:") ? '<span class="n">' + esc(l) + "</span>" : esc(l))).join("\n");
   }
@@ -172,9 +195,9 @@
   const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 
   // [element id, start, end] in seconds.
-  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 65.5], ["sc", 65.5, 72.5], ["s4", 72.5, 79.5], ["s5", 79.5, 84.5]];
+  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 65.5], ["sc", 65.5, 72.5], ["sp", 72.5, 80], ["s4", 80, 87], ["s5", 87, 92]];
   const start = (id) => S.find((x) => x[0] === id)[1];
-  window.DURATION = 84.5;
+  window.DURATION = 92;
 
   $("jsonBytes").textContent = D.jsonBytes + " bytes minified";
   $("flatBytes").textContent = D.flatBytes + " bytes";
@@ -224,6 +247,9 @@
     const lc = t - start("sc");
     $("cliTerm").innerHTML = hlTerm(typed(D.cli, lc / 4));
     $("cliTerm").scrollTop = $("cliTerm").scrollHeight;
+    const lp = t - start("sp");
+    $("pyCode").innerHTML = hlPy(typed(D.pyCode, lp / 2.2));
+    $("pyTerm").innerHTML = hlTerm(typed(D.pyTerm, (lp - 2.6) / 2.6));
     const l4 = t - start("s4");
     document.querySelectorAll("#bars .fill").forEach((f, i) => { f.style.width = ease((l4 - 0.6 - i * 0.5) / 1.2) * Number(f.dataset.w) * 100 + "%"; });
     document.querySelectorAll("#llm .callout").forEach((c, i) => { c.style.opacity = clamp((l4 - 2.8 - i * 0.6) / 0.4); });

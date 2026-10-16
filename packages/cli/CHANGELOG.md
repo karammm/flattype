@@ -1,5 +1,14 @@
 # @flattype/cli
 
+## 1.11.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/core@1.11.0
+  - @flattype/shared@1.11.0
+  - @flattype/models@1.11.0
+
 ## 1.10.0
 
 ### Minor Changes

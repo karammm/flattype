@@ -1,0 +1,2255 @@
+{
+ "prompts": [
+  {
+   "value": {
+    "name": "John",
+    "age": 30
+   },
+   "options": {},
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\nname: John\nage: 30\n</data>"
+  },
+  {
+   "value": {
+    "name": "John",
+    "age": 30
+   },
+   "options": {
+    "name": "or\"ders&<"
+   },
+   "text": "<data format=\"flat-notation\" name=\"or&quot;ders&amp;&lt;\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\nname: John\nage: 30\n</data>"
+  },
+  {
+   "value": {
+    "name": "John",
+    "age": 30
+   },
+   "options": {
+    "legend": false
+   },
+   "text": "<data format=\"flat-notation\">\nname: John\nage: 30\n</data>"
+  },
+  {
+   "value": {
+    "name": "John",
+    "age": 30
+   },
+   "options": {
+    "tag": false
+   },
+   "text": "# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\nname: John\nage: 30"
+  },
+  {
+   "value": {
+    "name": "John",
+    "age": 30
+   },
+   "options": {
+    "delimiter": "|"
+   },
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\nname: John\nage: 30\n</data>"
+  },
+  {
+   "value": {
+    "orders": [
+     {
+      "id": 1,
+      "customer": "Alice",
+      "amount": 120.5
+     },
+     {
+      "id": 2,
+      "customer": "Bob, Jr.",
+      "amount": 80
+     }
+    ]
+   },
+   "options": {},
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\norders[2]{id,customer,amount}:\n  1, Alice, 120.5\n  2, \"Bob, Jr.\", 80\n</data>"
+  },
+  {
+   "value": {
+    "orders": [
+     {
+      "id": 1,
+      "customer": "Alice",
+      "amount": 120.5
+     },
+     {
+      "id": 2,
+      "customer": "Bob, Jr.",
+      "amount": 80
+     }
+    ]
+   },
+   "options": {
+    "name": "or\"ders&<"
+   },
+   "text": "<data format=\"flat-notation\" name=\"or&quot;ders&amp;&lt;\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\norders[2]{id,customer,amount}:\n  1, Alice, 120.5\n  2, \"Bob, Jr.\", 80\n</data>"
+  },
+  {
+   "value": {
+    "orders": [
+     {
+      "id": 1,
+      "customer": "Alice",
+      "amount": 120.5
+     },
+     {
+      "id": 2,
+      "customer": "Bob, Jr.",
+      "amount": 80
+     }
+    ]
+   },
+   "options": {
+    "legend": false
+   },
+   "text": "<data format=\"flat-notation\">\norders[2]{id,customer,amount}:\n  1, Alice, 120.5\n  2, \"Bob, Jr.\", 80\n</data>"
+  },
+  {
+   "value": {
+    "orders": [
+     {
+      "id": 1,
+      "customer": "Alice",
+      "amount": 120.5
+     },
+     {
+      "id": 2,
+      "customer": "Bob, Jr.",
+      "amount": 80
+     }
+    ]
+   },
+   "options": {
+    "tag": false
+   },
+   "text": "# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\norders[2]{id,customer,amount}:\n  1, Alice, 120.5\n  2, \"Bob, Jr.\", 80"
+  },
+  {
+   "value": {
+    "orders": [
+     {
+      "id": 1,
+      "customer": "Alice",
+      "amount": 120.5
+     },
+     {
+      "id": 2,
+      "customer": "Bob, Jr.",
+      "amount": 80
+     }
+    ]
+   },
+   "options": {
+    "delimiter": "|"
+   },
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\norders[2|]{id|customer|amount}:\n  1 | Alice | 120.5\n  2 | Bob, Jr. | 80\n</data>"
+  },
+  {
+   "value": [
+    1,
+    "x"
+   ],
+   "options": {},
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n[]: 1, x\n</data>"
+  },
+  {
+   "value": [
+    1,
+    "x"
+   ],
+   "options": {
+    "name": "or\"ders&<"
+   },
+   "text": "<data format=\"flat-notation\" name=\"or&quot;ders&amp;&lt;\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n[]: 1, x\n</data>"
+  },
+  {
+   "value": [
+    1,
+    "x"
+   ],
+   "options": {
+    "legend": false
+   },
+   "text": "<data format=\"flat-notation\">\n[]: 1, x\n</data>"
+  },
+  {
+   "value": [
+    1,
+    "x"
+   ],
+   "options": {
+    "tag": false
+   },
+   "text": "# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n[]: 1, x"
+  },
+  {
+   "value": [
+    1,
+    "x"
+   ],
+   "options": {
+    "delimiter": "|"
+   },
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n[|]: 1 | x\n</data>"
+  },
+  {
+   "value": 42,
+   "options": {},
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n: 42\n</data>"
+  },
+  {
+   "value": 42,
+   "options": {
+    "name": "or\"ders&<"
+   },
+   "text": "<data format=\"flat-notation\" name=\"or&quot;ders&amp;&lt;\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n: 42\n</data>"
+  },
+  {
+   "value": 42,
+   "options": {
+    "legend": false
+   },
+   "text": "<data format=\"flat-notation\">\n: 42\n</data>"
+  },
+  {
+   "value": 42,
+   "options": {
+    "tag": false
+   },
+   "text": "# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n: 42"
+  },
+  {
+   "value": 42,
+   "options": {
+    "delimiter": "|"
+   },
+   "text": "<data format=\"flat-notation\">\n# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\n: 42\n</data>"
+  }
+ ],
+ "instructions": [
+  {
+   "text": "Reply with the data only, in Flat Notation, inside <data> and </data> tags.\nFlat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\nWrite a list of objects with the same keys as a table. Quote a string value if it contains a comma or could be read as a number, true, false or null."
+  },
+  {
+   "example": {
+    "orders": [
+     {
+      "id": 1,
+      "customer": "Alice",
+      "amount": 120.5
+     },
+     {
+      "id": 2,
+      "customer": "Bob, Jr.",
+      "amount": 80
+     }
+    ]
+   },
+   "text": "Reply with the data only, in Flat Notation, inside <data> and </data> tags.\nFlat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. `t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings.\nWrite a list of objects with the same keys as a table. Quote a string value if it contains a comma or could be read as a number, true, false or null.\nExample of the expected shape:\n<data format=\"flat-notation\">\norders[2]{id,customer,amount}:\n  1, Alice, 120.5\n  2, \"Bob, Jr.\", 80\n</data>"
+  }
+ ],
+ "replies": [
+  {
+   "text": "<database></data>",
+   "value": {}
+  },
+  {
+   "text": "Sure.\nname: Alice\nThat's all.\nage: 30",
+   "value": {
+    "name": "Alice",
+    "age": 30
+   }
+  },
+  {
+   "text": "<data>a: 1</data> draft\n<data>a: 2</data>",
+   "value": {
+    "a": 2
+   }
+  },
+  {
+   "text": "```json\n{\"a\": [1, 2]}\n```",
+   "value": {
+    "a": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "text": "Here:\n```\nx: 1\n```\nand ```y```",
+   "value": {
+    "Here": null,
+    "x": 1
+   }
+  },
+  {
+   "text": "b.c: x<data-x>: b.c: xSure!```flat\nHere you go:",
+   "value": {
+    "b": {
+     "c": "x<data-x>: b.c: xSure!```flat"
+    }
+   }
+  },
+  {
+   "text": "```json\n#",
+   "value": {}
+  },
+  {
+   "text": "a: 1[1, 2] ",
+   "value": {
+    "a": "1[1, 2]"
+   }
+  },
+  {
+   "text": "<data format=\"flat-notation\">: ",
+   "value": {}
+  },
+  {
+   "text": "<DATA><data-x><data>```<data>{\"a\": 1}Sure!",
+   "value": {}
+  },
+  {
+   "text": "</data>b.c: x",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}```json\n",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "</data>b.c: xb.c: x[1, 2]Here you go:<data><data format=\"flat-notation\">{\"a\": 1}``````flat\n",
+   "value": {}
+  },
+  {
+   "text": "<data>b.c: x",
+   "value": {}
+  },
+  {
+   "text": ": Sure!t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": "Sure!t[2]{x,y}:"
+  },
+  {
+   "text": "Sure!<DATA>{\"a\": 1}```<data-x><data>",
+   "value": {}
+  },
+  {
+   "text": "<DATA>[1, 2]Sure! ",
+   "value": {}
+  },
+  {
+   "text": "```json\nSure!<database>Sure!```flat\n#[1, 2]Sure!",
+   "value": {}
+  },
+  {
+   "text": ": ",
+   "value": null
+  },
+  {
+   "text": "{\"a\": 1}[1, 2]```flat\nSure!``````json\n```<data format=\"flat-notation\"><data>#",
+   "value": {}
+  },
+  {
+   "text": " <data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "```json\n</data>#```json\n```<data-x><DATA>\n",
+   "value": {}
+  },
+  {
+   "text": "```flat\n```json\n <DATA><database><DATA><data format=\"flat-notation\">[1, 2]\"",
+   "value": {}
+  },
+  {
+   "text": "```</data>[1, 2]#<database>",
+   "value": {}
+  },
+  {
+   "text": "#<data format=\"flat-notation\"><data-x><DATA>Sure!```json\n<data>#Sure!",
+   "value": {}
+  },
+  {
+   "text": "<DATA>##",
+   "value": {}
+  },
+  {
+   "text": "<data-x>\na: 1[1, 2] #t[2]{x,y}:\n  1, 2\n  3, 4<data><data-x>Sure!",
+   "value": {
+    "a": "1[1, 2] #t[2]{x,y}:"
+   }
+  },
+  {
+   "text": "```flat\n{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "<database>```b.c: xb.c: x",
+   "value": {}
+  },
+  {
+   "text": "\nb.c: x```json\nSure![1, 2]\n",
+   "value": {
+    "b": {
+     "c": "x```json"
+    }
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```[1, 2]```: ```flat\n[1, 2]Here you go:```Here you go:<DATA>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}\n",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "<DATA>```\nSure!```json\n[1, 2]Here you go:\n",
+   "value": {}
+  },
+  {
+   "text": "```json\n[1, 2]",
+   "value": {}
+  },
+  {
+   "text": ": ```json\n\n",
+   "value": "```json"
+  },
+  {
+   "text": "</data><data format=\"flat-notation\"></data></data>[1, 2]",
+   "value": {}
+  },
+  {
+   "text": " Here you go:a: 1",
+   "value": {}
+  },
+  {
+   "text": "b.c: x<data-x>",
+   "value": {
+    "b": {
+     "c": "x<data-x>"
+    }
+   }
+  },
+  {
+   "text": "\n<data>",
+   "value": {}
+  },
+  {
+   "text": "#<data>```b.c: x",
+   "value": {}
+  },
+  {
+   "text": "a: 1```flat\n<data format=\"flat-notation\">: ```json\n",
+   "value": {}
+  },
+  {
+   "text": "\n<DATA></data>\"t[2]{x,y}:\n  1, 2\n  3, 4: {\"a\": 1}\"{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "```json\nSure!",
+   "value": {}
+  },
+  {
+   "text": "```flat\nSure!##<data-x><database><DATA><DATA>: ",
+   "value": {}
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4Sure!```</data><data format=\"flat-notation\">Sure!<data>",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4Sure!```</data><data format=\"flat-notation\">Sure!<data>"
+     }
+    ]
+   }
+  },
+  {
+   "text": "`````` t[2]{x,y}:\n  1, 2\n  3, 4Here you go:<data format=\"flat-notation\">Here you go:Sure!```flat\n",
+   "value": {}
+  },
+  {
+   "text": "```#t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]<DATA></data>",
+   "value": {}
+  },
+  {
+   "text": "\nt[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": "```flat\n: t[2]{x,y}:\n  1, 2\n  3, 4\"<DATA>",
+   "value": "t[2]{x,y}:"
+  },
+  {
+   "text": "<data></data><database>Here you go:<database> t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": ": b.c: x</data>{\"a\": 1}[1, 2]",
+   "value": "b.c: x</data>{\"a\": 1}[1, 2]"
+  },
+  {
+   "text": "```json\na: 1#b.c: x<data-x>[1, 2]</data>\": ",
+   "value": {
+    "a": "1#b.c: x<data-x>[1, 2]</data>\":"
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```",
+   "value": {}
+  },
+  {
+   "text": "\nSure!Here you go:",
+   "value": {}
+  },
+  {
+   "text": "<data-x>[1, 2]Sure!```<database>```json\na: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "<data format=\"flat-notation\">[1, 2]a: 1: <data>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}\"</data>```",
+   "value": {}
+  },
+  {
+   "text": "Here you go:```json\n{\"a\": 1}<DATA>```flat\nb.c: x<DATA><database>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Here you go:a: 1",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]b.c: xt[2]{x,y}:\n  1, 2\n  3, 4<DATA>t[2]{x,y}:\n  1, 2\n  3, 4<data format=\"flat-notation\">a: 1```",
+   "value": {}
+  },
+  {
+   "text": "a: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "```\"```json\n: Here you go:Sure!t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]```",
+   "value": "Here you go:Sure!t[2]{x,y}:"
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Sure!<data format=\"flat-notation\"> a: 1<DATA>",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]<database>\n[1, 2]: ```flat\n",
+   "value": {}
+  },
+  {
+   "text": "<data>b.c: x```flat\n ```",
+   "value": {}
+  },
+  {
+   "text": "\nt[2]{x,y}:\n  1, 2\n  3, 4a: 1```json\n\n<data-x><data-x>b.c: x",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4a: 1```json"
+     }
+    ]
+   }
+  },
+  {
+   "text": "\"<data>Sure!\": \"",
+   "value": {
+    "<data>Sure!": "\""
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```t[2]{x,y}:\n  1, 2\n  3, 4b.c: x",
+   "value": {}
+  },
+  {
+   "text": "[1, 2][1, 2][1, 2]<data>b.c: x",
+   "value": {}
+  },
+  {
+   "text": "<database>t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]Here you go:<database>t[2]{x,y}:\n  1, 2\n  3, 4{\"a\": 1}<data format=\"flat-notation\">\n",
+   "value": {}
+  },
+  {
+   "text": "```json\n#t[2]{x,y}:\n  1, 2\n  3, 4<data format=\"flat-notation\">b.c: xSure!",
+   "value": {}
+  },
+  {
+   "text": " t[2]{x,y}:\n  1, 2\n  3, 4<DATA>[1, 2]<data-x>",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4<DATA>[1"
+     }
+    ]
+   }
+  },
+  {
+   "text": "<data>",
+   "value": {}
+  },
+  {
+   "text": "a: 1<data format=\"flat-notation\">t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "a": "1<data format=\"flat-notation\">t[2]{x,y}:"
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```json\n```flat\n[1, 2]</data><data>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\">``````flat\n<database>b.c: x<data format=\"flat-notation\">\"",
+   "value": {}
+  },
+  {
+   "text": "\"{\"a\": 1}<database><data format=\"flat-notation\"><database><database><data format=\"flat-notation\">\"#\"",
+   "value": {}
+  },
+  {
+   "text": "a: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "\n<data>#\"</data>\"<data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">##<data format=\"flat-notation\"><database>```",
+   "value": {}
+  },
+  {
+   "text": "\"```json\n```a: 1",
+   "value": {}
+  },
+  {
+   "text": "</data>\nSure!{\"a\": 1}Sure!<database>",
+   "value": {}
+  },
+  {
+   "text": "Sure!",
+   "value": {}
+  },
+  {
+   "text": "```flat\n[1, 2] t[2]{x,y}:\n  1, 2\n  3, 4b.c: xa: 1",
+   "value": {}
+  },
+  {
+   "text": "```json\n",
+   "value": {}
+  },
+  {
+   "text": ": ",
+   "value": null
+  },
+  {
+   "text": "<DATA>```json\n\"\n```flat\na: 1```json\n<database><data>\n",
+   "value": {}
+  },
+  {
+   "text": "#</data>a: 1<DATA>```json\n<DATA><data format=\"flat-notation\">Here you go:[1, 2]",
+   "value": {}
+  },
+  {
+   "text": " <data format=\"flat-notation\">b.c: x{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"> <DATA>```flat\n<data format=\"flat-notation\">```flat\n: ```<data>",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}{\"a\": 1}{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}[1, 2]```json\n a: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "```<data-x>#<DATA>Here you go:</data>[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "a: 1\"<DATA>Sure!t[2]{x,y}:\n  1, 2\n  3, 4<data-x><data>``````flat\n```",
+   "value": {
+    "a": "1\"<DATA>Sure!t[2]{x,y}:"
+   }
+  },
+  {
+   "text": "<database>```flat\n<data-x>```<data><DATA><data format=\"flat-notation\"><data-x>",
+   "value": {}
+  },
+  {
+   "text": "</data>b.c: x[1, 2]```flat\nHere you go:t[2]{x,y}:\n  1, 2\n  3, 4Sure!Sure!",
+   "value": {}
+  },
+  {
+   "text": "<data>```flat\n<data format=\"flat-notation\">: ```Here you go:<DATA>Here you go:<data>",
+   "value": {}
+  },
+  {
+   "text": "#<DATA> [1, 2]",
+   "value": {}
+  },
+  {
+   "text": "<data>```json\nb.c: x<data format=\"flat-notation\">{\"a\": 1}\n",
+   "value": {
+    "b": {
+     "c": "x<data format=\"flat-notation\">{\"a\": 1}"
+    }
+   }
+  },
+  {
+   "text": "\n<data-x>[1, 2]<data>```json\nt[2]{x,y}:\n  1, 2\n  3, 4[1, 2]<data>",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4[1"
+     }
+    ]
+   }
+  },
+  {
+   "text": "\"",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]: ",
+   "value": {}
+  },
+  {
+   "text": "<database>t[2]{x,y}:\n  1, 2\n  3, 4<data><DATA>Here you go:``` <DATA>\"[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data-x>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Here you go:t[2]{x,y}:\n  1, 2\n  3, 4b.c: x\"<DATA>```json\nSure!",
+   "value": {}
+  },
+  {
+   "text": "``````flat\n```flat\n",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4```",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4```"
+     }
+    ]
+   }
+  },
+  {
+   "text": "#\n```json\n\"```json\n: ```json\n<database>```flat\n",
+   "value": {}
+  },
+  {
+   "text": "<data-x> Here you go:: \n<DATA>b.c: x[1, 2]\n",
+   "value": {}
+  },
+  {
+   "text": "<database>```flat\n##b.c: x\n",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}[1, 2]</data>```Sure!Sure!```json\n",
+   "value": {}
+  },
+  {
+   "text": "```json\n```#",
+   "value": {}
+  },
+  {
+   "text": "</data>```flat\n<data-x><database>```\"[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "Sure!<DATA>{\"a\": 1}<data-x>#",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]",
+   "value": [
+    1,
+    2
+   ]
+  },
+  {
+   "text": "```json\n</data><data-x></data>[1, 2]```flat\nb.c: xa: 1<database>: ",
+   "value": {}
+  },
+  {
+   "text": "</data>\n: <DATA>",
+   "value": "<DATA>"
+  },
+  {
+   "text": "Here you go:#[1, 2]<data></data><data format=\"flat-notation\">b.c: x#",
+   "value": {}
+  },
+  {
+   "text": "\n[1, 2]{\"a\": 1}{\"a\": 1}\"",
+   "value": {}
+  },
+  {
+   "text": "#```<data-x>a: 1",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "Here you go: Here you go:a: 1b.c: xb.c: x",
+   "value": {}
+  },
+  {
+   "text": "<data>```json\n\"<DATA>```json\n[1, 2]```flat\n```flat\n",
+   "value": {}
+  },
+  {
+   "text": "\"```flat\n``` ```flat\n",
+   "value": {}
+  },
+  {
+   "text": "```flat\n<database><data>t[2]{x,y}:\n  1, 2\n  3, 4 ```flat\nSure!",
+   "value": {}
+  },
+  {
+   "text": "\"```flat\n<DATA>a: 1<database><DATA>",
+   "value": {}
+  },
+  {
+   "text": "</data><DATA>{\"a\": 1}<data><DATA>```<data-x>",
+   "value": {}
+  },
+  {
+   "text": "\"<data format=\"flat-notation\">```flat\nb.c: x#b.c: xt[2]{x,y}:\n  1, 2\n  3, 4#<database>",
+   "value": {
+    "b": {
+     "c": "x#b.c: xt[2]{x,y}:"
+    }
+   }
+  },
+  {
+   "text": "\"",
+   "value": {}
+  },
+  {
+   "text": "</data>: ",
+   "value": {}
+  },
+  {
+   "text": "Here you go:Here you go:<data>\"\"<database>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```: <DATA>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "#<data-x><database><data-x>#[1, 2]</data><data-x> ",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data>a: 1<data-x>[1, 2]<DATA>#<DATA>```json\n",
+   "value": {}
+  },
+  {
+   "text": ": ```json\n ",
+   "value": "```json"
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Here you go:<DATA>",
+   "value": {}
+  },
+  {
+   "text": "##b.c: x</data><data><data format=\"flat-notation\">Sure!{\"a\": 1}\nb.c: x",
+   "value": {
+    "b": {
+     "c": "x"
+    }
+   }
+  },
+  {
+   "text": ": <DATA> #<database>",
+   "value": "<DATA> #<database>"
+  },
+  {
+   "text": " ```json\n<data>Sure!t[2]{x,y}:\n  1, 2\n  3, 4\n#<data format=\"flat-notation\">: ",
+   "value": {}
+  },
+  {
+   "text": "``````json\n",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4<data format=\"flat-notation\"><data format=\"flat-notation\">: : ```flat\nt[2]{x,y}:\n  1, 2\n  3, 4<database>t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4<database>t[2]{x"
+     }
+    ]
+   }
+  },
+  {
+   "text": "```json\na: 1Here you go:",
+   "value": {
+    "a": "1Here you go:"
+   }
+  },
+  {
+   "text": "\n: ``` {\"a\": 1}: <data format=\"flat-notation\">```json\n</data><data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}<data-x>{\"a\": 1} <database>Sure!",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]\"b.c: x\n t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4: ",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4t[2]{x"
+     }
+    ]
+   }
+  },
+  {
+   "text": "<database>a: 1```flat\n```json\n``````flat\n: b.c: x",
+   "value": "b.c: x"
+  },
+  {
+   "text": "\n <data format=\"flat-notation\">{\"a\": 1} b.c: xHere you go:```json\n[1, 2]<data>",
+   "value": {}
+  },
+  {
+   "text": " t[2]{x,y}:\n  1, 2\n  3, 4\n{\"a\": 1}<data-x>t[2]{x,y}:\n  1, 2\n  3, 4a: 1</data>t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": "{\"a\": 1}\"",
+   "value": {}
+  },
+  {
+   "text": "<DATA><DATA>b.c: x\"Here you go:Sure!```a: 1 #",
+   "value": {}
+  },
+  {
+   "text": "<database>",
+   "value": {}
+  },
+  {
+   "text": " ```a: 1#",
+   "value": {}
+  },
+  {
+   "text": "Sure!```flat\n```json\n<data>a: 1Sure!```flat\n",
+   "value": {}
+  },
+  {
+   "text": "{\"a\": 1}",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "```flat\n</data>```#",
+   "value": {}
+  },
+  {
+   "text": "\n",
+   "value": {}
+  },
+  {
+   "text": "<data-x>",
+   "value": {}
+  },
+  {
+   "text": "<DATA>Here you go:a: 1</data>```json\n<data format=\"flat-notation\">#Sure!<data-x><data-x>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\">b.c: xa: 1Here you go:</data>Sure!",
+   "value": {
+    "b": {
+     "c": "xa: 1Here you go:"
+    }
+   }
+  },
+  {
+   "text": "<database> <data>t[2]{x,y}:\n  1, 2\n  3, 4: \nt[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": " [1, 2]<DATA>#Here you go:Here you go:t[2]{x,y}:\n  1, 2\n  3, 4\na: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "<data>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "</data>Sure!<database>```json\n<DATA><data><data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "</data><data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "</data><database>Here you go: a: 1```\n<data-x>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data>",
+   "value": {}
+  },
+  {
+   "text": "<data><DATA>[1, 2]```json\n",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]<data>Here you go:#a: 1a: 1<data># ",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"> ```flat\n<data>Here you go:```",
+   "value": {}
+  },
+  {
+   "text": "</data>t[2]{x,y}:\n  1, 2\n  3, 4 #",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4```json\n[1, 2]b.c: xSure!Sure!b.c: xb.c: x",
+   "value": {}
+  },
+  {
+   "text": "```",
+   "value": {}
+  },
+  {
+   "text": "<data-x>Sure!b.c: x\n<DATA>",
+   "value": {}
+  },
+  {
+   "text": "b.c: x<data><DATA>#t[2]{x,y}:\n  1, 2\n  3, 4<data>: ",
+   "value": {
+    "b": {
+     "c": "x<data><DATA>#t[2]{x,y}:"
+    }
+   }
+  },
+  {
+   "text": "<data></data> b.c: xa: 1",
+   "value": {}
+  },
+  {
+   "text": "\n: ",
+   "value": null
+  },
+  {
+   "text": "</data><DATA><data>",
+   "value": {}
+  },
+  {
+   "text": "#<database>{\"a\": 1}#[1, 2]Sure!",
+   "value": {}
+  },
+  {
+   "text": "<database>a: 1```json\na: 1: t[2]{x,y}:\n  1, 2\n  3, 4Here you go:<data>",
+   "value": {
+    "a": "1: t[2]{x,y}:"
+   }
+  },
+  {
+   "text": "```flat\na: 1<data format=\"flat-notation\"></data>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```json\n[1, 2]Sure!: <data><data-x>Here you go:\n#",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": ": ```[1, 2]: <data-x></data>t[2]{x,y}:\n  1, 2\n  3, 4 ",
+   "value": "```[1, 2]: <data-x></data>t[2]{x,y}:"
+  },
+  {
+   "text": "<data-x>[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "```flat\n``` t[2]{x,y}:\n  1, 2\n  3, 4\"b.c: x",
+   "value": {}
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4 #{\"a\": 1}<data><DATA>#```flat\n```flat\n",
+   "value": {}
+  },
+  {
+   "text": "```json\n",
+   "value": {}
+  },
+  {
+   "text": "<database>[1, 2]Sure!: </data>t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]``` Sure!",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data-x><database><data format=\"flat-notation\"></data>```json\n",
+   "value": {}
+  },
+  {
+   "text": "\n",
+   "value": {}
+  },
+  {
+   "text": "<database>\"",
+   "value": {}
+  },
+  {
+   "text": "```json\n#<data-x>\n ```json\n <database>",
+   "value": {}
+  },
+  {
+   "text": ": <data-x>\"<DATA>{\"a\": 1}[1, 2]<DATA><DATA> </data>",
+   "value": {}
+  },
+  {
+   "text": "Here you go:</data>",
+   "value": {}
+  },
+  {
+   "text": "\": <database><database><database>\"<data format=\"flat-notation\"><DATA><data><data-x>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Sure!a: 1",
+   "value": {}
+  },
+  {
+   "text": "``````<DATA>``````",
+   "value": {}
+  },
+  {
+   "text": "\n```flat\n",
+   "value": {}
+  },
+  {
+   "text": "```flat\n```flat\n: Here you go:t[2]{x,y}:\n  1, 2\n  3, 4<data>",
+   "value": {}
+  },
+  {
+   "text": "```a: 1```\n#```flat\n<data format=\"flat-notation\">```[1, 2]",
+   "value": {}
+  },
+  {
+   "text": " a: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "```\n",
+   "value": {}
+  },
+  {
+   "text": "```json\n``````flat\nt[2]{x,y}:\n  1, 2\n  3, 4<DATA>{\"a\": 1}```<data format=\"flat-notation\"><data-x>",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4<DATA>{\"a\": 1}"
+     }
+    ]
+   }
+  },
+  {
+   "text": ": Sure!<database>```json\n[1, 2]",
+   "value": "Sure!<database>```json"
+  },
+  {
+   "text": "```json\n  <DATA>t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4<data>",
+   "value": {}
+  },
+  {
+   "text": "<database>",
+   "value": {}
+  },
+  {
+   "text": " \n<data>",
+   "value": {}
+  },
+  {
+   "text": "<DATA>\n```flat\nb.c: x",
+   "value": {
+    "b": {
+     "c": "x"
+    }
+   }
+  },
+  {
+   "text": "<data format=\"flat-notation\">t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4```",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4```"
+     }
+    ]
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "\n\"```json\n",
+   "value": {}
+  },
+  {
+   "text": " a: 1#```flat\na: 1",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "```json\n",
+   "value": {}
+  },
+  {
+   "text": "<data-x>Sure!```json\n\n\"```",
+   "value": {}
+  },
+  {
+   "text": "\na: 1#",
+   "value": {
+    "a": "1#"
+   }
+  },
+  {
+   "text": "<data>#<data>",
+   "value": {}
+  },
+  {
+   "text": "```t[2]{x,y}:\n  1, 2\n  3, 4{\"a\": 1}<data-x>[1, 2]: t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "Here you go:</data>#<DATA><data format=\"flat-notation\">```flat\n\"{\"a\": 1}<database>",
+   "value": {}
+  },
+  {
+   "text": "\n```flat\nt[2]{x,y}:\n  1, 2\n  3, 4#```json\n",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4#"
+     }
+    ]
+   }
+  },
+  {
+   "text": "{\"a\": 1}Here you go:##<data-x>{\"a\": 1}</data><DATA>",
+   "value": {}
+  },
+  {
+   "text": "Here you go:",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\">\"\n```<data><data-x>```json\n",
+   "value": {}
+  },
+  {
+   "text": "<data-x></data>",
+   "value": {}
+  },
+  {
+   "text": "```json\n```flat\n<data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "b.c: x```json\n[1, 2]b.c: x \"",
+   "value": {
+    "b": {
+     "c": "x```json"
+    }
+   }
+  },
+  {
+   "text": "\"```flat\n<data format=\"flat-notation\">[1, 2]<data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "b.c: x: \na: 1```json\nSure!{\"a\": 1}```{\"a\": 1}```flat\n",
+   "value": {}
+  },
+  {
+   "text": "Here you go:: </data>",
+   "value": {}
+  },
+  {
+   "text": " ```json\n{\"a\": 1}<database> t[2]{x,y}:\n  1, 2\n  3, 4```#```",
+   "value": {}
+  },
+  {
+   "text": "Sure!```[1, 2]</data>[1, 2]<data>[1, 2]``````{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "<database>{\"a\": 1}```[1, 2]{\"a\": 1}```flat\n: <data format=\"flat-notation\">",
+   "value": "<data format=\"flat-notation\">"
+  },
+  {
+   "text": "{\"a\": 1}```flat\nb.c: x<data-x>t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "b": {
+     "c": "x<data-x>t[2]{x,y}:"
+    }
+   }
+  },
+  {
+   "text": "{\"a\": 1}\n <DATA>\"#</data></data>t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]",
+   "value": [
+    1,
+    2
+   ]
+  },
+  {
+   "text": "<data>a: 1Here you go:",
+   "value": {}
+  },
+  {
+   "text": "#a: 1t[2]{x,y}:\n  1, 2\n  3, 4</data><data>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Here you go:Here you go:: <data>",
+   "value": {}
+  },
+  {
+   "text": "<data>Sure!```json\nt[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": ": <data-x><data format=\"flat-notation\">",
+   "value": "<data-x><data format=\"flat-notation\">"
+  },
+  {
+   "text": "</data>",
+   "value": {}
+  },
+  {
+   "text": " : \n<DATA></data>```flat\n</data>#b.c: xb.c: x",
+   "value": {}
+  },
+  {
+   "text": "b.c: xa: 1",
+   "value": {
+    "b": {
+     "c": "xa: 1"
+    }
+   }
+  },
+  {
+   "text": "```flat\n<data-x></data>\nSure!Here you go:```json\n<DATA>a: 1<data>",
+   "value": {}
+  },
+  {
+   "text": "#{\"a\": 1}Sure!</data>Here you go:<database>",
+   "value": {}
+  },
+  {
+   "text": "</data>",
+   "value": {}
+  },
+  {
+   "text": "#[1, 2]```flat\n",
+   "value": {}
+  },
+  {
+   "text": "a: 1<data format=\"flat-notation\">a: 1 ```",
+   "value": {
+    "a": "1<data format=\"flat-notation\">a: 1 ```"
+   }
+  },
+  {
+   "text": "\n[1, 2]\"```a: 1",
+   "value": {}
+  },
+  {
+   "text": "\"<data format=\"flat-notation\">#",
+   "value": {}
+  },
+  {
+   "text": "</data></data>[1, 2]Sure!b.c: xa: 1</data>",
+   "value": {}
+  },
+  {
+   "text": "b.c: x: [1, 2]```</data>",
+   "value": {
+    "b": {
+     "c": "x: [1, 2]```</data>"
+    }
+   }
+  },
+  {
+   "text": "[1, 2]{\"a\": 1}t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]\"",
+   "value": {}
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]\n#",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4[1"
+     }
+    ]
+   }
+  },
+  {
+   "text": "```json\n: ",
+   "value": null
+  },
+  {
+   "text": "<data format=\"flat-notation\">: ",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "\n[1, 2]",
+   "value": [
+    1,
+    2
+   ]
+  },
+  {
+   "text": "Sure!<DATA>```[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "```flat\nSure!```{\"a\": 1}<database>\"\n\na: 1a: 1",
+   "value": {}
+  },
+  {
+   "text": "```json\n<data format=\"flat-notation\"><data-x>b.c: x<data format=\"flat-notation\">Here you go:```#```flat\n",
+   "value": {}
+  },
+  {
+   "text": "<data>",
+   "value": {}
+  },
+  {
+   "text": "<DATA>: Here you go:a: 1#```flat\n\"#",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]\"",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "Sure!<data format=\"flat-notation\">```json\n",
+   "value": {}
+  },
+  {
+   "text": "#\"<data-x>",
+   "value": {}
+  },
+  {
+   "text": "```Sure!<DATA>{\"a\": 1}Sure!",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "a: 1b.c: x",
+   "value": {
+    "a": "1b.c: x"
+   }
+  },
+  {
+   "text": "Here you go:t[2]{x,y}:\n  1, 2\n  3, 4: [1, 2]",
+   "value": {}
+  },
+  {
+   "text": " </data>Here you go:\nb.c: x<data format=\"flat-notation\">:  t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "b": {
+     "c": "x<data format=\"flat-notation\">:  t[2]{x,y}:"
+    }
+   }
+  },
+  {
+   "text": "\"a: 1<database>t[2]{x,y}:\n  1, 2\n  3, 4```json\nb.c: x{\"a\": 1} #\"",
+   "value": {
+    "b": {
+     "c": "x{\"a\": 1} #\""
+    }
+   }
+  },
+  {
+   "text": "Sure!<database>Here you go:<DATA>Here you go:t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "```json\n<data format=\"flat-notation\">#```\n",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<database>\n<data-x>",
+   "value": {}
+  },
+  {
+   "text": "\n</data>: #\"<data format=\"flat-notation\">\"#Here you go:",
+   "value": {}
+  },
+  {
+   "text": "a: 1<data></data>```json\n#<data format=\"flat-notation\">```<DATA>",
+   "value": {}
+  },
+  {
+   "text": "<data-x>Here you go:</data><data-x>``````flat\n<data format=\"flat-notation\"><data>Here you go:",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```<data> Here you go:```flat\n{\"a\": 1}{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": ": {\"a\": 1}<DATA>Sure!#Here you go:",
+   "value": "{\"a\": 1}<DATA>Sure!#Here you go:"
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4```json\n<data format=\"flat-notation\">b.c: x</data></data> b.c: x<database></data>",
+   "value": {
+    "b": {
+     "c": "x</data></data> b.c: x<database>"
+    }
+   }
+  },
+  {
+   "text": "b.c: x<DATA>\"</data>Sure![1, 2]<database>b.c: xSure!",
+   "value": {}
+  },
+  {
+   "text": "<data-x>```flat\n",
+   "value": {}
+  },
+  {
+   "text": "<DATA>```json\n #<data-x>b.c: x[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "<data>",
+   "value": {}
+  },
+  {
+   "text": "<data-x>t[2]{x,y}:\n  1, 2\n  3, 4<DATA>Here you go:\"</data><DATA>",
+   "value": {}
+  },
+  {
+   "text": "<DATA>b.c: x```#b.c: xHere you go:a: 1[1, 2]Sure!",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\">\n<data>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<data>{\"a\": 1} ```flat\n{\"a\": 1}Here you go:",
+   "value": {}
+  },
+  {
+   "text": "``````[1, 2] </data>",
+   "value": {}
+  },
+  {
+   "text": "</data>",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "```json\n<data-x> <data-x> ",
+   "value": {}
+  },
+  {
+   "text": "Sure!<database>```\nt[2]{x,y}:\n  1, 2\n  3, 4<DATA><database></data>",
+   "value": {}
+  },
+  {
+   "text": ": ```flat\n",
+   "value": "```flat"
+  },
+  {
+   "text": "</data>```json\n{\"a\": 1}```json\n{\"a\": 1}",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "text": "{\"a\": 1}#```flat\nb.c: xSure!<data format=\"flat-notation\">```flat\n<data-x>: ",
+   "value": {
+    "b": {
+     "c": "xSure!<data format=\"flat-notation\">"
+    }
+   }
+  },
+  {
+   "text": "Here you go:<database><data>#{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "<data-x>{\"a\": 1}: [1, 2]",
+   "value": {}
+  },
+  {
+   "text": "\"\"[1, 2]<database>\"",
+   "value": {}
+  },
+  {
+   "text": "<data> ```<data format=\"flat-notation\"><data>[1, 2]<database></data>{\"a\": 1}{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "<DATA>[1, 2] b.c: x",
+   "value": {}
+  },
+  {
+   "text": "<data>: \n<data><data-x>```t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4\"<DATA>",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\">a: 1<data format=\"flat-notation\">Here you go:<DATA>a: 1Sure!",
+   "value": {}
+  },
+  {
+   "text": "\"{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "a: 1a: 1",
+   "value": {
+    "a": "1a: 1"
+   }
+  },
+  {
+   "text": "\n <data-x><data-x>  [1, 2]: <data-x><data format=\"flat-notation\">",
+   "value": {}
+  },
+  {
+   "text": "\n b.c: x[1, 2]",
+   "value": {
+    "b": {
+     "c": "x[1, 2]"
+    }
+   }
+  },
+  {
+   "text": "\" ",
+   "value": {}
+  },
+  {
+   "text": ": ",
+   "value": null
+  },
+  {
+   "text": "{\"a\": 1}\n{\"a\": 1}<data> ```flat\n<data format=\"flat-notation\"></data><data-x>",
+   "value": {}
+  },
+  {
+   "text": "#```flat\nHere you go:```<data>: # [1, 2]",
+   "value": {}
+  },
+  {
+   "text": "<data>  <DATA>Sure!Sure!<data></data>{\"a\": 1}{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": " [1, 2]",
+   "value": [
+    1,
+    2
+   ]
+  },
+  {
+   "text": "\"```flat\n<data format=\"flat-notation\">#<data format=\"flat-notation\"></data><DATA>",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]Here you go:",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"></data>#<data-x>",
+   "value": {}
+  },
+  {
+   "text": "```<database>\"#",
+   "value": {}
+  },
+  {
+   "text": "<data>{\"a\": 1}```t[2]{x,y}:\n  1, 2\n  3, 4<database>{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "```\"t[2]{x,y}:\n  1, 2\n  3, 4b.c: x{\"a\": 1}",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "```flat\n b.c: x",
+   "value": {
+    "b": {
+     "c": "x"
+    }
+   }
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4{\"a\": 1}\nb.c: x",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4{\"a\": 1}"
+     }
+    ],
+    "b": {
+     "c": "x"
+    }
+   }
+  },
+  {
+   "text": "#\"</data>t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "[1, 2] <DATA>b.c: x",
+   "value": {}
+  },
+  {
+   "text": "```json\nt[2]{x,y}:\n  1, 2\n  3, 4```flat\na: 1t[2]{x,y}:\n  1, 2\n  3, 4a: 1",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "a: 1```flat\n```flat\n\n```",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"><data format=\"flat-notation\"><data>```flat\n##",
+   "value": {}
+  },
+  {
+   "text": "\n <data>",
+   "value": {}
+  },
+  {
+   "text": "a: 1 <DATA>",
+   "value": {
+    "a": "1 <DATA>"
+   }
+  },
+  {
+   "text": "a: 1Sure!: b.c: xHere you go:```",
+   "value": {
+    "a": "1Sure!: b.c: xHere you go:```"
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": ": \"Sure!\"b.c: x{\"a\": 1}",
+   "value": "\"Sure!\"b.c: x{\"a\": 1}"
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": 4
+     }
+    ]
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": " \"",
+   "value": {}
+  },
+  {
+   "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">t[2]{x,y}:\n  1, 2\n  3, 4```json\n<DATA>",
+   "value": {}
+  },
+  {
+   "text": "#",
+   "value": {}
+  },
+  {
+   "text": "\n\n<data-x>b.c: x{\"a\": 1}<DATA>",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]t[2]{x,y}:\n  1, 2\n  3, 4```{\"a\": 1}<data-x>t[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "\n```flat\nb.c: xHere you go:b.c: x#",
+   "value": {
+    "b": {
+     "c": "xHere you go:b.c: x#"
+    }
+   }
+  },
+  {
+   "text": "<database>Here you go:",
+   "value": {}
+  },
+  {
+   "text": "##",
+   "value": {}
+  },
+  {
+   "text": "\"t[2]{x,y}:\n  1, 2\n  3, 4<data>[1, 2]<DATA>",
+   "value": {}
+  },
+  {
+   "text": "b.c: x\"",
+   "value": {
+    "b": {
+     "c": "x\""
+    }
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]{\"a\": 1}: \"Sure!a: 1[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]",
+   "value": [
+    1,
+    2
+   ]
+  },
+  {
+   "text": "<data format=\"flat-notation\">\"Sure!\nHere you go:: Sure!b.c: x<data>",
+   "value": {}
+  },
+  {
+   "text": "```json\nb.c: x</data>",
+   "value": {
+    "b": {
+     "c": "x</data>"
+    }
+   }
+  },
+  {
+   "text": "<DATA>```\"```json\n",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]Sure!Here you go:Sure!```json\n```t[2]{x,y}:\n  1, 2\n  3, 4Here you go:",
+   "value": {}
+  },
+  {
+   "text": "b.c: x<DATA>```flat\n\"```json\n",
+   "value": {}
+  },
+  {
+   "text": "``````json\n<data>\n\"</data>Here you go:```json\n",
+   "value": {}
+  },
+  {
+   "text": "<DATA>",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": " : <database>: {\"a\": 1} <DATA>Here you go:",
+   "value": "<database>: {\"a\": 1} <DATA>Here you go:"
+  },
+  {
+   "text": "Sure!t[2]{x,y}:\n  1, 2\n  3, 4</data><data-x>```flat\n</data>```\"<data>[1, 2]",
+   "value": {}
+  },
+  {
+   "text": "t[2]{x,y}:\n  1, 2\n  3, 4: Here you go:\n[1, 2]</data>",
+   "value": {
+    "t": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "x": 3,
+      "y": "4: Here you go:"
+     }
+    ]
+   }
+  },
+  {
+   "text": "```flat\n: ",
+   "value": null
+  },
+  {
+   "text": "<data format=\"flat-notation\">\"Sure!",
+   "value": {}
+  },
+  {
+   "text": "",
+   "value": {}
+  },
+  {
+   "text": "\n#\"``````flat\n{\"a\": 1}</data>",
+   "value": {}
+  },
+  {
+   "text": ": a: 1: <data><data>",
+   "value": "a: 1: <data><data>"
+  },
+  {
+   "text": "<data format=\"flat-notation\">Here you go:Sure!b.c: xt[2]{x,y}:\n  1, 2\n  3, 4",
+   "value": {}
+  },
+  {
+   "text": "\": ",
+   "value": {}
+  },
+  {
+   "text": "[1, 2]```json\na: 1t[2]{x,y}:\n  1, 2\n  3, 4Sure!<data><database>[1, 2]```",
+   "value": {
+    "a": "1t[2]{x,y}:"
+   }
+  },
+  {
+   "text": "",
+   "value": {}
+  }
+ ]
+}

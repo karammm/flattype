@@ -1,5 +1,13 @@
 # @flattype/http
 
+## 1.11.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/core@1.11.0
+  - @flattype/shared@1.11.0
+
 ## 1.10.0
 
 ### Patch Changes

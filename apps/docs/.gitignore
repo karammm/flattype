@@ -11,3 +11,4 @@ guide/benchmarks.md
 .vitepress/cache
 .vitepress/dist
 public/
+guide/python.md

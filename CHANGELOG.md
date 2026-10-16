@@ -2,6 +2,25 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.11.0
+
+### New: `flattype` for Python ([PyPI](https://pypi.org/project/flattype/))
+
+- `encode` / `decode` (strict, lenient, `refs`, streaming `Decoder` with `on_row`), `flatten` / `unflatten`, `stats`, with the same options as `@flattype/core`. Python 3.9+, no dependencies
+- `flattype.asgi.FlatMiddleware`: FastAPI, Starlette and any ASGI app answer in Flat Notation when the client asks, with the same negotiation rules as `@flattype/http`. `flattype.starlette.FlatResponse` for routes that always do
+- `flattype.ai`: `to_prompt`, `output_instructions`, `from_model_output` (optionally validated with a Pydantic model), `count_tokens`, `tool_result`, `claude_tool_result`
+- Writes exactly what JavaScript writes, including number formatting (`1e+21`, `1e-7`). `conformance/` holds 990 encode cases, 3,215 decode cases (errors compared by message, line and column), 150 object graphs and 425 prompt and reply cases, all generated from the JavaScript packages. CI fails if they're stale or if Python disagrees
+- [`examples/python-fastapi`](https://github.com/karammm/flattype/tree/main/examples/python-fastapi), and a Python step in the intro video
+
+### Fixes (`@flattype/ai`)
+
+- `fromModelOutput` no longer loops forever on a reply that starts with a lookalike tag (`<database>…</data>`)
+- `fromModelOutput` drops prose lines in one pass: linear instead of quadratic in the number of lines (8,000 lines: 25 ms, was 850 ms)
+
+### `@flattype/core`
+
+- `decode(text, { strict: false, skipInvalidLines: true })` drops lines that can't be read, as if they weren't there. A line that fails part way leaves nothing behind, and a table whose path can't be written is dropped
+
 ## 1.10.0
 
 ### Shared objects and cycles (`@flattype/core`)

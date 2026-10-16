@@ -149,13 +149,18 @@ function setOwn(obj: Record<string, unknown>, key: string, value: unknown): void
   }
 }
 
-/** Writes `value` at `segments` under `holder.root`, creating objects and arrays on the way. */
+/**
+ * Writes `value` at `segments` under `holder.root`, creating objects and arrays on the way.
+ * With `dry`, nothing is written but every error is still thrown: containers it would create are made and
+ * walked into, just never attached. So a line that fails can be skipped without leaving anything behind.
+ */
 export function assign(
   holder: { root?: unknown },
   segments: Segment[],
   value: unknown,
   strict: boolean,
   line: number,
+  dry = false,
 ): void {
   let parent: Record<string, unknown> | unknown[] = holder as Record<string, unknown>;
   let key: Segment = "root";
@@ -169,7 +174,7 @@ export function assign(
       if (key < arr.length) {
         if (leaf) {
           if (strict) fail(`Duplicate index [${key}]`);
-          arr[key] = create();
+          if (!dry) arr[key] = create();
         }
         return arr[key];
       }
@@ -178,10 +183,10 @@ export function assign(
         // Lenient mode fills small gaps with null, but a tiny line like `a[999999999]: 1` must not
         // allocate a billion entries.
         if (key - arr.length > MAX_GAP) fail(`Index [${key}] is too far past [${arr.length}]`);
-        while (arr.length < key) arr.push(null);
+        if (!dry) while (arr.length < key) arr.push(null);
       }
       const v = create();
-      arr.push(v);
+      if (!dry) arr.push(v);
       return v;
     }
     const obj = parent as Record<string, unknown>;
@@ -190,7 +195,7 @@ export function assign(
       if (strict) fail(`Duplicate key '${key}'`);
     }
     const v = create();
-    setOwn(obj, key, v);
+    if (!dry) setOwn(obj, key, v);
     return v;
   };
 

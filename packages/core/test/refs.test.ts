@@ -171,3 +171,30 @@ describe("replacer and reviver", () => {
     expect((back.a as Node).self).toBe(back.a);
   });
 });
+
+describe("skipInvalidLines", () => {
+  const skip = { strict: false, skipInvalidLines: true } as const;
+
+  it("drops lines that aren't Flat Notation", () => {
+    expect(decode("Here is the data:\nname: Alice\nage: 30\nHope that helps!", skip)).toEqual({ name: "Alice", age: 30 });
+    expect(() => decode("Here is the data:\nname: Alice", { strict: false })).toThrow(FlatDecodeError);
+  });
+
+  it("leaves no trace of a line that fails part way", () => {
+    // `x.y` would be created before the index gap fails.
+    expect(decode("a: 1\nx.y[5000]: 1\nb: 2", skip)).toEqual({ a: 1, b: 2 });
+    expect(decode("a: 1\na.b: 2", skip)).toEqual({ a: 1 });
+  });
+
+  it("skips a bad table row without counting it, and drops a table whose path conflicts", () => {
+    // Every row fails (x and x.y conflict), so none counts: the table keeps reading rows until the end.
+    expect(decode("t[2]{x,x.y}:\n  1, 2\n  3, 4\nz: 1", skip)).toEqual({ t: [] });
+    expect(decode("t[1]{x}:\n  1, 2, 3\n  2", skip)).toEqual({ t: [{ x: 1 }] });
+    // t is a number, so t.u can't be written: the whole table is dropped.
+    expect(decode("t: 1\nt.u[1]{x}:\n  1\nz: 2", skip)).toEqual({ t: 1, z: 2 });
+  });
+
+  it("is ignored in strict mode", () => {
+    expect(() => decode("prose\na: 1", { skipInvalidLines: true })).toThrow(FlatDecodeError);
+  });
+});

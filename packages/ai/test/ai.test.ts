@@ -46,6 +46,15 @@ describe("fromModelOutput", () => {
     expect(fromModelOutput(reply)).toEqual({ orders: orders.orders });
   });
 
+  it("doesn't hang on a tag that only looks like <data> at the very start", () => {
+    expect(fromModelOutput("<database></data>")).toEqual({});
+    expect(fromModelOutput("<data-x>a: 1</data>")).toEqual({});
+  });
+
+  it("drops prose lines in one pass", () => {
+    expect(fromModelOutput("Sure.\nname: Alice\nThat's all.\nage: 30")).toEqual({ name: "Alice", age: 30 });
+  });
+
   it("uses the last <data> block when there are several", () => {
     expect(fromModelOutput("<data>a: 1</data> draft\n<data>a: 2</data>")).toEqual({ a: 2 });
   });

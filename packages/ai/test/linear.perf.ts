@@ -27,5 +27,7 @@ const attempt = (f: () => unknown): void => {
 describe("reading model output is linear", () => {
   it("many <data openers without a closer", () => expectLinear("tags", (n) => attempt(() => fromModelOutput("<data>".repeat(n)))));
   it("many openers before one closer", () => expectLinear("tags+close", (n) => attempt(() => fromModelOutput("<data ".repeat(n) + "a: 1</data>"))));
+  it("many lines of prose", () => expectLinear("prose", (n) => fromModelOutput("this is prose\n".repeat(n) + "a: 1"), 5_000));
+  it("many lookalike tags", () => expectLinear("lookalikes", (n) => fromModelOutput("<database>".repeat(n) + "</data>")));
   it("many fences", () => expectLinear("fences", (n) => attempt(() => fromModelOutput("```".repeat(n)))));
 });

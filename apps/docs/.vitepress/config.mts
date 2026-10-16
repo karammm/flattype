@@ -27,6 +27,7 @@ export default defineConfig({
           { text: "Changelog", link: "https://github.com/karammm/flattype/blob/main/CHANGELOG.md" },
           { text: "Roadmap", link: "https://github.com/karammm/flattype/blob/main/ROADMAP.md" },
           { text: "npm", link: "https://www.npmjs.com/package/@flattype/core" },
+          { text: "PyPI", link: "https://pypi.org/project/flattype/" },
         ],
       },
     ],
@@ -49,6 +50,7 @@ export default defineConfig({
           { text: "Svelte and Solid", link: "/guide/svelte-solid" },
           { text: "Claude and LLMs", link: "/guide/llms" },
           { text: "CLI and code generation", link: "/guide/cli" },
+          { text: "Python", link: "/guide/python" },
         ],
       },
       {

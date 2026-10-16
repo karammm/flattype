@@ -33,6 +33,11 @@ export interface EncodeOptions {
 export interface DecodeOptions {
   /** Throw on malformed input (default). Set `false` to recover what it can, e.g. from LLM output. */
   strict?: boolean;
+  /**
+   * With `strict: false`: drop any line that can't be read (prose around data, a path that conflicts) as if
+   * it weren't there, instead of throwing. That's what `fromModelOutput` uses. Default `false`.
+   */
+  skipInvalidLines?: boolean;
   /** Called for every value after decoding, bottom-up, exactly like the second argument of `JSON.parse`. */
   reviver?: Reviver;
   /**

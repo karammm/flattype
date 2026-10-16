@@ -12,13 +12,13 @@ hero:
 features:
   - { title: About half the size on lists, details: "Arrays of same-shaped objects become tables: keys written once, nested fields flattened into the header. 45% smaller than minified JSON on a list of 1,000 users.", link: /guide/benchmarks, linkText: Benchmarks }
   - { title: Typed models, details: "defineModel maps snake_case keys, numeric strings and ISO dates for you and reports every problem with its path. Generate models from a sample or an OpenAPI spec.", link: /guide/models, linkText: Models }
-  - { title: Every framework, details: "Hooks for React, composables for Vue, signals for Angular, stores for Svelte, resources for Solid, plus fetch, axios and server middleware.", link: /guide/react, linkText: Frameworks }
+  - { title: Every framework, details: "Hooks for React, composables for Vue, signals for Angular, stores for Svelte, resources for Solid, plus fetch, axios and server middleware. Python backends use the same format: pip install flattype.", link: /guide/react, linkText: Frameworks }
   - { title: Built for Claude and LLMs, details: "toPrompt, a tolerant fromModelOutput, real token counts with Claude's tokenizer, and compact MCP / Claude tool results.", link: /guide/llms, linkText: LLM helpers }
   - { title: Lossless and safe, details: "decode(encode(x)) equals JSON.parse(JSON.stringify(x)), checked by property-based fuzzing; the decoder is prototype-safe and linear-time.", link: /guide/security, linkText: Security }
-  - { title: Small, details: "The core is 4.7 KB min+gz with no third-party dependencies. Every package ships ESM, CJS and types, with npm provenance.", link: /guide/getting-started#packages, linkText: Packages }
+  - { title: Small, details: "The core is 4.8 KB min+gz with no third-party dependencies. Every package ships ESM, CJS and types, with npm provenance.", link: /guide/getting-started#packages, linkText: Packages }
 ---
 
-<video class="intro-video" src="/flattype-intro.mp4" controls muted playsinline preload="metadata" aria-label="FlatType.js in 84 seconds"></video>
+<video class="intro-video" src="/flattype-intro.mp4" controls muted playsinline preload="metadata" aria-label="FlatType in 92 seconds"></video>
 
 ```ts
 import { encode } from "@flattype/core";

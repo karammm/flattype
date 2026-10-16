@@ -18,9 +18,9 @@ const flatish = fc
 describe("decoder robustness", () => {
   it("only ever throws FlatDecodeError, strict or lenient", () => {
     fc.assert(
-      fc.property(flatish, fc.boolean(), fc.boolean(), (text, strict, refs) => {
+      fc.property(flatish, fc.boolean(), fc.boolean(), fc.boolean(), (text, strict, refs, skipInvalidLines) => {
         try {
-          decode(text, { strict, refs });
+          decode(text, { strict, refs, skipInvalidLines });
         } catch (e) {
           if (!(e instanceof FlatDecodeError)) throw e;
         }
@@ -33,7 +33,7 @@ describe("decoder robustness", () => {
     fc.assert(
       fc.property(flatish, (text) => {
         try {
-          decode(text, { strict: false, refs: true });
+          decode(text, { strict: false, refs: true, skipInvalidLines: true });
         } catch {
           // fine
         }

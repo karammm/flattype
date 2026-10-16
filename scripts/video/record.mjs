@@ -4,7 +4,7 @@
 // Needs ffmpeg (FFMPEG env var or on PATH) and Playwright's Chromium (`npx playwright install chromium`).
 import { execFileSync, spawn } from "node:child_process";
 import { createRequire } from "node:module";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -120,6 +120,15 @@ const cliText = [
   "…",
 ].join("\n");
 
+// The FastAPI example (examples/python-fastapi), called twice the way curl would. Needs uv.
+const py = JSON.parse(
+  execFileSync("uv", ["run", "-q", "--with", "fastapi", "--with", "httpx", "--with", "../../python", "python", "demo.py"], {
+    cwd: join(here, "../../examples/python-fastapi"),
+    encoding: "utf8",
+  }),
+);
+const pyApp = readFileSync(join(here, "../../examples/python-fastapi/app.py"), "utf8");
+
 const data = {
   json: JSON.stringify(response, null, 2),
   jsonBytes: small.jsonBytes,
@@ -224,6 +233,24 @@ const data = {
     "}",
   ].join("\n"),
   cli: cliText,
+  // app.py without its docstring and sample data.
+  pyCode: [
+    pyApp.slice(pyApp.indexOf("from fastapi")).split("\n\nUSERS")[0],
+    "",
+    '@app.get("/users")',
+    "def users():",
+    '    return {"users": USERS}  # plain FastAPI',
+  ].join("\n"),
+  pyTerm: [
+    "$ pip install flattype",
+    "",
+    "$ curl localhost:3000/users",
+    py.plain.replace(/},{/g, "},\n  {"),
+    "",
+    '$ curl -H "Accept: text/x-flat" localhost:3000/users',
+    `# Content-Type: ${py.contentType}`,
+    py.flat,
+  ].join("\n"),
   bars: [
     { label: "JSON, 1,000 users (minified)", value: bigJson },
     { label: "TOON", value: toon(big).length },

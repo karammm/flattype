@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.11.0
+
+### Minor Changes
+
+- `skipInvalidLines` for lenient decoding. `fromModelOutput` no longer hangs on a reply that starts with a lookalike tag, and drops prose lines in linear time. The `flattype` package for Python is out on PyPI.
+
 ## 1.10.0
 
 ### Minor Changes

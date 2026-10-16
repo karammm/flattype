@@ -116,10 +116,11 @@ Ideas from comparing with [flatted](https://github.com/WebReflection/flatted).
 - The README's core size is checked against the real bundle by `pnpm check:size`
 - `flattype decode --refs`
 
-## v1.11.0: Python
+## v1.11.0: Python ✅
 - `flattype` on PyPI: `encode`, `decode` (strict and lenient), the same options as `@flattype/core`
 - Shared fixtures run against both implementations in CI, so the two can't disagree on the format
-- A FastAPI / Starlette response class that answers in Flat Notation when the client asks
+- ASGI middleware for FastAPI / Starlette that answers in Flat Notation when the client asks, plus a response class
+- The LLM helpers (`to_prompt`, `from_model_output`, `count_tokens`) in `flattype.ai`
 ---
 
 Have an idea or a use case that isn't covered? [Open an issue](https://github.com/karammm/flattype/issues).

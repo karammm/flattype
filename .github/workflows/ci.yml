@@ -47,6 +47,30 @@ jobs:
       # Timing tests run alone so nothing else competes for the CPU.
       - run: pnpm --filter @flattype/core --filter @flattype/models --filter @flattype/ai --workspace-concurrency=1 test:perf
 
+  python:
+    name: python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # The conformance cases come from the JavaScript packages; their own test fails if the files are stale.
+      - run: uv run --python ${{ matrix.python }} pytest
+      - if: matrix.python == '3.13'
+        run: |
+          uv run mypy
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+          uv run pytest tests/perf_linear.py
+          uv build
+          uvx twine check --strict dist/*
+
   browsers:
     name: examples + real browsers
     runs-on: ubuntu-latest

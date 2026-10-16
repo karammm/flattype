@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 /** Accessibility (axe-core, WCAG 2.2 AA), broken links and phone layout for every documentation page. */
 const PAGES = [
   "", "guide/getting-started", "guide/format", "guide/models", "guide/http", "guide/react", "guide/vue", "guide/angular",
-  "guide/svelte-solid", "guide/llms", "guide/cli", "guide/benchmarks", "guide/security",
+  "guide/svelte-solid", "guide/llms", "guide/cli", "guide/python", "guide/benchmarks", "guide/security",
 ];
 
 for (const scheme of ["light", "dark"] as const) {

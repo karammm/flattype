@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flattype"
+version = "1.11.0"
+description = "JSON <-> Flat Notation: compact key: value text for APIs and LLM prompts. The Python side of @flattype/* on npm."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "karammm" }]
+keywords = ["json", "flatten", "serialization", "llm", "tokens", "claude", "toon", "api", "fastapi", "asgi"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Framework :: FastAPI",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Internet :: WWW/HTTP",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+starlette = ["starlette>=0.27"]
+
+[project.urls]
+Homepage = "https://karammm.github.io/flattype/docs/"
+Documentation = "https://karammm.github.io/flattype/docs/guide/python"
+Repository = "https://github.com/karammm/flattype"
+Issues = "https://github.com/karammm/flattype/issues"
+Changelog = "https://github.com/karammm/flattype/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "hypothesis>=6.100",
+    "anyio>=4",
+    "fastapi>=0.110",
+    "httpx>=0.27",
+    "mypy>=1.10",
+    "ruff>=0.6",
+    "pydantic>=2.13.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/flattype"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "README.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+strict = true
+files = ["src"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

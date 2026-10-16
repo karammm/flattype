@@ -25,6 +25,8 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   const keep = options.keepRows !== false;
   const onRow = options.onRow;
   const refs = options.refs === true;
+  // Lenient only: a line that can't be read is dropped, as if it weren't there.
+  const skip = !strict && options.skipInvalidLines === true;
   const holder: { root?: unknown } = {};
   // Reference lines, resolved once the whole document has been read (a cycle points at a parent).
   const pending: Ref[] = [];
@@ -33,13 +35,30 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   // The table whose rows are being read.
   let table: { at: number; segments: Segment[]; t: Table; path: string; rows: unknown[]; read: number } | undefined;
 
+  /** `assign` into the result. When skipping lines, checked first, so a line that fails changes nothing. */
+  const put = (segments: Segment[], value: unknown, at: number): void => {
+    if (skip) assign(holder, segments, value, strict, at, true);
+    assign(holder, segments, value, strict, at);
+  };
+
   const closeTable = (): void => {
-    assign(holder, table!.segments, table!.rows, strict, table!.at);
+    // Cleared first: a table whose path can't be written is dropped, not left half-open.
+    const t = table!;
     table = undefined;
+    put(t.segments, t.rows, t.at);
   };
 
   const line = (raw: string): void => {
     lineNo++;
+    if (!skip) return readLine(raw);
+    try {
+      readLine(raw);
+    } catch (e) {
+      if (!(e instanceof FlatDecodeError)) throw e;
+    }
+  };
+
+  const readLine = (raw: string): void => {
     const text = stripCR(raw);
     if (table) {
       const { t } = table;
@@ -71,9 +90,9 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     }
     const value = text.slice(end + 1);
     if (terminal.kind === "value") {
-      assign(holder, segments, scalar(value.trim(), strict, lineNo, end + 2), strict, lineNo);
+      put(segments, scalar(value.trim(), strict, lineNo, end + 2), lineNo);
     } else if (terminal.kind === "inline") {
-      assign(holder, segments, cells(value, terminal.delimiter, strict, lineNo, end + 2), strict, lineNo);
+      put(segments, cells(value, terminal.delimiter, strict, lineNo, end + 2), lineNo);
     } else {
       if (value.trim() !== "" && strict) {
         throw new FlatDecodeError("Table rows go on the following lines", lineNo, end + 2);
@@ -108,7 +127,7 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     while (text.charCodeAt(end) === 32) end++;
     if (end !== text.length) throw new FlatDecodeError("Unexpected text after reference", lineNo, end + 1);
     const ref = new Ref(segments, target, lineNo);
-    assign(holder, segments, ref, strict, lineNo);
+    put(segments, ref, lineNo);
     pending.push(ref);
   };
 
@@ -133,7 +152,11 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
       rest = "";
       if (table) {
         if (strict) throw new FlatDecodeError(`Expected ${table.t.count} rows, got ${table.read}`, table.at, 1);
-        closeTable();
+        try {
+          closeTable();
+        } catch (e) {
+          if (!skip || !(e instanceof FlatDecodeError)) throw e;
+        }
       }
       if (pending.length > 0) resolveRefs(holder, pending, strict);
       const value = "root" in holder ? holder.root : {};

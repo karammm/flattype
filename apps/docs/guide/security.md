@@ -28,6 +28,22 @@ The 1.9.0 review of every regular expression and loop that sees untrusted input 
 - **Quadratic streaming of long lines:** `createDecoder()` re-split everything it had buffered on every chunk, which was quadratic for one long line arriving in small chunks.
 - **Slow `streamRows` batches:** it removed rows one at a time from the front of an array, which was quadratic for large batches.
 
+## The 1.11 review
+
+Porting the decoder and the LLM helpers to Python meant reading every loop again, and two problems turned up in `@flattype/ai` (`fromModelOutput`), both fixed in 1.11.0:
+
+- **Endless loop on a lookalike tag.** A reply that started with a tag such as `<database>` and contained `</data>` later made the search for the opening tag find the same position again and again, forever. A lookalike tag at the very start is now handled like any other.
+- **Quadratic replies full of prose.** Lines that aren't Flat Notation were dropped by decoding the whole reply again after each one, so 8,000 lines of prose took 0.85 s and the time grew with the square of the length. The decoder can now skip such lines itself (`skipInvalidLines`), in one pass: 8,000 lines take 25 ms.
+
+Both have regression tests, and the linear-time job covers replies with many prose lines and many lookalike tags, in JavaScript and Python.
+
+## Python
+
+The [`flattype`](https://pypi.org/project/flattype/) package gives the same guarantees. Every case in `conformance/` (values, error messages, model replies) must match exactly. Python-specific points:
+- **Long integers can't stall it.** CPython's `int()` is slow and limited on very long digit strings, so a number longer than 4,300 digits is read as a float.
+- **Streaming stays linear.** Chunks of an unfinished line are kept in a list, not appended to one growing string.
+- **No recursion when decoding.** Decoding never recurses, so nesting depth doesn't matter. Encoding does recurse, like `json.dumps`, and raises `RecursionError` on very deep data.
+
 ## References
 
 The 1.10 `refs` option lets a document say that two paths are the same object. That is safe to decode, since FlatType resolves each reference in one step and never copies, but the result is no longer a tree:

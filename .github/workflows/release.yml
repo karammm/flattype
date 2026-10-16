@@ -1,4 +1,4 @@
-name: Release (npm)
+name: Release (npm + PyPI)
 
 # Fully automatic: when a push to main changes package versions (e.g. after `pnpm changeset version`),
 # this builds and tests, publishes every @flattype/* version not yet on npm, then tags vX.Y.Z and
@@ -6,10 +6,12 @@ name: Release (npm)
 #
 # Uses npm trusted publishing (OIDC): no npm token is stored in GitHub. Every package must have this
 # workflow configured as its trusted publisher on npmjs.com (Settings -> Trusted publishing).
+# The Python package (python/pyproject.toml) is published the same way to PyPI, with this workflow and
+# the `pypi` environment as its trusted publisher on pypi.org.
 on:
   push:
     branches: [main]
-    paths: ["packages/*/package.json"]
+    paths: ["packages/*/package.json", "python/pyproject.toml"]
   workflow_dispatch:
 
 permissions:
@@ -52,3 +54,30 @@ jobs:
           # Title from the roadmap heading, e.g. "## v1.2.0: HTTP integration"
           title=$(grep -m1 "^## v$version:" ROADMAP.md | sed -E 's/^## //; s/ ✅.*$//; s/ 🚧.*$//')
           gh release create "v$version" --target "$GITHUB_SHA" --title "${title:-v$version}" --notes-file notes.md
+
+  pypi:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Skip if this version is already on PyPI
+        id: check
+        run: |
+          version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          code=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/flattype/$version/json")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$code" = "200" ]; then echo "flattype $version is already on PyPI"; echo "publish=false" >> "$GITHUB_OUTPUT"; else echo "publish=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.check.outputs.publish == 'true'
+        run: uv run pytest
+      - if: steps.check.outputs.publish == 'true'
+        run: uv build
+      - if: steps.check.outputs.publish == 'true'
+        # Trusted publishing: uv exchanges the GitHub OIDC token for a short-lived PyPI token.
+        run: uv publish --trusted-publishing always
