@@ -2,6 +2,21 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.4.0
+
+### New: `@flattype/vue`
+
+- `useFlat(url, { model, list })` returns `data`, `error` and `loading` refs plus `refetch`. The URL can be a ref or a getter: a change aborts the old request, and the old data stays while the next one loads
+- `useFlatSuspense(url, { model })` for `async setup()` inside `<Suspense>`, so `data` is always set. A failed first request throws to `onErrorCaptured`
+- `useFlatStream(url, { model, table })` renders rows of a big list while it is still downloading
+- `useModel(source, Model)` is a computed ref for data you already have
+- `createFlat({ baseURL, headers, fetch })` plugin. `headers` can be a function, so tokens stay current
+- Vue 3.3+, 1.1 KB min+gz on top of `@flattype/http`
+
+### Examples and CI
+
+- `examples/vue-app`: Vite + Vue single-file components with a real Express API, tested in Chromium, Firefox and WebKit. CI now runs the browser tests of every example
+
 ## 1.3.0
 
 ### New: `@flattype/react`

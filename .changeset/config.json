@@ -14,6 +14,7 @@
   "ignore": [
     "@flattype/example-node-models",
     "@flattype/example-node-server",
-    "@flattype/example-react-app"
+    "@flattype/example-react-app",
+    "@flattype/example-vue-app"
   ]
 }

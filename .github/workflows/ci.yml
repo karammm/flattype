@@ -42,7 +42,7 @@ jobs:
       - run: pnpm turbo run build --filter="./packages/*"
       - run: pnpm --filter "./examples/*" typecheck
       - run: pnpm --filter @flattype/example-react-app exec playwright install --with-deps chromium firefox webkit
-      - run: pnpm --filter @flattype/example-react-app e2e
+      - run: pnpm --filter "./examples/*" --workspace-concurrency=1 e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

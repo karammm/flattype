@@ -62,11 +62,12 @@ New package: `@flattype/react`
 - `FlatProvider` for `baseURL`, headers, a custom `fetch` and the Suspense cache
 - React Testing Library tests, `examples/react-app` with Playwright tests in Chromium, Firefox and WebKit
 
-## v1.4.0: Vue
+## v1.4.0: Vue ✅
 
 New package: `@flattype/vue`
 
-- `useFlat` composable and a plugin, `examples/vue-app`
+- `useFlat`, `useFlatSuspense`, `useFlatStream` and `useModel` composables with reactive URLs, and a `createFlat()` plugin
+- Vue Test Utils tests, `examples/vue-app` with Playwright tests in Chromium, Firefox and WebKit
 
 ## v1.5.0: Angular
 

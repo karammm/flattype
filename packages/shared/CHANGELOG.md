@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.4.0
+
+### Minor Changes
+
+- New package `@flattype/vue`: `createFlat`, `useFlat`, `useFlatSuspense`, `useFlatStream` and `useModel` for Vue 3.
+
 ## 1.3.0
 
 ### Minor Changes

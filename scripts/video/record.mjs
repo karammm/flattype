@@ -58,19 +58,24 @@ const flatRes = await fetch(`${base}/users`, { headers: { accept: "text/x-flat" 
 const flatText = await flatRes.text();
 server.close();
 
-// A screenshot of the real example app (examples/react-app) once its streamed export has finished.
-const appDir = join(here, "../../examples/react-app");
-const { createServer } = await import(pathToFileURL(createRequire(join(appDir, "package.json")).resolve("vite")).href);
-const vite = await createServer({ root: appDir, configFile: join(appDir, "vite.config.ts"), logLevel: "error" });
-await vite.listen();
-const shotBrowser = await chromium.launch();
-const shotPage = await shotBrowser.newPage({ viewport: { width: 760, height: 900 }, deviceScaleFactor: 1 });
-await shotPage.goto("http://localhost:5179/");
-await shotPage.getByText("Done: 200 rows").waitFor({ timeout: 20000 });
-await shotPage.addStyleTag({ content: "main { margin: 0 auto !important; padding: 20px 24px !important; }" });
-const shotPng = await shotPage.locator("main").screenshot();
-await shotBrowser.close();
-await vite.close();
+// Screenshots of the real example apps once their streamed export has finished.
+async function screenshotApp(dir, port) {
+  const appDir = join(here, "../../examples", dir);
+  const { createServer } = await import(pathToFileURL(createRequire(join(appDir, "package.json")).resolve("vite")).href);
+  const vite = await createServer({ root: appDir, configFile: join(appDir, "vite.config.ts"), logLevel: "error" });
+  await vite.listen();
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 760, height: 900 }, deviceScaleFactor: 1 });
+  await page.goto(`http://localhost:${port}/`);
+  await page.getByText("Done: 200 rows").waitFor({ timeout: 20000 });
+  await page.addStyleTag({ content: "main { margin: 0 auto !important; padding: 20px 24px !important; }" });
+  const png = await page.locator("main").screenshot();
+  await browser.close();
+  await vite.close();
+  return `data:image/png;base64,${png.toString("base64")}`;
+}
+const shotReact = await screenshotApp("react-app", 5179);
+const shotVue = await screenshotApp("vue-app", 5180);
 
 const data = {
   json: JSON.stringify(response, null, 2),
@@ -134,7 +139,23 @@ const data = {
     "  ));",
     "}",
   ].join("\n"),
-  shot: `data:image/png;base64,${shotPng.toString("base64")}`,
+  vue: [
+    '<script setup lang="ts">',
+    'import { useFlat } from "@flattype/vue";',
+    "",
+    'const { data, error } = useFlat("/users", {',
+    "  model: UsersPage,",
+    "}); // data is a typed Ref, from the model",
+    "</script>",
+    "",
+    "<template>",
+    '  <li v-for="u in data?.data" :key="u.id">',
+    "    {{ u.fullName }} · {{ u.address.city }}",
+    "  </li>",
+    "</template>",
+  ].join("\n"),
+  shot: shotReact,
+  shot2: shotVue,
   bars: [
     { label: "JSON, 1,000 users (minified)", value: bigJson },
     { label: "TOON", value: toon(big).length },

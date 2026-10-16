@@ -99,11 +99,11 @@
 
   <!-- react -->
   <section class="scene" id="sr">
-    <div class="kicker">Step 4 · @flattype/react</div>
-    <h1>Hooks for React. <em>Typed data, no glue code.</em></h1>
+    <div class="kicker" id="fwKicker">Step 4 · @flattype/react</div>
+    <h1>Hooks for React. <em>Composables for Vue.</em></h1>
     <div class="row">
-      <div class="panel" style="flex:.9"><div class="bar"><span>Users.tsx</span></div><pre id="react" class="mid"></pre></div>
-      <div class="panel" style="flex:1.1"><div class="bar"><span>localhost:5179 · examples/react-app</span><b>real app</b></div><div style="height:420px;overflow:hidden;background:#fff"><img id="shot" style="width:100%;display:block;transform-origin:top left"></div></div>
+      <div class="panel" style="flex:.9"><div class="bar"><span id="fwFile">Users.tsx</span></div><pre id="react" class="mid"></pre></div>
+      <div class="panel" style="flex:1.1"><div class="bar"><span id="fwUrl">localhost:5179 · examples/react-app</span><b>real app</b></div><div style="height:420px;overflow:hidden;background:#fff;position:relative"><img id="shot" style="width:100%;display:block;position:absolute;top:0"><img id="shot2" style="width:100%;display:block;position:absolute;top:0;opacity:0"></div></div>
     </div>
   </section>
 
@@ -120,7 +120,7 @@
     <svg class="mark" viewBox="0 0 64 64" style="width:84px;height:84px"><rect width="64" height="64" rx="16" fill="#8b6cff"/><circle cx="17" cy="22" r="3.2" fill="#fff"/><rect x="25" y="19" width="24" height="6" rx="3" fill="#fff"/><circle cx="17" cy="32" r="3.2" fill="#fff"/><rect x="25" y="29" width="17" height="6" rx="3" fill="#fff" opacity=".85"/><circle cx="17" cy="42" r="3.2" fill="#fff"/><rect x="25" y="39" width="21" height="6" rx="3" fill="#2fd4b2"/></svg>
     <h1 style="margin-top:22px">Plain TypeScript. No third-party dependencies.</h1>
     <div class="cmd"><span class="p">$</span> npm install @flattype/models @flattype/http @flattype/react</div>
-    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18 &amp; 19</span><span class="chip">Vue · Angular · Svelte <small>(roadmap)</small></span></div>
+    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18 &amp; 19</span><span class="chip">Vue 3</span><span class="chip">Angular · Svelte <small>(roadmap)</small></span></div>
     <div class="url">github.com/karammm/flattype</div>
   </section>
 
@@ -163,9 +163,9 @@
   const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 
   // [element id, start, end] in seconds.
-  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 50], ["s4", 50, 57], ["s5", 57, 62]];
+  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 54], ["s4", 54, 61], ["s5", 61, 66]];
   const start = (id) => S.find((x) => x[0] === id)[1];
-  window.DURATION = 62;
+  window.DURATION = 66;
 
   $("jsonBytes").textContent = D.jsonBytes + " bytes minified";
   $("flatBytes").textContent = D.flatBytes + " bytes";
@@ -177,6 +177,7 @@
     '<div><div class="lbl"><span>' + b.label + "</span><span>" + b.value.toLocaleString("en-US") + " chars</span></div>" +
     '<div class="track"><div class="fill" data-w="' + (b.value / Math.max(...D.bars.map((x) => x.value))) + '" style="background:' + (i === D.bars.length - 1 ? "var(--teal)" : "#59608a") + '"></div></div></div>').join("");
   $("shot").src = D.shot;
+  $("shot2").src = D.shot2;
   $("rules").innerHTML = D.rules.map((l) => '<div class="callout">' + l + "</div>").join("");
   $("llm").innerHTML = D.llm.map((l) => '<div class="callout">' + l + "</div>").join("");
 
@@ -200,10 +201,17 @@
     const lh = t - start("sh");
     $("server").innerHTML = hlTs(typed(D.server, lh / 2.5));
     $("term").innerHTML = hlTerm(typed(D.term, (lh - 3) / 4));
+    // React for the first 7 seconds, then the same thing in Vue.
     const lr = t - start("sr");
-    $("react").innerHTML = hlTs(typed(D.react, lr / 3));
-    $("shot").style.opacity = clamp((lr - 3.2) / 0.6);
-    $("shot").style.transform = "translateY(" + -Math.max(0, Math.min(1, (lr - 6) / 3)) * Math.max(0, $("shot").offsetHeight - 420) + "px)";
+    const vue = lr >= 7, lf = vue ? lr - 7 : lr;
+    $("fwKicker").textContent = vue ? "Step 4 · @flattype/vue" : "Step 4 · @flattype/react";
+    $("fwFile").textContent = vue ? "Users.vue" : "Users.tsx";
+    $("fwUrl").textContent = vue ? "localhost:5180 · examples/vue-app" : "localhost:5179 · examples/react-app";
+    $("react").innerHTML = hlTs(typed(vue ? D.vue : D.react, lf / 2.2));
+    const img = vue ? $("shot2") : $("shot");
+    $("shot").style.opacity = vue ? 0 : clamp((lf - 2.4) / 0.5);
+    $("shot2").style.opacity = vue ? clamp((lf - 2.4) / 0.5) : 0;
+    img.style.transform = "translateY(" + -Math.max(0, Math.min(1, (lf - 3.5) / 2.5)) * Math.max(0, img.offsetHeight - 420) + "px)";
     const l4 = t - start("s4");
     document.querySelectorAll("#bars .fill").forEach((f, i) => { f.style.width = ease((l4 - 0.6 - i * 0.5) / 1.2) * Number(f.dataset.w) * 100 + "%"; });
     document.querySelectorAll("#llm .callout").forEach((c, i) => { c.style.opacity = clamp((l4 - 2.8 - i * 0.6) / 0.4); });
