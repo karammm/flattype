@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.6.0
+
+### Minor Changes
+
+- New package `@flattype/svelte`: `flatStore`, `flatStreamStore`, `modelStore` and `createFlat` (store contract, also usable from Solid via `from()`), plus `@flattype/svelte/solid` with `createFlatResource` and `createFlatStream`.
+
 ## 1.5.0
 
 ### Minor Changes

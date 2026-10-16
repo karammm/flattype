@@ -91,6 +91,7 @@ async function screenshotAngularApp() {
 const shotReact = await screenshotViteApp("react-app", 5179);
 const shotVue = await screenshotViteApp("vue-app", 5180);
 const shotAngular = await screenshotAngularApp();
+const shotSvelte = await screenshotViteApp("svelte-app", 5181);
 
 const data = {
   json: JSON.stringify(response, null, 2),
@@ -169,6 +170,18 @@ const data = {
     "  </li>",
     "</template>",
   ].join("\n"),
+  svelteCode: [
+    '<script lang="ts">',
+    '  import { flatStore } from "@flattype/svelte";',
+    '  const users = flatStore("/api/users", {',
+    "    model: UsersPage,",
+    "  }); // a store: Svelte $users, Solid from(users)",
+    "</script>",
+    "",
+    "{#each $users.data?.data ?? [] as u (u.id)}",
+    "  <li>{u.fullName} · {u.address.city}</li>",
+    "{/each}",
+  ].join("\n"),
   angularCode: [
     "@Component({",
     "  template: `",
@@ -199,6 +212,7 @@ data.fw = [
   { kicker: "Step 4 · @flattype/react", file: "Users.tsx", url: "localhost:5179 · examples/react-app", code: data.reactCode, shot: shotReact },
   { kicker: "Step 4 · @flattype/vue", file: "Users.vue", url: "localhost:5180 · examples/vue-app", code: data.vueCode, shot: shotVue },
   { kicker: "Step 4 · @flattype/angular", file: "users.component.ts", url: "127.0.0.1:4187 · examples/angular-app (production build)", code: data.angularCode, shot: shotAngular },
+  { kicker: "Step 4 · @flattype/svelte · Svelte & Solid", file: "Users.svelte", url: "localhost:5181 · examples/svelte-app", code: data.svelteCode, shot: shotSvelte },
 ];
 
 const frames = mkdtempSync(join(tmpdir(), "flattype-video-"));
@@ -220,6 +234,6 @@ const mp4 = join(assets, "flattype-intro.mp4");
 const gif = join(assets, "flattype-intro.gif");
 const run = (args) => execFileSync(ffmpeg, ["-y", "-loglevel", "error", ...args], { stdio: "inherit" });
 run(["-framerate", String(FPS), "-i", join(frames, "%05d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "slow", "-movflags", "+faststart", mp4]);
-run(["-i", mp4, "-vf", "fps=12,scale=820:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", gif]);
+run(["-i", mp4, "-vf", "fps=10,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=64:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", gif]);
 rmSync(frames, { recursive: true, force: true });
 console.log(`wrote ${mp4}\nwrote ${gif}`);

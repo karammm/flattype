@@ -16,6 +16,8 @@
     "@flattype/example-node-models",
     "@flattype/example-node-server",
     "@flattype/example-react-app",
+    "@flattype/example-solid-app",
+    "@flattype/example-svelte-app",
     "@flattype/example-vue-app"
   ]
 }

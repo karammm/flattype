@@ -100,7 +100,7 @@
   <!-- react -->
   <section class="scene" id="sr">
     <div class="kicker" id="fwKicker">Step 4 · @flattype/react</div>
-    <h1>One API for <em>React, Vue and Angular.</em></h1>
+    <h1>One API for <em>every framework.</em></h1>
     <div class="row">
       <div class="panel" style="flex:.9"><div class="bar"><span id="fwFile">Users.tsx</span></div><pre id="react" class="mid"></pre></div>
       <div class="panel" style="flex:1.1"><div class="bar"><span id="fwUrl">localhost:5179 · examples/react-app</span><b>real app</b></div><div id="shots" style="height:420px;overflow:hidden;background:#fff;position:relative"></div></div>
@@ -120,7 +120,7 @@
     <svg class="mark" viewBox="0 0 64 64" style="width:84px;height:84px"><rect width="64" height="64" rx="16" fill="#8b6cff"/><circle cx="17" cy="22" r="3.2" fill="#fff"/><rect x="25" y="19" width="24" height="6" rx="3" fill="#fff"/><circle cx="17" cy="32" r="3.2" fill="#fff"/><rect x="25" y="29" width="17" height="6" rx="3" fill="#fff" opacity=".85"/><circle cx="17" cy="42" r="3.2" fill="#fff"/><rect x="25" y="39" width="21" height="6" rx="3" fill="#2fd4b2"/></svg>
     <h1 style="margin-top:22px">Plain TypeScript. No third-party dependencies.</h1>
     <div class="cmd"><span class="p">$</span> npm install @flattype/models @flattype/http @flattype/react</div>
-    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18 &amp; 19</span><span class="chip">Vue 3</span><span class="chip">Angular 19+</span><span class="chip">Svelte <small>(roadmap)</small></span></div>
+    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18 &amp; 19</span><span class="chip">Vue 3</span><span class="chip">Angular 19+</span><span class="chip">Svelte &amp; Solid</span></div>
     <div class="url">github.com/karammm/flattype</div>
   </section>
 
@@ -163,9 +163,9 @@
   const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 
   // [element id, start, end] in seconds.
-  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 59], ["s4", 59, 66], ["s5", 66, 71]];
+  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 65.5], ["s4", 65.5, 72.5], ["s5", 72.5, 77.5]];
   const start = (id) => S.find((x) => x[0] === id)[1];
-  window.DURATION = 71;
+  window.DURATION = 77.5;
 
   $("jsonBytes").textContent = D.jsonBytes + " bytes minified";
   $("flatBytes").textContent = D.flatBytes + " bytes";
@@ -200,7 +200,7 @@
     const lh = t - start("sh");
     $("server").innerHTML = hlTs(typed(D.server, lh / 2.5));
     $("term").innerHTML = hlTerm(typed(D.term, (lh - 3) / 4));
-    // React, then Vue, then Angular: about 6 seconds each.
+    // React, Vue, Angular, then Svelte & Solid: about 6 seconds each.
     const lr = t - start("sr");
     const k = Math.min(D.fw.length - 1, Math.max(0, Math.floor(lr / 6.3)));
     const fw = D.fw[k], lf = lr - k * 6.3;

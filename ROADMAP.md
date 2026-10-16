@@ -77,11 +77,13 @@ New package: `@flattype/angular`
 - The signal-based `flatResource` and `flatStream`, and the RxJS operators `mapModel` / `mapModelList`
 - `examples/angular-app` (Angular 22, zoneless) with Playwright tests in Chromium, Firefox and WebKit
 
-## v1.6.0: Svelte and Solid
+## v1.6.0: Svelte and Solid ✅
 
 New package: `@flattype/svelte`
 
-- Svelte stores and a Solid resource helper
+- `flatStore`, `flatStreamStore`, `modelStore` and `createFlat`, built on the store contract (Svelte `$store`, Solid `from()`)
+- `@flattype/svelte/solid`: `createFlatResource` and `createFlatStream`
+- `examples/svelte-app` (Svelte 5) and `examples/solid-app`, each with Playwright tests in Chromium, Firefox and WebKit
 
 ## v1.7.0: Claude and LLMs
 

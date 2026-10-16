@@ -2,6 +2,21 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.6.0
+
+### New: `@flattype/svelte` (Svelte and Solid)
+
+- `flatStore(url, { model, list })` is a store of `{ data, error, loading }` plus `refetch()`. It follows the store contract, so Svelte 3, 4 and 5 read it with `$store`. `url` can be a string or a store. It fetches on the first subscriber, aborts on the last unsubscribe, and aborts the old request when the URL changes
+- `flatStreamStore(url, { model, table })`: rows of a big list while it is still downloading
+- `modelStore(source, Model)` maps another store's value
+- `createFlat({ baseURL, headers, fetch })` shares options between stores. `headers` can be a function, for fresh tokens
+- `@flattype/svelte/solid`: `createFlatResource(() => url, { model })`, a real Solid resource (works with `<Suspense>` and `<ErrorBoundary>`, aborts on change), and `createFlatStream`. The stores also work in Solid through `from(store)`
+- No framework dependency in the main entry (`solid-js` is an optional peer for `/solid`). 1.1 KB + 0.9 KB min+gz
+
+### Examples
+
+- `examples/svelte-app` (Svelte 5) and `examples/solid-app` (Solid with `<Suspense>`), each with a real Express API and Playwright tests in Chromium, Firefox and WebKit
+
 ## 1.5.0
 
 ### New: `@flattype/angular`
