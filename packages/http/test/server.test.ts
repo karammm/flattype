@@ -37,10 +37,12 @@ describe("express", () => {
   it("negotiates", () => check(`${s.url}/users`));
 });
 
-describe("fastify", () => {
+// Fastify 5 itself needs Node 20+.
+describe.skipIf(Number(process.versions.node.split(".")[0]) < 20)("fastify", () => {
   let url: string;
-  const app = Fastify();
+  let app: ReturnType<typeof Fastify>;
   beforeAll(async () => {
+    app = Fastify();
     await app.register(flatFastify);
     app.get("/users", async () => data);
     url = await app.listen({ port: 0, host: "127.0.0.1" });

@@ -54,12 +54,13 @@ New package: `@flattype/http`
 - Tested against real Express, Fastify, Hono and axios, `examples/node-server`
 - Releases became fully automatic (version bump on `main` → npm + GitHub release)
 
-## v1.3.0: React
+## v1.3.0: React ✅
 
 New package: `@flattype/react`
 
-- `useFlat(url, Model)` and `useModel(data, Model)`, with Suspense support
-- React Testing Library tests, `examples/react-app`
+- `useFlat(url, { model })`, `useFlatSuspense`, `useFlatStream` (rows render while downloading) and `useModel(data, Model)`
+- `FlatProvider` for `baseURL`, headers, a custom `fetch` and the Suspense cache
+- React Testing Library tests, `examples/react-app` with Playwright tests in Chromium, Firefox and WebKit
 
 ## v1.4.0: Vue
 

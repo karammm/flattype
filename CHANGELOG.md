@@ -2,6 +2,21 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.3.0
+
+### New: `@flattype/react`
+
+- `useFlat(url, { model, list })`: `{ data, error, loading, refetch }`, typed from the model. Changing the URL aborts the old request, and the previous data stays visible while the next request loads
+- `useFlatSuspense(url, { model })`: suspends until the data is ready, sends errors to the nearest error boundary, and caches by URL (one request even for many components and StrictMode)
+- `useFlatStream(url, { model, table })`: renders rows of a big list while it is still downloading, one render per network chunk
+- `useModel(data, Model)`: memoized mapping for data you already have
+- `FlatProvider` for `baseURL`, `headers`, a custom `fetch` and the Suspense cache (`FlatCache`, with `invalidate` and `set`)
+- React 18 and 19, 1.4 KB min+gz on top of `@flattype/http`
+
+### Examples and CI
+
+- `examples/react-app`: Vite + React with a real Express API, tested in Chromium, Firefox and WebKit with Playwright on every push
+
 ## 1.2.0
 
 ### New: `@flattype/http`

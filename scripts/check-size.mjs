@@ -3,7 +3,7 @@
 import { build } from "esbuild";
 import { gzipSync } from "node:zlib";
 
-const budgets = { core: 4 * 1024, models: 5 * 1024, http: 5 * 1024 };
+const budgets = { core: 4 * 1024, models: 5 * 1024, http: 5 * 1024, react: 5 * 1024 };
 let failed = false;
 for (const [pkg, limit] of Object.entries(budgets)) {
   const out = await build({
@@ -12,7 +12,7 @@ for (const [pkg, limit] of Object.entries(budgets)) {
     minify: true,
     format: "esm",
     write: false,
-    external: ["@flattype/*"],
+    external: ["@flattype/*", "react"],
   });
   const size = gzipSync(out.outputFiles[0].contents).length;
   const ok = size <= limit;

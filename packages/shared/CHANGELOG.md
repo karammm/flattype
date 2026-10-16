@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.3.0
+
+### Minor Changes
+
+- New package `@flattype/react`: `useFlat`, `useFlatSuspense`, `useFlatStream`, `useModel` and `FlatProvider`.
+
 ## 1.2.0
 
 ### Minor Changes
