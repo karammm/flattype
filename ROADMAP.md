@@ -69,11 +69,13 @@ New package: `@flattype/vue`
 - `useFlat`, `useFlatSuspense`, `useFlatStream` and `useModel` composables with reactive URLs, and a `createFlat()` plugin
 - Vue Test Utils tests, `examples/vue-app` with Playwright tests in Chromium, Firefox and WebKit
 
-## v1.5.0: Angular
+## v1.5.0: Angular ✅
 
 New package: `@flattype/angular`
 
-- `provideFlatType()`, an `HttpInterceptor`, and a `flatModel` pipe (ng-packagr), `examples/angular-app`
+- `provideFlatType()`, the `flatInterceptor` HttpClient interceptor and the `flatModel` pipe (ng-packagr, Angular 19+)
+- The signal-based `flatResource` and `flatStream`, and the RxJS operators `mapModel` / `mapModelList`
+- `examples/angular-app` (Angular 22, zoneless) with Playwright tests in Chromium, Firefox and WebKit
 
 ## v1.6.0: Svelte and Solid
 

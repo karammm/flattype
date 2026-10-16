@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.5.0
+
+### Minor Changes
+
+- New package `@flattype/angular`: `flatInterceptor`, `provideFlatType`, `flatResource`, `flatStream`, `FlatModelPipe`, `mapModel` / `mapModelList`.
+
 ## 1.4.1
 
 ## 1.4.0

@@ -2,6 +2,21 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.5.0
+
+### New: `@flattype/angular`
+
+- `flatInterceptor`, a functional HttpClient interceptor: it asks for Flat Notation (JSON stays the fallback) and decodes it, so `http.get<T>()` works the same with either format. Error bodies are decoded too. `FLAT_TYPE_SKIP` opts a request out
+- `flatResource(() => url, { model, list })` returns signals for `value`, `error` and `isLoading` plus `reload()`. It runs on HttpClient, so your interceptors apply. A URL that reads signals refetches when they change and cancels the old request
+- `flatStream(() => url, { model, table })` renders rows of a big list while it is still downloading
+- The `flatModel` pipe (`{{ raw | flatModel: User }}`) and the RxJS operators `mapModel` / `mapModelList`
+- `provideFlatType({ baseURL, headers, fetch })`
+- Angular 19+ (built with partial compilation; the example runs Angular 22, zoneless), 1.8 KB min+gz
+
+### Examples and CI
+
+- `examples/angular-app`: an Angular 22 production build served together with a real Express API, tested in Chromium, Firefox and WebKit
+
 ## 1.4.1
 
 ### Fixes

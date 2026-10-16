@@ -2,7 +2,7 @@
 // video is real output from the built packages, computed here.
 //   pnpm build && FFMPEG=/path/to/ffmpeg node scripts/video/record.mjs
 // Needs ffmpeg (FFMPEG env var or on PATH) and Playwright's Chromium (`npx playwright install chromium`).
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -59,23 +59,38 @@ const flatText = await flatRes.text();
 server.close();
 
 // Screenshots of the real example apps once their streamed export has finished.
-async function screenshotApp(dir, port) {
-  const appDir = join(here, "../../examples", dir);
-  const { createServer } = await import(pathToFileURL(createRequire(join(appDir, "package.json")).resolve("vite")).href);
-  const vite = await createServer({ root: appDir, configFile: join(appDir, "vite.config.ts"), logLevel: "error" });
-  await vite.listen();
+async function screenshot(url) {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 760, height: 900 }, deviceScaleFactor: 1 });
-  await page.goto(`http://localhost:${port}/`);
+  await page.goto(url);
   await page.getByText("Done: 200 rows").waitFor({ timeout: 20000 });
   await page.addStyleTag({ content: "main { margin: 0 auto !important; padding: 20px 24px !important; }" });
   const png = await page.locator("main").screenshot();
   await browser.close();
-  await vite.close();
   return `data:image/png;base64,${png.toString("base64")}`;
 }
-const shotReact = await screenshotApp("react-app", 5179);
-const shotVue = await screenshotApp("vue-app", 5180);
+async function screenshotViteApp(dir, port) {
+  const appDir = join(here, "../../examples", dir);
+  const { createServer } = await import(pathToFileURL(createRequire(join(appDir, "package.json")).resolve("vite")).href);
+  const vite = await createServer({ root: appDir, configFile: join(appDir, "vite.config.ts"), logLevel: "error" });
+  await vite.listen();
+  const shot = await screenshot(`http://localhost:${port}/`);
+  await vite.close();
+  return shot;
+}
+// The Angular example is a production build (run `pnpm --filter @flattype/example-angular-app build` first).
+async function screenshotAngularApp() {
+  const server = spawn(process.execPath, ["e2e/server.mjs", "4187"], { cwd: join(here, "../../examples/angular-app"), stdio: ["ignore", "pipe", "inherit"] });
+  await new Promise((resolve) => server.stdout.once("data", resolve));
+  try {
+    return await screenshot("http://127.0.0.1:4187/");
+  } finally {
+    server.kill();
+  }
+}
+const shotReact = await screenshotViteApp("react-app", 5179);
+const shotVue = await screenshotViteApp("vue-app", 5180);
+const shotAngular = await screenshotAngularApp();
 
 const data = {
   json: JSON.stringify(response, null, 2),
@@ -123,7 +138,7 @@ const data = {
     `# Content-Type: ${flatRes.headers.get("content-type")}`,
     flatText,
   ].join("\n"),
-  react: [
+  reactCode: [
     'import { useFlat } from "@flattype/react";',
     "",
     "function Users() {",
@@ -139,7 +154,7 @@ const data = {
     "  ));",
     "}",
   ].join("\n"),
-  vue: [
+  vueCode: [
     '<script setup lang="ts">',
     'import { useFlat } from "@flattype/vue";',
     "",
@@ -154,8 +169,20 @@ const data = {
     "  </li>",
     "</template>",
   ].join("\n"),
-  shot: shotReact,
-  shot2: shotVue,
+  angularCode: [
+    "@Component({",
+    "  template: `",
+    "    @for (u of users.value()?.data; track u.id) {",
+    "      <li>{{ u.fullName }} · {{ u.address.city }}</li>",
+    "    }",
+    "  `,",
+    "})",
+    "export class Users {",
+    '  users = flatResource(() => "/users", {',
+    "    model: UsersPage,",
+    "  }); // signals, on top of HttpClient",
+    "}",
+  ].join("\n"),
   bars: [
     { label: "JSON, 1,000 users (minified)", value: bigJson },
     { label: "TOON", value: toon(big).length },
@@ -167,6 +194,12 @@ const data = {
     "decode(reply, { <b>strict: false</b> }) recovers data from model output",
   ],
 };
+
+data.fw = [
+  { kicker: "Step 4 · @flattype/react", file: "Users.tsx", url: "localhost:5179 · examples/react-app", code: data.reactCode, shot: shotReact },
+  { kicker: "Step 4 · @flattype/vue", file: "Users.vue", url: "localhost:5180 · examples/vue-app", code: data.vueCode, shot: shotVue },
+  { kicker: "Step 4 · @flattype/angular", file: "users.component.ts", url: "127.0.0.1:4187 · examples/angular-app (production build)", code: data.angularCode, shot: shotAngular },
+];
 
 const frames = mkdtempSync(join(tmpdir(), "flattype-video-"));
 const browser = await chromium.launch();

@@ -1,0 +1,30 @@
+{
+  "name": "@flattype/example-angular-app",
+  "private": true,
+  "scripts": {
+    "start": "ng serve --proxy-config proxy.conf.json",
+    "build": "ng build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "ng build && playwright test"
+  },
+  "dependencies": {
+    "@angular/common": "22.2.2",
+    "@angular/compiler": "22.2.2",
+    "@angular/core": "22.2.2",
+    "@angular/platform-browser": "22.2.2",
+    "@flattype/angular": "link:../../packages/angular/dist",
+    "@flattype/core": "workspace:*",
+    "@flattype/http": "workspace:*",
+    "@flattype/models": "workspace:*",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.2",
+    "@angular/cli": "22.2.2",
+    "@angular/compiler-cli": "22.2.2",
+    "@playwright/test": "1.49.1",
+    "express": "5.3.0",
+    "typescript": "6.0.3"
+  }
+}
