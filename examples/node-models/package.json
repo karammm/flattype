@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node index.mjs"
+    "start": "node index.mjs",
+    "typecheck": "node --check index.mjs"
   },
   "dependencies": {
     "@flattype/core": "workspace:*",

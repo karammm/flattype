@@ -1,0 +1,72 @@
+{
+  "name": "@flattype/react",
+  "version": "1.2.0",
+  "description": "React hooks for FlatType.js: fetch Flat Notation or JSON into typed models, with Suspense and streaming rows.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "react",
+    "hooks",
+    "fetch",
+    "suspense",
+    "streaming",
+    "models",
+    "json",
+    "flattype"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@flattype/core": "workspace:*",
+    "@flattype/http": "workspace:*",
+    "@flattype/shared": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karammm/flattype.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/karammm/flattype#readme",
+  "bugs": {
+    "url": "https://github.com/karammm/flattype/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@flattype/models": "workspace:*",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "jsdom": "25.0.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@types/react-dom": "19.3.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

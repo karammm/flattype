@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
 permissions:
@@ -27,6 +27,27 @@ jobs:
       - run: pnpm turbo run build typecheck test --filter="./packages/*"
       - run: pnpm check:dist
       - run: pnpm check:size
+
+  browsers:
+    name: examples + real browsers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter="./packages/*"
+      - run: pnpm --filter "./examples/*" typecheck
+      - run: pnpm --filter @flattype/example-react-app exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm --filter @flattype/example-react-app e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: "**/test-results"
 
   supply-chain:
     name: known vulnerabilities

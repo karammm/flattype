@@ -13,6 +13,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@flattype/example-node-models",
-    "@flattype/example-node-server"
+    "@flattype/example-node-server",
+    "@flattype/example-react-app"
   ]
 }
