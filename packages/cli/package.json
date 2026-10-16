@@ -1,0 +1,63 @@
+{
+  "name": "@flattype/cli",
+  "version": "1.8.0",
+  "description": "The flattype command: convert JSON and Flat Notation, compare sizes, and generate typed models from API samples or OpenAPI specs.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "cli",
+    "json",
+    "openapi",
+    "swagger",
+    "codegen",
+    "models",
+    "typescript",
+    "flattype"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@flattype/core": "workspace:*",
+    "@flattype/models": "workspace:*",
+    "@flattype/shared": "workspace:*",
+    "yaml": "^2.9.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karammm/flattype.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/karammm/flattype#readme",
+  "bugs": {
+    "url": "https://github.com/karammm/flattype/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "flattype": "./dist/cli.js"
+  }
+}

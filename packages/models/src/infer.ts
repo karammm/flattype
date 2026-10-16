@@ -116,9 +116,18 @@ function singular(s: string): string {
   return s;
 }
 
-/** Prints TypeScript source for a model and the models nested in it. */
-export function toSource(model: Model<unknown>, name: string): string {
+/**
+ * Prints TypeScript source for a model and the models nested in it, or for several named models at once
+ * (`toSource({ User, Order })`), where a model used by another is referenced by its name, not repeated.
+ */
+export function toSource(model: Model<unknown>, name: string): string;
+export function toSource(models: Record<string, Model<unknown>>): string;
+export function toSource(modelOrModels: Model<unknown> | Record<string, Model<unknown>>, name?: string): string {
+  const roots: Array<[string, Model<unknown>]> = isModel(modelOrModels)
+    ? [[name ?? "Model", modelOrModels]]
+    : Object.entries(modelOrModels);
   const names = new Map<Model<unknown>, string>();
+  const emitted = new Set<Model<unknown>>();
   const used = new Set<string>();
   const blocks: string[] = [];
 
@@ -130,10 +139,13 @@ export function toSource(model: Model<unknown>, name: string): string {
   };
 
   const emit = (m: Model<unknown>, want: string): string => {
-    const known = names.get(m);
-    if (known) return known;
-    const id = unique(want);
-    names.set(m, id);
+    let id = names.get(m);
+    if (id && emitted.has(m)) return id;
+    if (!id) {
+      id = unique(want);
+      names.set(m, id);
+    }
+    emitted.add(m);
     const lines: string[] = [];
     for (const [field, spec] of Object.entries(m.shape)) {
       const key = IDENT.test(field) ? field : JSON.stringify(field);
@@ -160,6 +172,8 @@ export function toSource(model: Model<unknown>, name: string): string {
     return `{ ${parts.join(", ")} }`;
   };
 
-  emit(model, pascal(name));
+  // Claim the given names first, so references to these models use them.
+  for (const [n, m] of roots) if (!names.has(m)) names.set(m, unique(pascal(n)));
+  for (const [, m] of roots) emit(m, names.get(m)!);
   return `import { defineModel, type Infer } from "@flattype/models";\n\n${blocks.join("\n\n")}\n`;
 }

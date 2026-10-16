@@ -13,6 +13,8 @@ import { encode as toon } from "@toon-format/toon";
 import { encode, stats } from "../../packages/core/dist/index.js";
 import { defineModel } from "../../packages/models/dist/index.js";
 import { flatExpress } from "../../packages/http/dist/index.js";
+import { run as runCLI } from "../../packages/cli/dist/index.js";
+import { readFile as readFileAsync } from "node:fs/promises";
 import express from "express";
 import { users } from "../../fixtures/index.mjs";
 
@@ -92,6 +94,31 @@ const shotReact = await screenshotViteApp("react-app", 5179);
 const shotVue = await screenshotViteApp("vue-app", 5180);
 const shotAngular = await screenshotAngularApp();
 const shotSvelte = await screenshotViteApp("svelte-app", 5181);
+
+// Real runs of the CLI on the test fixtures, captured in memory.
+async function cliOutput(argv, stdin = "") {
+  let out = "";
+  let err = "";
+  await runCLI(argv, {
+    readFile: (p) => readFileAsync(join(here, "../../packages/cli/test/fixtures", p), "utf8"),
+    writeFile: async () => {},
+    stdin: async () => stdin,
+    stdout: (t) => void (out += t),
+    stderr: (t) => void (err += t),
+  });
+  return err + out;
+}
+const genOut = (await cliOutput(["gen", "--openapi", "openapi.yaml"])).split("\n");
+const cliText = [
+  "$ flattype stats users.json",
+  (await cliOutput(["stats"], JSON.stringify(big))).trimEnd(),
+  "",
+  "$ flattype gen --openapi openapi.yaml",
+  // The warning, then the Customer model (the import line and Address come first in the file).
+  genOut[0],
+  ...genOut.slice(genOut.findIndex((l) => l.startsWith("export const Customer")), genOut.findIndex((l) => l.startsWith("export type Customer")) + 1),
+  "…",
+].join("\n");
 
 const data = {
   json: JSON.stringify(response, null, 2),
@@ -196,6 +223,7 @@ const data = {
     "  }); // signals, on top of HttpClient",
     "}",
   ].join("\n"),
+  cli: cliText,
   bars: [
     { label: "JSON, 1,000 users (minified)", value: bigJson },
     { label: "TOON", value: toon(big).length },

@@ -107,6 +107,15 @@
     </div>
   </section>
 
+  <!-- cli -->
+  <section class="scene" id="sc">
+    <div class="kicker">Step 5 · @flattype/cli</div>
+    <h1>Models from your <em>OpenAPI spec.</em></h1>
+    <div class="row">
+      <div class="panel"><div class="bar"><span>terminal</span><b>real output</b></div><pre id="cliTerm" class="mid" style="height:440px"></pre></div>
+    </div>
+  </section>
+
   <!-- 4 LLM -->
   <section class="scene" id="s4">
     <div class="kicker">Built for Claude &amp; LLMs</div>
@@ -155,7 +164,7 @@
     }).join("\n");
   }
   function hlTerm(s) {
-    return s.split("\n").map((l) => (l.startsWith("$") ? '<span class="s">' + esc(l) + "</span>" : esc(l))).join("\n");
+    return s.split("\n").map((l) => (l.startsWith("$") ? '<span class="s">' + esc(l) + "</span>" : l.startsWith("warning:") ? '<span class="n">' + esc(l) + "</span>" : esc(l))).join("\n");
   }
   /** Shows the first `frac` of the text, whole characters. */
   const typed = (text, frac) => text.slice(0, Math.round(text.length * Math.max(0, Math.min(1, frac))));
@@ -163,9 +172,9 @@
   const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 
   // [element id, start, end] in seconds.
-  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 65.5], ["s4", 65.5, 72.5], ["s5", 72.5, 77.5]];
+  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 65.5], ["sc", 65.5, 72.5], ["s4", 72.5, 79.5], ["s5", 79.5, 84.5]];
   const start = (id) => S.find((x) => x[0] === id)[1];
-  window.DURATION = 77.5;
+  window.DURATION = 84.5;
 
   $("jsonBytes").textContent = D.jsonBytes + " bytes minified";
   $("flatBytes").textContent = D.flatBytes + " bytes";
@@ -212,6 +221,9 @@
       img.style.opacity = i === k ? clamp((lf - 2.2) / 0.5) : 0;
       if (i === k) img.style.transform = "translateY(" + -Math.max(0, Math.min(1, (lf - 3.2) / 2.4)) * Math.max(0, img.offsetHeight - 420) + "px)";
     });
+    const lc = t - start("sc");
+    $("cliTerm").innerHTML = hlTerm(typed(D.cli, lc / 4));
+    $("cliTerm").scrollTop = $("cliTerm").scrollHeight;
     const l4 = t - start("s4");
     document.querySelectorAll("#bars .fill").forEach((f, i) => { f.style.width = ease((l4 - 0.6 - i * 0.5) / 1.2) * Number(f.dataset.w) * 100 + "%"; });
     document.querySelectorAll("#llm .callout").forEach((c, i) => { c.style.opacity = clamp((l4 - 2.8 - i * 0.6) / 0.4); });

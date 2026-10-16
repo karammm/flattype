@@ -58,3 +58,32 @@ export type UsersPage = Infer<typeof UsersPage>;
     expect(() => infer(5)).toThrow(TypeError);
   });
 });
+
+describe("toSource with several models", () => {
+  it("names shared models once and references them", async () => {
+    const { defineModel } = await import("../src/index.js");
+    const Address = defineModel({ city: "string" });
+    const User = defineModel({ id: "number", address: Address });
+    const Order = defineModel({ id: "number", buyer: User, ship_to: Address });
+    expect(toSource({ Order, User, Address })).toBe(`import { defineModel, type Infer } from "@flattype/models";
+
+export const Address = defineModel({
+  city: "string",
+});
+export type Address = Infer<typeof Address>;
+
+export const User = defineModel({
+  id: "number",
+  address: Address,
+});
+export type User = Infer<typeof User>;
+
+export const Order = defineModel({
+  id: "number",
+  buyer: User,
+  ship_to: Address,
+});
+export type Order = Infer<typeof Order>;
+`);
+  });
+});

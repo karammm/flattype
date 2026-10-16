@@ -94,12 +94,13 @@ New package: `@flattype/ai`
 - `countTokens()`: a token-savings report through the Anthropic token-counting API
 - `toolResult()` for MCP, `claudeToolResult()` for the Claude API, `examples/ai-claude` (tested over stdio with a real MCP client)
 
-## v1.8.0: CLI and code generation
+## v1.8.0: CLI and code generation ✅
 
 New package: `@flattype/cli`
 
-- `flattype encode` / `flattype decode` for files and stdin
-- `flattype gen --openapi spec.yaml` and `flattype gen --sample response.json` generate models
+- `flattype encode` / `flattype decode` / `flattype stats` for files and stdin
+- `flattype gen --openapi spec.yaml` (OpenAPI 3.0/3.1, Swagger 2, JSON or YAML) and `flattype gen --sample response.json` generate models
+- `toSource({ ...models })` in `@flattype/models` for multi-model files
 
 ## v1.9.0: Docs, playground, hardening
 

@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const ORDER = ["shared", "core", "models", "http", "react", "vue", "angular", "svelte", "ai"];
+const ORDER = ["shared", "core", "models", "http", "react", "vue", "angular", "svelte", "ai", "cli"];
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const passThrough = args.filter((a) => a.startsWith("--otp=") || a === "--provenance" || a.startsWith("--tag="));

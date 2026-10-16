@@ -2,6 +2,21 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.8.0
+
+### New: `@flattype/cli`
+
+- `flattype encode` / `flattype decode` convert JSON and Flat Notation from a file or stdin (`--delimiter`, `--indent`, `--no-tables`, `--compact`, `--lenient`, `-o`)
+- `flattype stats` compares bytes and gzip bytes as JSON and as Flat Notation
+- `flattype gen --sample response.json --name User` prints TypeScript models inferred from a real response (JSON or Flat Notation)
+- `flattype gen --openapi openapi.yaml -o models.ts` writes one model per object schema of an OpenAPI 3.0/3.1 or Swagger 2 spec, in JSON or YAML. It handles `$ref`, `allOf`, `required`, `nullable` and `type: [..., "null"]`, `oneOf` with null, `date` / `date-time`, enums and inline objects. Recursive references become `"any"`, with a warning
+- `fromOpenAPI(spec)` for use from code
+- Clear errors with exit codes (1 for bad input, 2 for usage)
+
+### `@flattype/models`
+
+- `toSource({ User, Order })` prints several named models into one file and references shared ones by name
+
 ## 1.7.0
 
 ### New: `@flattype/ai`
