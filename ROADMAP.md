@@ -13,7 +13,7 @@ Each release is built, tested, tagged, and published on its own before work on t
 ## Release checklist (every version)
 
 1. Implement the scope, with unit tests (and browser tests for framework packages)
-2. Add an example and update the READMEs
+2. Add an example, update the READMEs, and re-render the intro video (`pnpm video`) if what it shows changed
 3. Add a changeset
 4. CI green on Node 18/20/22/24, under the size budget (`pnpm check:size`)
 5. Pack and install the tarballs in a clean project (ESM, CJS, types)
@@ -41,6 +41,7 @@ New package: `@flattype/models`
 - Key mapping (`snake_case` → `camelCase`, `rename`), coercion (ISO dates, numeric strings), defaults, optional/nullable fields
 - `infer(sample)` builds a model from a real API response
 - Works on decoded Flat Notation and on plain JSON
+- `toSource(model, name)` prints TypeScript for a model, and `examples/node-models` shows the whole flow
 
 ## v1.2.0: HTTP integration
 

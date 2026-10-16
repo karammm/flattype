@@ -1,0 +1,104 @@
+// Renders docs/assets/flattype-intro.{mp4,gif} from scene.html. Every number and code sample in the
+// video is real output from the built packages, computed here.
+//   pnpm build && FFMPEG=/path/to/ffmpeg node scripts/video/record.mjs
+// Needs ffmpeg (FFMPEG env var or on PATH) and Playwright's Chromium (`npx playwright install chromium`).
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { chromium } from "playwright-core";
+import { encode as toon } from "@toon-format/toon";
+import { encode, stats } from "../../packages/core/dist/index.js";
+import { defineModel } from "../../packages/models/dist/index.js";
+import { users } from "../../fixtures/index.mjs";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const assets = join(here, "../../docs/assets");
+const ffmpeg = process.env.FFMPEG ?? "ffmpeg";
+const FPS = 30;
+
+const response = {
+  page: 1,
+  data: [
+    { id: "1", full_name: "Alice Martin", created_at: "2026-01-01T09:00:00Z", role: "admin", address: { city: "Paris" } },
+    { id: "2", full_name: "Bob Singh", created_at: "2026-01-02T10:30:00Z", role: "editor", address: { city: "Delhi" } },
+    { id: "3", full_name: "Chen Wei", created_at: "2026-01-03T08:15:00Z", role: "viewer", address: { city: "Tokyo" } },
+  ],
+};
+const flat = encode(response);
+const small = stats(response);
+
+const Address = defineModel({ city: "string" });
+const User = defineModel({ id: "number", fullName: "string", createdAt: "date", role: "string", address: Address });
+const first = User.parseList(response.data)[0];
+const out = JSON.stringify(first, (k, v) => (k === "createdAt" ? `@Date(${v})` : v), 2).replace(
+  /"@Date\((.*)\)"/,
+  "Date(\"$1\")",
+);
+
+const big = users(1000);
+const bigJson = JSON.stringify(big).length;
+const bigFlat = encode(big).length;
+
+const data = {
+  json: JSON.stringify(response, null, 2),
+  jsonBytes: small.jsonBytes,
+  flat,
+  flatBytes: small.flatBytes,
+  savedSmall: Math.round(small.saved * 100),
+  notes: { 0: "plain key: value", 1: "keys written once; address.city is a nested path", 2: "then one row per user" },
+  rules: [
+    '<b>"1"</b> stays quoted because it is a string, so decode() gives back exactly the same JSON',
+    "Mixed arrays fall back to paths: <b>items[0].id: 1</b>",
+    "decode(encode(x)) is checked against <b>JSON.parse</b> with thousands of random inputs",
+  ],
+  code: [
+    'import { defineModel } from "@flattype/models";',
+    "",
+    "const Address = defineModel({ city: \"string\" });",
+    "const User = defineModel({",
+    '  id: "number",       // "1" becomes 1',
+    '  fullName: "string", // reads full_name',
+    '  createdAt: "date",  // ISO string becomes Date',
+    '  role: "string",',
+    "  address: Address,",
+    "});",
+    "",
+    "const users = User.parseList(res.data);",
+  ].join("\n"),
+  out,
+  bars: [
+    { label: "JSON, 1,000 users (minified)", value: bigJson },
+    { label: "TOON", value: toon(big).length },
+    { label: "Flat Notation", value: bigFlat },
+  ],
+  llm: [
+    `<b>${Math.round((1 - bigFlat / bigJson) * 100)}% fewer characters</b> than minified JSON for the same 1,000 users`,
+    "Readable by people and models alike: <b>key: value</b> lines and tables",
+    "decode(reply, { <b>strict: false</b> }) recovers data from model output",
+  ],
+};
+
+const frames = mkdtempSync(join(tmpdir(), "flattype-video-"));
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.addInitScript((d) => (window.DATA = d), data);
+await page.goto(pathToFileURL(join(here, "scene.html")).href);
+const duration = await page.evaluate(() => window.DURATION);
+const total = Math.round(duration * FPS);
+for (let i = 0; i < total; i++) {
+  await page.evaluate((t) => window.render(t), i / FPS);
+  await page.screenshot({ path: join(frames, `${String(i).padStart(5, "0")}.png`) });
+  if (i % 150 === 0) console.log(`frame ${i}/${total}`);
+}
+await browser.close();
+
+mkdirSync(assets, { recursive: true });
+const mp4 = join(assets, "flattype-intro.mp4");
+const gif = join(assets, "flattype-intro.gif");
+const run = (args) => execFileSync(ffmpeg, ["-y", "-loglevel", "error", ...args], { stdio: "inherit" });
+run(["-framerate", String(FPS), "-i", join(frames, "%05d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "slow", "-movflags", "+faststart", mp4]);
+run(["-i", mp4, "-vf", "fps=12,scale=820:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", gif]);
+rmSync(frames, { recursive: true, force: true });
+console.log(`wrote ${mp4}\nwrote ${gif}`);

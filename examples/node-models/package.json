@@ -1,0 +1,12 @@
+{
+  "name": "@flattype/example-node-models",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@flattype/core": "workspace:*",
+    "@flattype/models": "workspace:*"
+  }
+}

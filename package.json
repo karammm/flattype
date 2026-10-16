@@ -17,13 +17,15 @@
     "compare": "node scripts/compare.mjs",
     "check:size": "node scripts/check-size.mjs",
     "check:dist": "node scripts/check-dist.mjs",
-    "release:npm": "turbo run build --filter=./packages/* && node scripts/publish-npm.mjs"
+    "release:npm": "turbo run build --filter=./packages/* && node scripts/publish-npm.mjs",
+    "video": "node scripts/video/record.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.11",
     "@toon-format/toon": "^2.1.0",
     "@types/node": "^22.10.2",
     "esbuild": "^0.24.2",
+    "playwright-core": "1.49.1",
     "tsup": "^8.3.5",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",

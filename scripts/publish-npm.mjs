@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const ORDER = ["shared", "core"];
+const ORDER = ["shared", "core", "models"];
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const passThrough = args.filter((a) => a.startsWith("--otp=") || a === "--provenance" || a.startsWith("--tag="));
