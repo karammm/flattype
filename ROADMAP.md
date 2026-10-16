@@ -33,7 +33,7 @@ Packages: `@flattype/core`, `@flattype/shared`
 - Tests: property-based round trip (fast-check) across every option, escaping edge cases, malformed input
 - Benchmarks: bytes, gzip bytes and parse time against JSON and TOON (`pnpm compare`)
 
-## v1.1.0: Automatic model mapping
+## v1.1.0: Automatic model mapping ✅
 
 New package: `@flattype/models`
 
