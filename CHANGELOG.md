@@ -2,6 +2,12 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.4.1
+
+### Fixes
+
+- `@flattype/vue`: `useFlatSuspense` returned before its data was set during server-side rendering with Vue 3.5, because Vue stops watchers after setup and that aborted the first request. The first request now runs outside the watcher. Server-rendering tests were added
+
 ## 1.4.0
 
 ### New: `@flattype/vue`

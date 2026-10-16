@@ -1,5 +1,13 @@
 # @flattype/react
 
+## 1.4.1
+
+### Patch Changes
+
+- @flattype/core@1.4.1
+- @flattype/http@1.4.1
+- @flattype/shared@1.4.1
+
 ## 1.4.0
 
 ### Minor Changes

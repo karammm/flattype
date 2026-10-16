@@ -1,6 +1,6 @@
 {
   "name": "@flattype/models",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Typed models for API data: key mapping, coercion and defaults, from JSON or Flat Notation.",
   "license": "MIT",
   "type": "module",

@@ -24,13 +24,35 @@ export interface FlatState<T> {
 
 const isAbort = (e: unknown): boolean => e instanceof Error && e.name === "AbortError";
 
-function start(url: Url, options: UseFlatOptions & { model?: Parser<unknown>; list?: boolean }) {
+function start(url: Url, options: UseFlatOptions & { model?: Parser<unknown>; list?: boolean }, immediate: boolean) {
   const config = useFlatConfig();
   const data = shallowRef<unknown>();
   const error = shallowRef<unknown>();
   const loading = ref(false);
   const tick = ref(0);
-  let settled: Promise<void> = Promise.resolve();
+
+  /** Loads `u` into the refs, unless `signal` is aborted first. */
+  const load = (u: string, signal: AbortSignal): Promise<void> => {
+    loading.value = true;
+    error.value = undefined;
+    const { model, list, init } = options;
+    return flatFetch(resolveURL(config, u), {
+      ...mergeInit(config, init, signal),
+      ...(config.fetch ? { fetch: config.fetch } : {}),
+      ...(model ? { model, list: list === true } : {}),
+    } as Parameters<typeof flatFetch>[1]).then(
+      (value) => {
+        if (signal.aborted) return;
+        data.value = value;
+        loading.value = false;
+      },
+      (e: unknown) => {
+        if (signal.aborted || isAbort(e)) return;
+        error.value = e;
+        loading.value = false;
+      },
+    );
+  };
 
   watch(
     [() => toValue(url), () => toValue(options.enabled) !== false, tick],
@@ -41,30 +63,12 @@ function start(url: Url, options: UseFlatOptions & { model?: Parser<unknown>; li
       }
       const controller = new AbortController();
       onCleanup(() => controller.abort());
-      loading.value = true;
-      error.value = undefined;
-      const { model, list, init } = options;
-      settled = flatFetch(resolveURL(config, u), {
-        ...mergeInit(config, init, controller.signal),
-        ...(config.fetch ? { fetch: config.fetch } : {}),
-        ...(model ? { model, list: list === true } : {}),
-      } as Parameters<typeof flatFetch>[1]).then(
-        (value) => {
-          if (controller.signal.aborted) return;
-          data.value = value;
-          loading.value = false;
-        },
-        (e: unknown) => {
-          if (controller.signal.aborted || isAbort(e)) return;
-          error.value = e;
-          loading.value = false;
-        },
-      );
+      void load(u, controller.signal);
     },
-    { immediate: true },
+    { immediate },
   );
 
-  return { state: { data, error, loading, refetch: () => void tick.value++ }, settled: () => settled };
+  return { state: { data, error, loading, refetch: () => void tick.value++ }, load };
 }
 
 /**
@@ -79,7 +83,7 @@ export function useFlat(url: Url, options?: UseFlatOptions): FlatState<JsonValue
 export function useFlat<T>(url: Url, options: UseFlatOptions & { model: Parser<T>; list?: false }): FlatState<T>;
 export function useFlat<T>(url: Url, options: UseFlatOptions & { model: Parser<T>; list: true }): FlatState<T[]>;
 export function useFlat(url: Url, options: UseFlatOptions & { model?: Parser<unknown>; list?: boolean } = {}): FlatState<unknown> {
-  return start(url, options).state;
+  return start(url, options, true).state;
 }
 
 export interface FlatSuspenseState<T> extends Omit<FlatState<T>, "data"> {
@@ -101,8 +105,11 @@ export async function useFlatSuspense(
   url: Url,
   options: Pick<UseFlatOptions, "init"> & { model?: Parser<unknown>; list?: boolean } = {},
 ): Promise<FlatSuspenseState<unknown>> {
-  const { state, settled } = start(url, options);
-  await settled();
+  // The first request runs outside the watcher: during server rendering Vue stops watchers (and so would
+  // abort a watcher's request) as soon as setup returns. The watcher only handles later URL changes.
+  const { state, load } = start(url, options, false);
+  const first = toValue(url);
+  if (first != null) await load(first, new AbortController().signal);
   if (state.error.value !== undefined) throw state.error.value;
   return state as FlatSuspenseState<unknown>;
 }
