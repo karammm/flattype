@@ -1,0 +1,33 @@
+name: Release (npm)
+
+# Push a tag like v1.6.0 to publish every @flattype/* package.
+# Uses npm trusted publishing (OIDC): no npm token is stored in GitHub. Each package must have this
+# workflow configured as its trusted publisher on npmjs.com (Settings -> Trusted publishing).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          # No `registry-url` here: it makes setup-node inject a placeholder NODE_AUTH_TOKEN, which npm
+          # would use instead of trusted publishing (OIDC) and fail with "401 token is invalid".
+      - run: npm install -g npm@11
+      - run: npm --version
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build typecheck test --filter="./packages/*"
+      - run: pnpm check:dist
+      - run: node scripts/publish-npm.mjs --provenance
