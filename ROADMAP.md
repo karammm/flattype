@@ -22,7 +22,7 @@ Each release is built, tested, tagged, and published on its own before work on t
 
 ---
 
-## v1.0.0: Core engine 🚧
+## v1.0.0: Core engine ✅
 
 Packages: `@flattype/core`, `@flattype/shared`
 
