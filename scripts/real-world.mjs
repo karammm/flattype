@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
 import { encode as toon, decode as untoon } from "@toon-format/toon";
 import { decode, encode } from "../packages/core/dist/index.js";
+import { fromModelOutput } from "../packages/ai/dist/index.js";
 
 const NAMES = ["64KB", "128KB", "256KB", "512KB", "1MB", "5MB"];
 // Both variants of each file are read: NAME.json (pretty-printed) and NAME-min.json.
@@ -68,6 +69,32 @@ const big = rows.find((r) => r.name === "5MB");
 const first = JSON.parse(dir ? readFileSync(join(dir, "64KB.json"), "utf8") : await (await fetch(`${BASE}64KB.json`)).text());
 const unique = first.length;
 const bioShare = first.reduce((a, x) => a + x.bio.length, 0) / first.reduce((a, x) => a + JSON.stringify(x).length, 0);
+// missing-colon.json: 64KB-min.json with one colon removed.
+const broken = dir ? readFileSync(join(dir, "missing-colon.json"), "utf8") : await (await fetch(`${BASE}missing-colon.json`)).text();
+let jsonError = "";
+try {
+  JSON.parse(broken);
+} catch (e) {
+  jsonError = e.message;
+}
+const at = Number(/position (\d+)/.exec(jsonError)?.[1] ?? 0);
+const snippet = broken.slice(broken.lastIndexOf("{", at), broken.indexOf(",", at + 12) );
+const damagedName = /"name": "([^"]+)"/.exec(snippet)?.[1];
+const idx = first.findIndex((r) => r.name === damagedName);
+const flatLines = encode(first).split("\n");
+const goodRow = flatLines[idx + 1];
+const badRow = goodRow.replace(", ", " ");
+const badFlat = [...flatLines.slice(0, idx + 1), badRow, ...flatLines.slice(idx + 2)].join("\n");
+let flatError = "";
+try {
+  decode(badFlat);
+} catch (e) {
+  flatError = e.message;
+}
+const lenient = decode(badFlat, { strict: false });
+const intact = lenient.filter((r, i) => same(r, first[i])).length;
+const fromReply = JSON.stringify(fromModelOutput(broken));
+
 const md = `# Benchmark: Microsoft Edge demo JSON (64 KB to 5 MB, pretty and minified)
 
 The [JSON dummy data](https://github.com/MicrosoftEdge/Demos/tree/main/json-dummy-data) files from Microsoft's Edge demos, both the pretty-printed \`.json\` and the \`-min.json\` versions, converted with \`@flattype/core\`. Every file is a list of people with the same five fields, the most common shape of an API response. Every number below was measured by [\`scripts/real-world.mjs\`](../scripts/real-world.mjs) on the real files, and every conversion was decoded again and checked to equal the original.
@@ -141,6 +168,30 @@ So the large savings are for text that isn't compressed, above all **LLM prompts
 Measured on Node ${process.versions.node}, ${cpus()[0].model.trim()}, best of 7 runs. \`JSON.parse\` and \`JSON.stringify\` are built into the engine. FlatType is plain JavaScript.
 
 The [Python package](../python) writes the same ${kb(big.flat)} byte for byte (\`pip install flattype\`; the SHA-256 of both outputs matched when this page was written).
+
+## A broken file: missing-colon.json
+
+The demo site also has [missing-colon.json](${BASE}missing-colon.json): 64KB-min.json with one character removed, the colon in \`${snippet.slice(snippet.indexOf('"language"'), snippet.indexOf('"language"') + 22)}…\`, record ${idx + 1} of ${first.length}.
+
+| | What happens |
+| --- | --- |
+| \`JSON.parse\` | Throws \`${jsonError}\`. **0 of ${first.length} records** are read, because JSON is one nested value: one wrong character anywhere invalidates the whole document. |
+| \`flattype encode missing-colon.json\` | Stops with the same message. FlatType reads JSON with \`JSON.parse\`, so it can't convert JSON that is already broken. |
+| \`fromModelOutput(text)\` (\`@flattype/ai\`) | Returns \`${fromReply}\`. The text looks like JSON, the JSON fails, and the Flat Notation fallback finds nothing either, so the data is lost without an error. |
+
+The same one-character slip **inside Flat Notation**, a missing comma in that record's row:
+
+\`\`\`
+${goodRow.slice(0, 64)}…    (original)
+${badRow.slice(0, 64)}…     (comma missing)
+\`\`\`
+
+| | What happens |
+| --- | --- |
+| \`decode(text)\` | Throws \`${flatError}\`, pointing at that record's line. |
+| \`decode(text, { strict: false })\` | Reads all ${lenient.length} records. **${intact} are exactly right**; the damaged one has its fields shifted by one (\`name\` is \`"${lenient[idx].name}"\`, the last field is \`null\`). |
+
+Each record is one line, so a mistake stays in its line. That only holds for rows, though: if the colon at the end of the table header is missing, the header can't be read, and the rows can't be read without it.
 
 ## Run it yourself
 

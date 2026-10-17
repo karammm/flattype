@@ -91,13 +91,37 @@ So the large savings are for text that isn't compressed, above all **LLM prompts
 | | Time |
 | --- | ---: |
 | `JSON.parse` (native) | 4.1 ms |
-| `decode` (Flat Notation) | 11.8 ms |
-| `JSON.stringify` (native) | 4.4 ms |
-| `encode` (Flat Notation) | 11.6 ms |
+| `decode` (Flat Notation) | 11.5 ms |
+| `JSON.stringify` (native) | 4.1 ms |
+| `encode` (Flat Notation) | 11.4 ms |
 
 Measured on Node 24.15.0, Apple M4, best of 7 runs. `JSON.parse` and `JSON.stringify` are built into the engine. FlatType is plain JavaScript.
 
 The [Python package](../python) writes the same 3.73 MB byte for byte (`pip install flattype`; the SHA-256 of both outputs matched when this page was written).
+
+## A broken file: missing-colon.json
+
+The demo site also has [missing-colon.json](https://microsoftedge.github.io/Demos/json-dummy-data/missing-colon.json): 64KB-min.json with one character removed, the colon in `"language" "Galician",…`, record 76 of 197.
+
+| | What happens |
+| --- | --- |
+| `JSON.parse` | Throws `Expected ':' after property name in JSON at position 22260 (line 1 column 22261)`. **0 of 197 records** are read, because JSON is one nested value: one wrong character anywhere invalidates the whole document. |
+| `flattype encode missing-colon.json` | Stops with the same message. FlatType reads JSON with `JSON.parse`, so it can't convert JSON that is already broken. |
+| `fromModelOutput(text)` (`@flattype/ai`) | Returns `{}`. The text looks like JSON, the JSON fails, and the Flat Notation fallback finds nothing either, so the data is lost without an error. |
+
+The same one-character slip **inside Flat Notation**, a missing comma in that record's row:
+
+```
+  Noa Ervello, Galician, W9FR842CI16V8NU3, "Aliquam sollicitudin…    (original)
+  Noa Ervello Galician, W9FR842CI16V8NU3, "Aliquam sollicitudin …     (comma missing)
+```
+
+| | What happens |
+| --- | --- |
+| `decode(text)` | Throws `Expected 5 values, got 4 (line 77, column 1)`, pointing at that record's line. |
+| `decode(text, { strict: false })` | Reads all 197 records. **196 are exactly right**; the damaged one has its fields shifted by one (`name` is `"Noa Ervello Galician"`, the last field is `null`). |
+
+Each record is one line, so a mistake stays in its line. That only holds for rows, though: if the colon at the end of the table header is missing, the header can't be read, and the rows can't be read without it.
 
 ## Run it yourself
 
