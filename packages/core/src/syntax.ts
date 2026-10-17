@@ -1,14 +1,18 @@
 /** Errors from `decode` and `unflatten`, with the 1-based line and column of the problem. */
 export class FlatDecodeError extends SyntaxError {
   constructor(
-    message: string,
+    /** The problem without its position, e.g. `Missing value`. */
+    readonly reason: string,
     readonly line: number,
     readonly column: number,
   ) {
-    super(`${message} (line ${line}, column ${column})`);
+    super(`${reason} (line ${line}, column ${column})`);
     this.name = "FlatDecodeError";
   }
 }
+
+/** Reports a problem lenient decoding repaired, and the `repair` it made. */
+export type Warn = (reason: string, line: number, column: number, repair: string) => void;
 
 /** Exactly the JSON number grammar. Anything else bare is a string. */
 export const NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;

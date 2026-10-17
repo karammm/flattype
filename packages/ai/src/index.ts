@@ -1,4 +1,4 @@
-import { decode, encode, type EncodeOptions, type JsonValue } from "@flattype/core";
+import { decode, encode, type EncodeOptions, type FlatWarning, type JsonValue } from "@flattype/core";
 
 /** Anything with `parse` / `parseList`, such as a model from `@flattype/models`. */
 export interface Parser<T> {
@@ -85,30 +85,74 @@ function extract(text: string): { body: string; json: boolean } {
 }
 
 /**
+ * Thrown by `fromModelOutput` when the reply holds JSON that can't be parsed. It says where the JSON breaks
+ * (when the JavaScript engine reports a position) and shows the text around it.
+ */
+export class ModelOutputError extends SyntaxError {
+  constructor(
+    message: string,
+    /** 1-based position of the problem inside the JSON, when known. */
+    readonly line?: number,
+    readonly column?: number,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = "ModelOutputError";
+  }
+}
+
+/** Where `JSON.parse` failed, from its message (V8: "position N", Firefox: "line L column C"). */
+function brokenJson(json: string, error: Error): ModelOutputError {
+  let pos = Number(/position (\d+)/.exec(error.message)?.[1] ?? NaN);
+  const lc = /line (\d+) column (\d+)/.exec(error.message);
+  if (Number.isNaN(pos) && lc) {
+    const lines = json.split("\n").slice(0, Number(lc[1]) - 1);
+    pos = lines.reduce((n, l) => n + l.length + 1, 0) + Number(lc[2]) - 1;
+  }
+  if (Number.isNaN(pos)) return new ModelOutputError(`The data is JSON, but it is broken: ${error.message}`, undefined, undefined, { cause: error });
+  const before = json.slice(0, pos);
+  const line = before.split("\n").length;
+  const column = pos - before.lastIndexOf("\n");
+  const near = (json.slice(Math.max(0, pos - 30), pos) + " ⟶ " + json.slice(pos, pos + 30)).replace(/\s+/g, " ").trim();
+  return new ModelOutputError(`The data is JSON, but it is broken at line ${line}, column ${column}: ${near}`, line, column, { cause: error });
+}
+
+/** Text that is JSON rather than Flat Notation. A Flat Notation root table or list also starts with `[`. */
+const looksLikeJson = (s: string): boolean => s[0] === "{" || (s[0] === "[" && !/^\[\d*[|\t]?\][{:]/.test(s));
+
+/**
  * Reads data out of an LLM reply, tolerating what models actually send back: `<data>` tags or code fences
  * around it, a sentence before or after, small format slips, or plain JSON instead. With a model, the
  * result is mapped and validated (throws `ModelError` with every problem).
  *
+ * Every slip that was repaired is passed to `onWarning` with its line and column, so you can show where the
+ * data may be wrong. JSON that can't be parsed throws `ModelOutputError`, saying where it breaks.
+ *
  * ```ts
- * const rows = fromModelOutput(reply, { model: Row, list: true });
+ * const rows = fromModelOutput(reply, { model: Row, list: true, onWarning: (w) => console.warn(w.message) });
  * ```
  */
-export function fromModelOutput(text: string): JsonValue;
-export function fromModelOutput<T>(text: string, options: { model: Parser<T>; list?: false }): T;
-export function fromModelOutput<T>(text: string, options: { model: Parser<T>; list: true }): T[];
-export function fromModelOutput(text: string, options: { model?: Parser<unknown>; list?: boolean } = {}): unknown {
+export function fromModelOutput(text: string, options?: { onWarning?: (warning: FlatWarning) => void }): JsonValue;
+export function fromModelOutput<T>(text: string, options: { model: Parser<T>; list?: false; onWarning?: (warning: FlatWarning) => void }): T;
+export function fromModelOutput<T>(text: string, options: { model: Parser<T>; list: true; onWarning?: (warning: FlatWarning) => void }): T[];
+export function fromModelOutput(
+  text: string,
+  options: { model?: Parser<unknown>; list?: boolean; onWarning?: (warning: FlatWarning) => void } = {},
+): unknown {
   const { body, json } = extract(text);
   const trimmed = body.trim();
   let value: unknown;
-  if (json || /^[[{]/.test(trimmed)) {
+  if (json || looksLikeJson(trimmed)) {
     try {
       value = JSON.parse(trimmed);
-    } catch {
-      value = undefined;
+    } catch (e) {
+      // Reading broken JSON as Flat Notation would only lose the data quietly.
+      throw brokenJson(trimmed, e as Error);
     }
+  } else {
+    // Lenient, and lines that aren't Flat Notation (prose like "Here are the results:") are dropped, in one pass.
+    value = decode(body, { strict: false, skipInvalidLines: true, onWarning: options.onWarning });
   }
-  // Lenient, and lines that aren't Flat Notation (prose like "Here are the results:") are dropped, in one pass.
-  if (value === undefined) value = decode(body, { strict: false, skipInvalidLines: true });
   const { model, list } = options;
   if (!model) return value;
   return list ? model.parseList(value) : model.parse(value);

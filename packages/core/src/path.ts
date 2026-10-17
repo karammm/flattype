@@ -1,5 +1,5 @@
 import type { Delimiter } from "@flattype/shared";
-import { FlatDecodeError, formatKey, isKeyChar, scanString } from "./syntax.js";
+import { FlatDecodeError, formatKey, isKeyChar, scanString, type Warn } from "./syntax.js";
 
 /** A key (string) or an array index (number). */
 export type Segment = string | number;
@@ -150,9 +150,10 @@ function setOwn(obj: Record<string, unknown>, key: string, value: unknown): void
 }
 
 /**
- * Writes `value` at `segments` under `holder.root`, creating objects and arrays on the way.
- * With `dry`, nothing is written but every error is still thrown: containers it would create are made and
- * walked into, just never attached. So a line that fails can be skipped without leaving anything behind.
+ * Writes `value` at `segments` under `holder.root`, creating objects and arrays on the way. In lenient mode,
+ * what it repairs (duplicates, skipped indexes) goes to `warn`.
+ * With `dry`, nothing is written and nothing is reported, but every error is still thrown: containers it would
+ * create are made and walked into, just never attached. So a line that fails can be skipped cleanly.
  */
 export function assign(
   holder: { root?: unknown },
@@ -161,11 +162,17 @@ export function assign(
   strict: boolean,
   line: number,
   dry = false,
+  warn?: Warn,
 ): void {
   let parent: Record<string, unknown> | unknown[] = holder as Record<string, unknown>;
   let key: Segment = "root";
   const fail = (msg: string): never => {
     throw new FlatDecodeError(msg, line, 1);
+  };
+  /** Strict: an error. Lenient: reported, then repaired by the caller. */
+  const problem = (msg: string, repair: string): void => {
+    if (strict) fail(msg);
+    if (!dry) warn?.(msg, line, 1, repair);
   };
 
   const slot = (create: () => unknown, leaf: boolean): unknown => {
@@ -173,7 +180,7 @@ export function assign(
       const arr = parent as unknown[];
       if (key < arr.length) {
         if (leaf) {
-          if (strict) fail(`Duplicate index [${key}]`);
+          problem(`Duplicate index [${key}]`, "the last value is kept");
           if (!dry) arr[key] = create();
         }
         return arr[key];
@@ -183,6 +190,7 @@ export function assign(
         // Lenient mode fills small gaps with null, but a tiny line like `a[999999999]: 1` must not
         // allocate a billion entries.
         if (key - arr.length > MAX_GAP) fail(`Index [${key}] is too far past [${arr.length}]`);
+        problem(`Index [${key}] skips [${arr.length}]`, "the gap is filled with null");
         if (!dry) while (arr.length < key) arr.push(null);
       }
       const v = create();
@@ -192,7 +200,7 @@ export function assign(
     const obj = parent as Record<string, unknown>;
     if (hasOwn.call(obj, key) && obj[key] !== undefined) {
       if (!leaf) return obj[key];
-      if (strict) fail(`Duplicate key '${key}'`);
+      problem(`Duplicate key '${key}'`, "the last value is kept");
     }
     const v = create();
     if (!dry) setOwn(obj, key, v);
@@ -218,7 +226,7 @@ const show = (segments: Segment[]): string =>
  * Replaces each reference placeholder with the object or array its target path points to, in document order.
  * A target may pass through a reference resolved before it, but not through one still waiting.
  */
-export function resolveRefs(holder: { root?: unknown }, refs: Ref[], strict: boolean): void {
+export function resolveRefs(holder: { root?: unknown }, refs: Ref[], strict: boolean, warn?: Warn): void {
   const isContainer = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !(v instanceof Ref);
   for (const ref of refs) {
     // Lenient decoding may have overwritten the placeholder (or a parent) with a later line; that line wins.
@@ -234,7 +242,9 @@ export function resolveRefs(holder: { root?: unknown }, refs: Ref[], strict: boo
     let value: unknown = cur;
     if (cur === null || typeof cur !== "object" || cur instanceof Ref) {
       const why = cur instanceof Ref ? "is a reference that comes later" : cur === undefined ? "doesn't exist" : "isn't an object or array";
-      if (strict) throw new FlatDecodeError(`Reference target '${show(ref.target)}' ${why}`, ref.line, 1);
+      const msg = `Reference target '${show(ref.target)}' ${why}`;
+      if (strict) throw new FlatDecodeError(msg, ref.line, 1);
+      warn?.(msg, ref.line, 1, "read as null");
       value = null;
     }
     setOwn(parent, ref.segments[last] as string, value);

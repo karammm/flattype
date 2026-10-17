@@ -5,16 +5,33 @@ from __future__ import annotations
 import json
 import math
 import re
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Callable
 
 
 class FlatDecodeError(ValueError):
     """Raised by :func:`decode` on malformed input, with the 1-based ``line`` and ``column`` of the problem."""
 
-    def __init__(self, message: str, line: int, column: int) -> None:
-        super().__init__(f"{message} (line {line}, column {column})")
+    def __init__(self, reason: str, line: int, column: int) -> None:
+        super().__init__(f"{reason} (line {line}, column {column})")
+        #: The problem without its position, e.g. ``Missing value``.
+        self.reason = reason
         self.line = line
         self.column = column
+
+
+@dataclass(frozen=True)
+class FlatWarning:
+    """A problem lenient decoding repaired, and where it was."""
+
+    #: What was wrong and what was done, e.g. ``Expected 5 values, got 4: the missing values are null``.
+    message: str
+    line: int
+    column: int
+
+
+#: Reports a problem lenient decoding repaired: ``(reason, line, column, repair)``.
+Warn = Callable[[str, int, int, str], None]
 
 
 #: Exactly the JSON number grammar (ASCII digits only). Anything else bare is a string.

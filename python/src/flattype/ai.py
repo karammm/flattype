@@ -14,8 +14,18 @@ from typing import Any, Callable, Protocol
 
 from ._decode import decode
 from ._encode import encode
+from ._syntax import FlatWarning
 
-__all__ = ["LEGEND", "claude_tool_result", "count_tokens", "from_model_output", "output_instructions", "to_prompt", "tool_result"]
+__all__ = [
+    "LEGEND",
+    "ModelOutputError",
+    "claude_tool_result",
+    "count_tokens",
+    "from_model_output",
+    "output_instructions",
+    "to_prompt",
+    "tool_result",
+]
 
 #: One line that teaches a model the format. It is a ``#`` comment, so a block that includes it is still valid.
 LEGEND = (
@@ -85,26 +95,61 @@ def _extract(text: str) -> tuple[str, bool]:
     return text, False
 
 
-def from_model_output(text: str, model: Callable[[Any], Any] | None = None, *, many: bool = False) -> Any:
+class ModelOutputError(ValueError):
+    """Raised by :func:`from_model_output` when the reply holds JSON that can't be parsed. ``line`` and ``column``
+    say where the JSON breaks, and the message shows the text around it."""
+
+    def __init__(self, message: str, line: int | None = None, column: int | None = None) -> None:
+        super().__init__(message)
+        self.line = line
+        self.column = column
+
+
+_SPACE = re.compile(r"\s+")
+_FLAT_ROOT = re.compile(r"\[[0-9]*[|\t]?\][{:]")
+
+
+def _looks_like_json(s: str) -> bool:
+    """JSON rather than Flat Notation. A Flat Notation root table or list also starts with ``[``."""
+    return s[:1] == "{" or (s[:1] == "[" and not _FLAT_ROOT.match(s))
+
+
+def _broken_json(text: str, error: json.JSONDecodeError) -> ModelOutputError:
+    pos = error.pos
+    before = text[:pos]
+    line = before.count("\n") + 1
+    column = pos - before.rfind("\n")
+    near = _SPACE.sub(" ", text[max(0, pos - 30) : pos] + " ⟶ " + text[pos : pos + 30]).strip()
+    return ModelOutputError(f"The data is JSON, but it is broken at line {line}, column {column}: {near}", line, column)
+
+
+def from_model_output(
+    text: str,
+    model: Callable[[Any], Any] | None = None,
+    *,
+    many: bool = False,
+    on_warning: Callable[[FlatWarning], None] | None = None,
+) -> Any:
     """Reads data out of an LLM reply, tolerating what models actually send: ``<data>`` tags or code fences around
     it, prose before or after, small format slips, or plain JSON instead.
+
+    Every slip that was repaired is passed to ``on_warning`` with its line and column, so you can show where the
+    data may be wrong. JSON that can't be parsed raises :class:`ModelOutputError`, saying where it breaks.
 
     :param model: validates the result, e.g. a Pydantic model class (``model_validate`` is used) or any callable.
     :param many: the data is a list; ``model`` is applied to each item.
     """
     body, is_json = _extract(text)
     trimmed = body.strip()
-    value: Any = None
-    parsed = False
-    if is_json or trimmed[:1] in ("[", "{"):
+    if is_json or _looks_like_json(trimmed):
         try:
             value = json.loads(trimmed)
-            parsed = True
-        except ValueError:
-            pass
-    if not parsed:
+        except json.JSONDecodeError as e:
+            # Reading broken JSON as Flat Notation would only lose the data quietly.
+            raise _broken_json(trimmed, e) from e
+    else:
         # Lenient, and lines that aren't Flat Notation (prose like "Here are the results:") are dropped.
-        value = decode(body, strict=False, skip_invalid_lines=True)
+        value = decode(body, strict=False, skip_invalid_lines=True, on_warning=on_warning)
     if model is None:
         return value
     validate = getattr(model, "model_validate", model)

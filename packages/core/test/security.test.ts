@@ -20,7 +20,7 @@ describe("decoder robustness", () => {
     fc.assert(
       fc.property(flatish, fc.boolean(), fc.boolean(), fc.boolean(), (text, strict, refs, skipInvalidLines) => {
         try {
-          decode(text, { strict, refs, skipInvalidLines });
+          decode(text, { strict, refs, skipInvalidLines, onWarning: (w) => expect(w.line).toBeGreaterThan(0) });
         } catch (e) {
           if (!(e instanceof FlatDecodeError)) throw e;
         }

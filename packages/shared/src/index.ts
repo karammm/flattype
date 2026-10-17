@@ -30,6 +30,14 @@ export interface EncodeOptions {
   refs?: boolean;
 }
 
+/** A problem lenient decoding repaired, and where it was. */
+export interface FlatWarning {
+  /** What was wrong and what was done, e.g. `Expected 5 values, got 4: the missing values are null`. */
+  message: string;
+  line: number;
+  column: number;
+}
+
 export interface DecodeOptions {
   /** Throw on malformed input (default). Set `false` to recover what it can, e.g. from LLM output. */
   strict?: boolean;
@@ -38,6 +46,11 @@ export interface DecodeOptions {
    * it weren't there, instead of throwing. That's what `fromModelOutput` uses. Default `false`.
    */
   skipInvalidLines?: boolean;
+  /**
+   * With `strict: false`: called for every problem that was repaired (a missing value, a short row, a skipped
+   * line…), with its line and column, so you can tell the user where the data is wrong.
+   */
+  onWarning?: (warning: FlatWarning) => void;
   /** Called for every value after decoding, bottom-up, exactly like the second argument of `JSON.parse`. */
   reviver?: Reviver;
   /**

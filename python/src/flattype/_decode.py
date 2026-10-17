@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from ._path import Ref, Segment, assign, check, parse_path, resolve_refs, show_number
-from ._syntax import INVALID, FlatDecodeError, format_key, js_trim, parse_scalar, scan_string
+from ._syntax import INVALID, FlatDecodeError, FlatWarning, Warn, format_key, js_trim, parse_scalar, scan_string
 
 
 @dataclass(frozen=True)
@@ -57,6 +57,7 @@ class Decoder:
         on_row: Callable[[TableRow], None] | None = None,
         keep_rows: bool = True,
         skip_invalid_lines: bool = False,
+        on_warning: Callable[[FlatWarning], None] | None = None,
     ) -> None:
         self._strict = strict
         # Lenient only: a line that can't be read is dropped, as if it weren't there.
@@ -70,6 +71,11 @@ class Decoder:
         self._rest: list[str] = []
         self._table: _Table | None = None
         self._pending: list[Ref] = []
+        # Lenient repairs, reported to on_warning. When skipping lines, a line's warnings wait until it has been
+        # read, so a line that is dropped reports only that.
+        self._on_warning = None if strict else on_warning
+        self._held: list[FlatWarning] | None = None
+        self._warn: Warn | None = self._emit if self._on_warning else None
 
     def write(self, chunk: str) -> None:
         """Feeds the next chunk of text."""
@@ -89,45 +95,71 @@ class Decoder:
             start = nl + 1
         self._rest = [chunk[start:]] if start < len(chunk) else []
 
+    def _emit(self, reason: str, line: int, column: int, repair: str) -> None:
+        w = FlatWarning(f"{reason}: {repair}", line, column)
+        if self._held is not None:
+            self._held.append(w)
+        else:
+            assert self._on_warning is not None
+            self._on_warning(w)
+
+    def _problem(self, reason: str, line: int, column: int, repair: str) -> None:
+        """Strict: an error. Lenient: a warning, and the caller repairs it."""
+        if self._strict:
+            raise FlatDecodeError(reason, line, column)
+        if self._warn:
+            self._warn(reason, line, column, repair)
+
     def end(self) -> Any:
         """Finishes decoding and returns the value. An empty document is ``{}``."""
         self._line("".join(self._rest))
         self._rest = []
         table = self._table
         if table is not None:
-            if self._strict:
-                raise FlatDecodeError(f"Expected {show_number(table.count)} rows, got {table.read}", table.at, 1)
-            try:
-                self._close_table()
-            except FlatDecodeError:
-                if not self._skip:
-                    raise
+            repair = "the table has the rows that are there"
+            self._problem(f"Expected {show_number(table.count)} rows, got {table.read}", table.at, 1, repair)
+            self._close_table()
         if self._pending:
-            resolve_refs(self._holder, self._pending, self._strict)
+            resolve_refs(self._holder, self._pending, self._strict, self._warn)
         return self._holder.get("root", {})
 
     def _put(self, segments: list[Segment], value: Any, at: int) -> None:
         """``assign`` into the result. When skipping lines, checked first, so a line that fails changes nothing."""
         if self._skip:
             check(self._holder, segments, self._strict, at)
-        assign(self._holder, segments, value, self._strict, at)
+        assign(self._holder, segments, value, self._strict, at, self._warn)
 
     def _close_table(self) -> None:
         # Cleared first: a table whose path can't be written is dropped, not left half-open.
         t = self._table
         assert t is not None
         self._table = None
-        self._put(t.segments, t.rows, t.at)
+        if not self._skip:
+            self._put(t.segments, t.rows, t.at)
+            return
+        try:
+            self._put(t.segments, t.rows, t.at)
+        except FlatDecodeError as e:
+            if self._warn:
+                self._warn(e.reason, e.line, e.column, "the table is dropped")
 
     def _line(self, raw: str) -> None:
         self._line_no += 1
         if not self._skip:
             self._read_line(raw)
             return
+        if self._on_warning:
+            self._held = []
         try:
             self._read_line(raw)
-        except FlatDecodeError:
-            pass
+        except FlatDecodeError as e:
+            if self._held is not None:
+                self._held = [FlatWarning(f"{e.reason}: the line is skipped", e.line, e.column)]
+        held, self._held = self._held, None
+        if held:
+            assert self._on_warning is not None
+            for w in held:
+                self._on_warning(w)
 
     def _read_line(self, raw: str) -> None:
         line_no = self._line_no
@@ -136,9 +168,10 @@ class Decoder:
         t = self._table
         if t is not None:
             width = len(t.fields)
-            row = _cells(text, t.delimiter, strict, line_no, 1)
-            if len(row) != width and strict:
-                raise FlatDecodeError(f"Expected {width} values, got {len(row)}", line_no, 1)
+            row = _cells(text, t.delimiter, self._problem, line_no, 1)
+            if len(row) != width:
+                repair = "the missing values are null" if len(row) < width else "the extra values are dropped"
+                self._problem(f"Expected {width} values, got {len(row)}", line_no, 1, repair)
             if len(row) < width:
                 row += [None] * (width - len(row))
             if t.keys is not None:
@@ -151,7 +184,7 @@ class Decoder:
             else:
                 obj: dict[str, Any] = {"root": {}}
                 for f in range(width):
-                    assign(obj, t.fields[f], row[f], strict, line_no)
+                    assign(obj, t.fields[f], row[f], strict, line_no, self._warn)
                 value = obj["root"]
             if self._keep:
                 t.rows.append(value)
@@ -175,17 +208,23 @@ class Decoder:
         if terminal[0] == "value" and eq < n and text[eq] == "=":
             self._reference(segments, text, eq)
             return
-        if end >= n or text[end] != ":":
-            raise FlatDecodeError("Expected ':' after path", line_no, end + 1)
-        value = text[end + 1 :]
+        colon = end < n and text[end] == ":"
+        if not colon:
+            # A table header that only lacks its colon is still clearly a header: lenient mode reads it as one.
+            if strict or terminal[0] != "table" or js_trim(text[end:]) != "":
+                raise FlatDecodeError("Expected ':' after path", line_no, end + 1)
+            if self._warn:
+                self._warn("Expected ':' after the table header", line_no, end + 1, "read as a table anyway")
+        value = text[end + 1 :] if colon else ""
         kind = terminal[0]
         if kind == "value":
-            self._put(segments, _scalar(js_trim(value), strict, line_no, end + 2), line_no)
+            self._put(segments, _scalar(js_trim(value), self._problem, line_no, end + 2), line_no)
         elif kind == "inline":
-            self._put(segments, _cells(value, terminal[1], strict, line_no, end + 2), line_no)
+            self._put(segments, _cells(value, terminal[1], self._problem, line_no, end + 2), line_no)
         else:
-            if js_trim(value) != "" and strict:
-                raise FlatDecodeError("Table rows go on the following lines", line_no, end + 2)
+            if js_trim(value) != "":
+                repair = "the text after the header is ignored"
+                self._problem("Table rows go on the following lines", line_no, end + 2, repair)
             self._table = _Table(line_no, segments, terminal)
             if terminal[1] == 0:
                 self._close_table()
@@ -194,8 +233,7 @@ class Decoder:
         """``path = target`` (``~`` is the root)."""
         line_no = self._line_no
         if not self._refs:
-            if self._strict:
-                raise FlatDecodeError("References need { refs: true }", line_no, eq + 1)
+            self._problem("References need { refs: true }", line_no, eq + 1, "the line is skipped")
             return
         if not segments:
             raise FlatDecodeError("The root can't be a reference", line_no, eq + 1)
@@ -219,15 +257,23 @@ class Decoder:
         self._pending.append(ref)
 
 
-def decode(text: str, *, strict: bool = True, refs: bool = False, skip_invalid_lines: bool = False) -> Any:
+def decode(
+    text: str,
+    *,
+    strict: bool = True,
+    refs: bool = False,
+    skip_invalid_lines: bool = False,
+    on_warning: Callable[[FlatWarning], None] | None = None,
+) -> Any:
     """Decodes Flat Notation back into the value it came from. An empty document is ``{}``.
 
     ``strict=False`` recovers what it can from malformed input (for example LLM output) instead of raising.
     ``refs=True`` accepts ``path = other.path`` references and rebuilds the shared objects and cycles they describe.
     It is off by default: a few such lines can describe a graph that is endless or enormous when walked.
     ``skip_invalid_lines=True`` (with ``strict=False``) drops lines that can't be read, such as prose around data.
+    ``on_warning`` (with ``strict=False``) is called for every problem that was repaired, with its line and column.
     """
-    d = Decoder(strict=strict, refs=refs, skip_invalid_lines=skip_invalid_lines)
+    d = Decoder(strict=strict, refs=refs, skip_invalid_lines=skip_invalid_lines, on_warning=on_warning)
     d.write(text)
     return d.end()
 
@@ -242,26 +288,25 @@ def _format_path(segments: list[Segment]) -> str:
     return out
 
 
-def _scalar(tok: str, strict: bool, line: int, column: int) -> Any:
+def _scalar(tok: str, problem: Warn, line: int, column: int) -> Any:
     if tok == "":
-        if strict:
-            raise FlatDecodeError("Missing value", line, column)
+        problem("Missing value", line, column, "read as null")
         return None
     v = parse_scalar(tok)
     if v is INVALID:
-        if strict:
-            raise FlatDecodeError("Invalid quoted string", line, column)
+        problem("Invalid quoted string", line, column, "kept as text")
         return tok
     return v
 
 
-def _cells(s: str, delimiter: str, strict: bool, line: int, column: int) -> list[Any]:
+def _cells(s: str, delimiter: str, problem: Warn, line: int, column: int) -> list[Any]:
     """Splits ``a, "b, c", 3`` on the delimiter, honouring quotes."""
     if '"' not in s:
         # No quotes: a plain split gives the same cells. (Column numbers are only needed for errors.)
         parts = [js_trim(x) for x in s.split(delimiter)]
-        if not strict or "" not in parts:
-            return [_scalar(p, strict, line, column) for p in parts]
+        # An empty cell is a problem that needs its column: the full scan below has it.
+        if "" not in parts:
+            return [_scalar(p, problem, line, column) for p in parts]
     out: list[Any] = []
     n = len(s)
     spaces = " " if delimiter == "\t" else " \t"
@@ -272,22 +317,21 @@ def _cells(s: str, delimiter: str, strict: bool, line: int, column: int) -> list
         if i < n and s[i] == '"':
             close = scan_string(s, i)
             if close < 0:
-                if strict:
-                    raise FlatDecodeError("Unterminated string", line, column + i)
+                problem("Unterminated string", line, column + i, "kept as text")
                 out.append(s[i + 1 :])
                 return out
-            out.append(_scalar(s[i : close + 1], strict, line, column + i))
+            out.append(_scalar(s[i : close + 1], problem, line, column + i))
             i = close + 1
             while i < n and s[i] in spaces:
                 i += 1
-            if i < n and s[i] != delimiter and strict:
-                raise FlatDecodeError("Expected delimiter after quoted string", line, column + i)
+            if i < n and s[i] != delimiter:
+                problem("Expected delimiter after quoted string", line, column + i, "the text after it is dropped")
             nxt = s.find(delimiter, i)
             i = n if nxt < 0 else nxt
         else:
             nxt = s.find(delimiter, i)
             j = n if nxt < 0 else nxt
-            out.append(_scalar(js_trim(s[i:j]), strict, line, column + i))
+            out.append(_scalar(js_trim(s[i:j]), problem, line, column + i))
             i = j
         if i >= n:
             return out

@@ -51,7 +51,9 @@ describe("encode / decode", () => {
     const strict = await cli(["decode"], { stdin: "a: 1\na: 2" });
     expect(strict.code).toBe(1);
     expect(strict.err).toMatch(/Duplicate key 'a' \(line 2/);
-    expect(JSON.parse((await cli(["decode", "--lenient"], { stdin: "a: 1\na: 2" })).out)).toEqual({ a: 2 });
+    const lenient = await cli(["decode", "--lenient"], { stdin: "a: 1\na: 2" });
+    expect(JSON.parse(lenient.out)).toEqual({ a: 2 });
+    expect(lenient.err).toBe("warning: stdin:2:1: Duplicate key 'a': the last value is kept\n");
     expect((await cli(["encode", "missing.json"])).err).toMatch(/ENOENT/);
   });
 

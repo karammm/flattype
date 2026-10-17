@@ -1,6 +1,6 @@
 {
   "name": "@flattype/core",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Flatten JSON into Flat Notation: compact, LLM-friendly key: value text. No third-party dependencies.",
   "license": "MIT",
   "type": "module",

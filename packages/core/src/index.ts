@@ -8,6 +8,7 @@ export type {
   Reviver,
   FlatLeaf,
   FlatRecord,
+  FlatWarning,
   JsonPrimitive,
   JsonValue,
   TableRow,

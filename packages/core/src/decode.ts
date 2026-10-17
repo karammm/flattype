@@ -1,7 +1,7 @@
-import type { Decoder, DecoderOptions, DecodeOptions, Delimiter, JsonValue } from "@flattype/shared";
+import type { Decoder, DecoderOptions, DecodeOptions, Delimiter, FlatWarning, JsonValue } from "@flattype/shared";
 import { assign, parsePath, Ref, resolveRefs, type Segment, type Terminal } from "./path.js";
 import { revive } from "./revive.js";
-import { FlatDecodeError, formatKey, parseScalar, scanString } from "./syntax.js";
+import { FlatDecodeError, formatKey, parseScalar, scanString, type Warn } from "./syntax.js";
 
 /**
  * Decodes Flat Notation back into the JSON value it came from. An empty document is `{}`.
@@ -28,6 +28,20 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   // Lenient only: a line that can't be read is dropped, as if it weren't there.
   const skip = !strict && options.skipInvalidLines === true;
   const holder: { root?: unknown } = {};
+  // Lenient repairs, reported to onWarning. When skipping lines, a line's warnings wait until it has been
+  // read, so a line that is dropped reports only that.
+  const onWarning = strict ? undefined : options.onWarning;
+  let held: FlatWarning[] | undefined;
+  const emit = (w: FlatWarning): void => {
+    if (held) held.push(w);
+    else onWarning!(w);
+  };
+  const warn: Warn | undefined = onWarning && ((reason, line, column, repair) => emit({ message: `${reason}: ${repair}`, line, column }));
+  /** Strict: an error. Lenient: a warning, and the caller repairs it. */
+  const problem: Warn = (reason, line, column, repair) => {
+    if (strict) throw new FlatDecodeError(reason, line, column);
+    warn?.(reason, line, column, repair);
+  };
   // Reference lines, resolved once the whole document has been read (a cycle points at a parent).
   const pending: Ref[] = [];
   let lineNo = 0;
@@ -38,24 +52,35 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   /** `assign` into the result. When skipping lines, checked first, so a line that fails changes nothing. */
   const put = (segments: Segment[], value: unknown, at: number): void => {
     if (skip) assign(holder, segments, value, strict, at, true);
-    assign(holder, segments, value, strict, at);
+    assign(holder, segments, value, strict, at, false, warn);
   };
 
   const closeTable = (): void => {
     // Cleared first: a table whose path can't be written is dropped, not left half-open.
     const t = table!;
     table = undefined;
-    put(t.segments, t.rows, t.at);
+    if (!skip) return put(t.segments, t.rows, t.at);
+    try {
+      put(t.segments, t.rows, t.at);
+    } catch (e) {
+      if (!(e instanceof FlatDecodeError)) throw e;
+      warn?.(e.reason, e.line, e.column, "the table is dropped");
+    }
   };
 
   const line = (raw: string): void => {
     lineNo++;
     if (!skip) return readLine(raw);
+    if (onWarning) held = [];
     try {
       readLine(raw);
     } catch (e) {
       if (!(e instanceof FlatDecodeError)) throw e;
+      if (held) held = [{ message: `${e.reason}: the line is skipped`, line: e.line, column: e.column }];
     }
+    const lineWarnings = held;
+    held = undefined;
+    lineWarnings?.forEach(onWarning!);
   };
 
   const readLine = (raw: string): void => {
@@ -63,12 +88,12 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     if (table) {
       const { t } = table;
       const width = t.fields.length;
-      const row = cells(text, t.delimiter, strict, lineNo, 1);
-      if (row.length !== width && strict) {
-        throw new FlatDecodeError(`Expected ${width} values, got ${row.length}`, lineNo, 1);
+      const row = cells(text, t.delimiter, problem, lineNo, 1);
+      if (row.length !== width) {
+        problem(`Expected ${width} values, got ${row.length}`, lineNo, 1, row.length < width ? "the missing values are null" : "the extra values are dropped");
       }
       const obj: { root?: unknown } = { root: {} };
-      for (let f = 0; f < width; f++) assign(obj, t.fields[f]!, f < row.length ? row[f] : null, strict, lineNo);
+      for (let f = 0; f < width; f++) assign(obj, t.fields[f]!, f < row.length ? row[f] : null, strict, lineNo, false, warn);
       if (keep) table.rows.push(obj.root);
       onRow?.({ path: table.path, index: table.read, value: obj.root as JsonValue });
       if (++table.read === t.count) closeTable();
@@ -85,18 +110,21 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
       reference(segments, text, eq);
       return;
     }
-    if (text.charCodeAt(end) !== 58) {
-      throw new FlatDecodeError("Expected ':' after path", lineNo, end + 1);
-    }
-    const value = text.slice(end + 1);
-    if (terminal.kind === "value") {
-      put(segments, scalar(value.trim(), strict, lineNo, end + 2), lineNo);
-    } else if (terminal.kind === "inline") {
-      put(segments, cells(value, terminal.delimiter, strict, lineNo, end + 2), lineNo);
-    } else {
-      if (value.trim() !== "" && strict) {
-        throw new FlatDecodeError("Table rows go on the following lines", lineNo, end + 2);
+    const colon = text.charCodeAt(end) === 58;
+    if (!colon) {
+      // A table header that only lacks its colon is still clearly a header: lenient mode reads it as one.
+      if (strict || terminal.kind !== "table" || text.slice(end).trim() !== "") {
+        throw new FlatDecodeError("Expected ':' after path", lineNo, end + 1);
       }
+      warn?.("Expected ':' after the table header", lineNo, end + 1, "read as a table anyway");
+    }
+    const value = colon ? text.slice(end + 1) : "";
+    if (terminal.kind === "value") {
+      put(segments, scalar(value.trim(), problem, lineNo, end + 2), lineNo);
+    } else if (terminal.kind === "inline") {
+      put(segments, cells(value, terminal.delimiter, problem, lineNo, end + 2), lineNo);
+    } else {
+      if (value.trim() !== "") problem("Table rows go on the following lines", lineNo, end + 2, "the text after the header is ignored");
       table = { at: lineNo, segments, t: terminal, path: formatPath(segments), rows: [], read: 0 };
       if (terminal.count === 0) closeTable();
     }
@@ -104,10 +132,7 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
 
   /** `path = target` (`~` is the root). */
   const reference = (segments: Segment[], text: string, eq: number): void => {
-    if (!refs) {
-      if (strict) throw new FlatDecodeError("References need { refs: true }", lineNo, eq + 1);
-      return;
-    }
+    if (!refs) return problem("References need { refs: true }", lineNo, eq + 1, "the line is skipped");
     if (segments.length === 0) throw new FlatDecodeError("The root can't be a reference", lineNo, eq + 1);
     let pos = eq + 1;
     while (text.charCodeAt(pos) === 32) pos++;
@@ -151,14 +176,10 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
       line(rest);
       rest = "";
       if (table) {
-        if (strict) throw new FlatDecodeError(`Expected ${table.t.count} rows, got ${table.read}`, table.at, 1);
-        try {
-          closeTable();
-        } catch (e) {
-          if (!skip || !(e instanceof FlatDecodeError)) throw e;
-        }
+        problem(`Expected ${table.t.count} rows, got ${table.read}`, table.at, 1, "the table has the rows that are there");
+        closeTable();
       }
-      if (pending.length > 0) resolveRefs(holder, pending, strict);
+      if (pending.length > 0) resolveRefs(holder, pending, strict, warn);
       const value = "root" in holder ? holder.root : {};
       return (options.reviver ? revive(value, options.reviver) : value) as JsonValue;
     },
@@ -175,21 +196,21 @@ function stripCR(line: string): string {
   return line.charCodeAt(line.length - 1) === 13 ? line.slice(0, -1) : line;
 }
 
-function scalar(tok: string, strict: boolean, line: number, column: number): unknown {
+function scalar(tok: string, problem: Warn, line: number, column: number): unknown {
   if (tok === "") {
-    if (strict) throw new FlatDecodeError("Missing value", line, column);
+    problem("Missing value", line, column, "read as null");
     return null;
   }
   const v = parseScalar(tok);
   if (v === undefined) {
-    if (strict) throw new FlatDecodeError("Invalid quoted string", line, column);
+    problem("Invalid quoted string", line, column, "kept as text");
     return tok;
   }
   return v;
 }
 
 /** Splits `a, "b, c", 3` on the delimiter, honouring quotes. */
-function cells(s: string, delimiter: Delimiter, strict: boolean, line: number, column: number): unknown[] {
+function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, column: number): unknown[] {
   const out: unknown[] = [];
   const n = s.length;
   const isSpace = (c: number): boolean => c === 32 || (c === 9 && delimiter !== "\t");
@@ -199,22 +220,20 @@ function cells(s: string, delimiter: Delimiter, strict: boolean, line: number, c
     if (s.charCodeAt(i) === 34) {
       const close = scanString(s, i);
       if (close < 0) {
-        if (strict) throw new FlatDecodeError("Unterminated string", line, column + i);
+        problem("Unterminated string", line, column + i, "kept as text");
         out.push(s.slice(i + 1));
         return out;
       }
-      out.push(scalar(s.slice(i, close + 1), strict, line, column + i));
+      out.push(scalar(s.slice(i, close + 1), problem, line, column + i));
       i = close + 1;
       while (i < n && isSpace(s.charCodeAt(i))) i++;
-      if (i < n && s[i] !== delimiter && strict) {
-        throw new FlatDecodeError("Expected delimiter after quoted string", line, column + i);
-      }
+      if (i < n && s[i] !== delimiter) problem("Expected delimiter after quoted string", line, column + i, "the text after it is dropped");
       const next = s.indexOf(delimiter, i);
       i = next < 0 ? n : next;
     } else {
       const next = s.indexOf(delimiter, i);
       const j = next < 0 ? n : next;
-      out.push(scalar(s.slice(i, j).trim(), strict, line, column + i));
+      out.push(scalar(s.slice(i, j).trim(), problem, line, column + i));
       i = j;
     }
     if (i >= n) return out;

@@ -1,5 +1,17 @@
 # @flattype/ai
 
+## 1.12.0
+
+### Minor Changes
+
+- Warnings for lenient decoding (`onWarning`), with the line and column of every repair. A table header without its colon is read as a table. `fromModelOutput` throws `ModelOutputError` saying where broken JSON breaks instead of returning `{}`. `flattype decode --lenient` prints the warnings.
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/core@1.12.0
+  - @flattype/shared@1.12.0
+
 ## 1.11.0
 
 ### Minor Changes

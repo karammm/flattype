@@ -121,6 +121,13 @@ Ideas from comparing with [flatted](https://github.com/WebReflection/flatted).
 - Shared fixtures run against both implementations in CI, so the two can't disagree on the format
 - ASGI middleware for FastAPI / Starlette that answers in Flat Notation when the client asks, plus a response class
 - The LLM helpers (`to_prompt`, `from_model_output`, `count_tokens`) in `flattype.ai`
+
+## v1.12.0: Warnings for broken data ✅
+From testing with Microsoft's [missing-colon.json](https://microsoftedge.github.io/Demos/json-dummy-data/missing-colon.json).
+- `onWarning` / `on_warning`: every lenient repair, with its line and column
+- A table header without its colon is read as a table in lenient mode
+- `fromModelOutput` throws `ModelOutputError` saying where broken JSON breaks, instead of returning `{}`
+- `flattype decode --lenient` prints the warnings
 ---
 
 Have an idea or a use case that isn't covered? [Open an issue](https://github.com/karammm/flattype/issues).

@@ -6,7 +6,7 @@ import json
 import re
 from typing import Any, Callable, NoReturn, Union
 
-from ._syntax import FlatDecodeError, format_key, format_number, is_key_char, scan_string
+from ._syntax import FlatDecodeError, Warn, format_key, format_number, is_key_char, scan_string
 
 #: A key (str) or an array index (int; a float only for indexes too large to be valid).
 Segment = Union[str, int, float]
@@ -137,8 +137,11 @@ class Ref:
         self.line = line
 
 
-def assign(holder: dict[str, Any], segments: list[Segment], value: Any, strict: bool, line: int) -> None:
-    """Writes ``value`` at ``segments`` under ``holder["root"]``, creating dicts and lists on the way."""
+def assign(
+    holder: dict[str, Any], segments: list[Segment], value: Any, strict: bool, line: int, warn: Warn | None = None
+) -> None:
+    """Writes ``value`` at ``segments`` under ``holder["root"]``, creating dicts and lists on the way. In lenient
+    mode, what it repairs (duplicates, skipped indexes) goes to ``warn``."""
     parent: Any = holder
     key: Segment = "root"
 
@@ -152,6 +155,8 @@ def assign(holder: dict[str, Any], segments: list[Segment], value: Any, strict: 
                 if leaf:
                     if strict:
                         fail(f"Duplicate index [{show_number(key)}]")
+                    if warn:
+                        warn(f"Duplicate index [{show_number(key)}]", line, 1, "the last value is kept")
                     arr[int(key)] = create()
                 return arr[int(key)]
             if key > len(arr):
@@ -160,6 +165,8 @@ def assign(holder: dict[str, Any], segments: list[Segment], value: Any, strict: 
                 # Lenient mode fills small gaps with None, but `a[999999999]: 1` must not allocate a billion entries.
                 if key - len(arr) > MAX_GAP:
                     fail(f"Index [{show_number(key)}] is too far past [{len(arr)}]")
+                if warn:
+                    warn(f"Index [{show_number(key)}] skips [{len(arr)}]", line, 1, "the gap is filled with null")
                 arr.extend([None] * (int(key) - len(arr)))
             v = create()
             arr.append(v)
@@ -170,6 +177,8 @@ def assign(holder: dict[str, Any], segments: list[Segment], value: Any, strict: 
                 return obj[key]
             if strict:
                 fail(f"Duplicate key '{key}'")
+            if warn:
+                warn(f"Duplicate key '{key}'", line, 1, "the last value is kept")
         v = create()
         obj[key] = v
         return v
@@ -261,7 +270,7 @@ def _show(segments: list[Segment]) -> str:
     return out
 
 
-def resolve_refs(holder: dict[str, Any], refs: list[Ref], strict: bool) -> None:
+def resolve_refs(holder: dict[str, Any], refs: list[Ref], strict: bool, warn: Warn | None = None) -> None:
     """Replaces each placeholder with the dict or list its target points to, in document order.
 
     A target may pass through a reference resolved before it, but not through one still waiting.
@@ -288,8 +297,11 @@ def resolve_refs(holder: dict[str, Any], refs: list[Ref], strict: bool) -> None:
                 why = "doesn't exist"
             else:
                 why = "isn't an object or array"
+            msg = f"Reference target '{_show(ref.target)}' {why}"
             if strict:
-                raise FlatDecodeError(f"Reference target '{_show(ref.target)}' {why}", ref.line, 1)
+                raise FlatDecodeError(msg, ref.line, 1)
+            if warn:
+                warn(msg, ref.line, 1, "read as null")
             value = None
         k = ref.segments[last]
         if isinstance(parent, list):

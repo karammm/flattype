@@ -1,7 +1,8 @@
 import fc from "fast-check";
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { fromModelOutput, outputInstructions, toPrompt } from "../src/index.js";
+import { fromModelOutput, ModelOutputError, outputInstructions, toPrompt } from "../src/index.js";
+import type { FlatWarning } from "@flattype/core";
 
 /**
  * conformance/llm.json: what toPrompt writes and fromModelOutput reads, for the Python package to match.
@@ -29,7 +30,19 @@ function build(): unknown {
     "```json\n{\"a\": [1, 2]}\n```",
     "Here:\n```\nx: 1\n```\nand ```y```",
     ...fc.sample(reply, { seed: SEED, numRuns: 400 }),
-  ].map((text) => ({ text, value: fromModelOutput(text) }));
+    '[{"name": "Noa","language" "Galician"}]',
+    "```json\n{\"a\": 1,}\n```",
+    "people[2]{name,id}\n  Ann, 1\n  Bo",
+  ].map((text) => {
+    const warnings: FlatWarning[] = [];
+    try {
+      return { text, value: fromModelOutput(text, { onWarning: (w) => warnings.push(w) }), warnings };
+    } catch (e) {
+      if (!(e instanceof ModelOutputError)) throw e;
+      // Engines word JSON errors differently: other implementations must fail too, but not with this message.
+      return { text, error: "ModelOutputError" };
+    }
+  });
   return { prompts, instructions, replies };
 }
 

@@ -23,7 +23,7 @@
   <a href="https://www.npmjs.com/package/@flattype/ai"><img src="https://img.shields.io/npm/v/@flattype/ai?label=%40flattype%2Fai&color=8b6cff" alt="npm @flattype/ai"></a>
   <a href="https://www.npmjs.com/package/@flattype/cli"><img src="https://img.shields.io/npm/v/@flattype/cli?label=%40flattype%2Fcli&color=8b6cff" alt="npm @flattype/cli"></a>
   <a href="https://github.com/karammm/flattype/actions/workflows/ci.yml"><img src="https://github.com/karammm/flattype/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/core-4.8_KB_min%2Bgz-2fd4b2" alt="4.8 KB min+gz">
+  <img src="https://img.shields.io/badge/core-5.2_KB_min%2Bgz-2fd4b2" alt="5.2 KB min+gz">
   <img src="https://img.shields.io/badge/dependencies-0-2fd4b2" alt="No third-party dependencies">
   <a href="https://github.com/karammm/flattype/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
@@ -138,11 +138,11 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 ## Why FlatType
 
 - **About half the size on list payloads.** A list of 1,000 users is 45% smaller than minified JSON and 50% smaller than TOON, because keys are written once and nested fields are flattened into the table header.
-- **Made for LLM context.** You pay for every character you send to Claude or another model. Flat Notation is plain `key: value` text that both models and people read easily, and `decode(text, { strict: false })` recovers data from model replies.
+- **Made for LLM context.** You pay for every character you send to Claude or another model. Flat Notation is plain `key: value` text that both models and people read easily, and `decode(text, { strict: false })` recovers data from model replies, with a warning for every line it had to repair.
 - **Typed models without boilerplate.** Declare the fields you want and get full TypeScript types. snake_case keys, numeric strings, ISO dates, defaults and nullable fields are handled for you, and every problem is reported with its path.
 - **Drop-in for your API.** One middleware for Express, Fastify, Hono or any fetch-API server. Clients that ask get Flat Notation, everyone else still gets JSON, and big lists can be streamed row by row.
 - **Lossless.** `decode(encode(x))` always equals `JSON.parse(JSON.stringify(x))`. Thousands of random values check this on every test run.
-- **Small and safe.** The core is 4.8 KB min+gz, with no third-party dependencies. It's ESM + CJS with full types, works in the browser and Node 18+, and guards against `__proto__` pollution.
+- **Small and safe.** The core is 5.2 KB min+gz, with no third-party dependencies. It's ESM + CJS with full types, works in the browser and Node 18+, and guards against `__proto__` pollution.
 
 ### When JSON is the better choice
 
@@ -154,7 +154,7 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 
 | Package | What it does | Size (min+gz) |
 | --- | --- | ---: |
-| [`@flattype/core`](https://github.com/karammm/flattype/blob/main/packages/core) | `encode`, `decode`, `createDecoder`, `flatten`, `unflatten`, `stats`, and a `<script>` build for CDNs | 4.8 KB |
+| [`@flattype/core`](https://github.com/karammm/flattype/blob/main/packages/core) | `encode`, `decode`, `createDecoder`, `flatten`, `unflatten`, `stats`, and a `<script>` build for CDNs | 5.2 KB |
 | [`@flattype/models`](https://github.com/karammm/flattype/blob/main/packages/models) | `defineModel`, `infer`, `toSource`: typed models from JSON or Flat Notation | +3.2 KB |
 | [`@flattype/http`](https://github.com/karammm/flattype/blob/main/packages/http) | `flatFetch`, `createClient`, `flatAxios`, `streamRows`, and `flatExpress` / `flatFastify` / `flatHono` | +2.3 KB |
 | [`@flattype/react`](https://github.com/karammm/flattype/blob/main/packages/react) | `useFlat`, `useFlatSuspense`, `useFlatStream`, `useModel`, `FlatProvider` | +1.4 KB |
@@ -238,6 +238,33 @@ const order = decode(text, {
 ```
 
 For typed results with validation, [`@flattype/models`](#typed-models) is usually the better fit.
+
+### Broken input: where the data is wrong
+
+`decode` is strict by default: the first problem throws a `FlatDecodeError` with its line and column. With `strict: false` it repairs what it can instead, and `onWarning` tells you what it repaired and where:
+
+```ts
+const people = decode(text, {
+  strict: false,
+  onWarning: (w) => console.warn(`line ${w.line}, column ${w.column}: ${w.message}`),
+});
+// line 77, column 1: Expected 5 values, got 4: the missing values are null
+```
+
+Each row of a table is one line, so a slip stays in its line. A missing separator in one record of a 197-record file leaves the other 196 exactly right, and the warning names the record to check. A JSON file with one missing colon can't be read at all; see the [Edge demo benchmark](https://github.com/karammm/flattype/blob/main/benchmarks/edge-json-dummy-data.md#a-broken-file-missing-colonjson).
+
+| Problem | Lenient repair (the warning says so) |
+| --- | --- |
+| A row with too few or too many values | Missing values are `null`; extra ones are dropped |
+| A missing value (`a:`) | `null` |
+| A duplicate key or index | The last value is kept |
+| A skipped index (`a[2]` before `a[0]`) | The gap is filled with `null`, up to 1,000 entries |
+| Fewer table rows than declared | The table has the rows that are there |
+| A table header without its colon | Read as a table anyway |
+| A broken quoted string | Kept as text |
+| With `skipInvalidLines: true`, a line that isn't Flat Notation | The line is skipped |
+
+`flattype decode --lenient file.flat` prints the same warnings, as `warning: file.flat:77:1: …`.
 
 ## Typed models
 
@@ -547,7 +574,7 @@ messages.push({ role: "user", content: [claudeToolResult(toolUse.id, await runTo
 | --- | --- |
 | `toPrompt(data, { name, legend })` | `<data format="flat-notation">` plus a one-line legend. The block is still valid Flat Notation; put the legend in your system prompt once with `legend: false` |
 | `outputInstructions(example)` | Asks the model to answer in Flat Notation and shows the exact shape you expect |
-| `fromModelOutput(reply, { model, list })` | Finds the data (last `<data>` block, code fence, or the text itself), skips prose lines, and accepts JSON too |
+| `fromModelOutput(reply, { model, list, onWarning })` | Finds the data (last `<data>` block, code fence, or the text itself), skips prose lines, and accepts JSON too. Repairs go to `onWarning`, with their line. JSON that doesn't parse throws `ModelOutputError`, saying where it breaks: `The data is JSON, but it is broken at line 1, column 22261: …"language" ⟶ "Galician"…` |
 | `countTokens(client, data, { model })` | `{ json, flat, saved }` in real Claude tokens, minus per-message overhead. Takes any client with `messages.countTokens` |
 | `toolResult(data, { structured })` / `claudeToolResult(id, data)` | MCP `CallToolResult` and Claude API `tool_result` blocks |
 

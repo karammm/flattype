@@ -18,7 +18,7 @@ from typing import Any
 from ._decode import Decoder, TableRow, decode
 from ._encode import encode
 from ._flatten import flatten, unflatten
-from ._syntax import FlatDecodeError
+from ._syntax import FlatDecodeError, FlatWarning
 
 __all__ = [
     "MEDIA_TYPE",
@@ -26,6 +26,7 @@ __all__ = [
     "Decoder",
     "FlatDecodeError",
     "FlatStats",
+    "FlatWarning",
     "TableRow",
     "decode",
     "dumps",
@@ -36,7 +37,7 @@ __all__ = [
     "unflatten",
 ]
 
-__version__ = "1.11.0"
+__version__ = "1.12.0"
 
 #: Media type for Flat Notation over HTTP.
 MEDIA_TYPE = "text/x-flat"

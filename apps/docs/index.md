@@ -15,7 +15,7 @@ features:
   - { title: Every framework, details: "Hooks for React, composables for Vue, signals for Angular, stores for Svelte, resources for Solid, plus fetch, axios and server middleware. Python backends use the same format: pip install flattype.", link: /guide/react, linkText: Frameworks }
   - { title: Built for Claude and LLMs, details: "toPrompt, a tolerant fromModelOutput, real token counts with Claude's tokenizer, and compact MCP / Claude tool results.", link: /guide/llms, linkText: LLM helpers }
   - { title: Lossless and safe, details: "decode(encode(x)) equals JSON.parse(JSON.stringify(x)), checked by property-based fuzzing; the decoder is prototype-safe and linear-time.", link: /guide/security, linkText: Security }
-  - { title: Small, details: "The core is 4.8 KB min+gz with no third-party dependencies. Every package ships ESM, CJS and types, with npm provenance.", link: /guide/getting-started#packages, linkText: Packages }
+  - { title: Small, details: "The core is 5.2 KB min+gz with no third-party dependencies. Every package ships ESM, CJS and types, with npm provenance.", link: /guide/getting-started#packages, linkText: Packages }
 ---
 
 <video class="intro-video" src="/flattype-intro.mp4" controls muted playsinline preload="metadata" aria-label="FlatType in 92 seconds"></video>

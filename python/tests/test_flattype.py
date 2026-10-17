@@ -164,7 +164,7 @@ flatish = st.lists(
 @given(flatish, st.booleans(), st.booleans())
 def test_only_flat_decode_error(text: str, strict: bool, refs: bool) -> None:
     try:
-        decode(text, strict=strict, refs=refs)
+        decode(text, strict=strict, refs=refs, skip_invalid_lines=True, on_warning=lambda w: None)
     except FlatDecodeError:
         pass
 

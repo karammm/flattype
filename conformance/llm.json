@@ -253,20 +253,40 @@
  "replies": [
   {
    "text": "<database></data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "Sure.\nname: Alice\nThat's all.\nage: 30",
    "value": {
     "name": "Alice",
     "age": 30
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected a key after '.': the line is skipped",
+     "line": 1,
+     "column": 6
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data>a: 1</data> draft\n<data>a: 2</data>",
    "value": {
     "a": 2
-   }
+   },
+   "warnings": []
   },
   {
    "text": "```json\n{\"a\": [1, 2]}\n```",
@@ -275,14 +295,37 @@
      1,
      2
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "Here:\n```\nx: 1\n```\nand ```y```",
    "value": {
     "Here": null,
     "x": 1
-   }
+   },
+   "warnings": [
+    {
+     "message": "Missing value: read as null",
+     "line": 1,
+     "column": 6
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 5,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "b.c: x<data-x>: b.c: xSure!```flat\nHere you go:",
@@ -290,111 +333,261 @@
     "b": {
      "c": "x<data-x>: b.c: xSure!```flat"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```json\n#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "a: 1[1, 2] ",
    "value": {
     "a": "1[1, 2]"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\">: ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA><data-x><data>```<data>{\"a\": 1}Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data>b.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}```json\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "</data>b.c: xb.c: x[1, 2]Here you go:<data><data format=\"flat-notation\">{\"a\": 1}``````flat\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data>b.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": Sure!t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": "Sure!t[2]{x,y}:"
+   "value": "Sure!t[2]{x,y}:",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "Sure!<DATA>{\"a\": 1}```<data-x><data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<DATA>[1, 2]Sure! ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\nSure!<database>Sure!```flat\n#[1, 2]Sure!",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": ": ",
-   "value": null
+   "value": null,
+   "warnings": [
+    {
+     "message": "Missing value: read as null",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}[1, 2]```flat\nSure!``````json\n```<data format=\"flat-notation\"><data>#",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": " <data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "```json\n</data>#```json\n```<data-x><DATA>\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "```flat\n```json\n <DATA><database><DATA><data format=\"flat-notation\">[1, 2]\"",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```</data>[1, 2]#<database>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#<data format=\"flat-notation\"><data-x><DATA>Sure!```json\n<data>#Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>##",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data-x>\na: 1[1, 2] #t[2]{x,y}:\n  1, 2\n  3, 4<data><data-x>Sure!",
    "value": {
     "a": "1[1, 2] #t[2]{x,y}:"
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```flat\n{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<database>```b.c: xb.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\nb.c: x```json\nSure![1, 2]\n",
@@ -402,45 +595,89 @@
     "b": {
      "c": "x```json"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```[1, 2]```: ```flat\n[1, 2]Here you go:```Here you go:<DATA>",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "{\"a\": 1}\n",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "<DATA>```\nSure!```json\n[1, 2]Here you go:\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```json\n[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": ```json\n\n",
-   "value": "```json"
+   "value": "```json",
+   "warnings": []
   },
   {
    "text": "</data><data format=\"flat-notation\"></data></data>[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " Here you go:a: 1",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 6
+    }
+   ]
   },
   {
    "text": "b.c: x<data-x>",
@@ -448,31 +685,72 @@
     "b": {
      "c": "x<data-x>"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "\n<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#<data>```b.c: x",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "a: 1```flat\n<data format=\"flat-notation\">: ```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n<DATA></data>\"t[2]{x,y}:\n  1, 2\n  3, 4: {\"a\": 1}\"{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```json\nSure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```flat\nSure!##<data-x><database><DATA><DATA>: ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4Sure!```</data><data format=\"flat-notation\">Sure!<data>",
@@ -487,15 +765,34 @@
       "y": "4Sure!```</data><data format=\"flat-notation\">Sure!<data>"
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "`````` t[2]{x,y}:\n  1, 2\n  3, 4Here you go:<data format=\"flat-notation\">Here you go:Sure!```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```#t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]<DATA></data>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\nt[2]{x,y}:\n  1, 2\n  3, 4",
@@ -510,101 +807,194 @@
       "y": 4
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "```flat\n: t[2]{x,y}:\n  1, 2\n  3, 4\"<DATA>",
-   "value": "t[2]{x,y}:"
+   "value": "t[2]{x,y}:",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "<data></data><database>Here you go:<database> t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": ": b.c: x</data>{\"a\": 1}[1, 2]",
-   "value": "b.c: x</data>{\"a\": 1}[1, 2]"
+   "value": "b.c: x</data>{\"a\": 1}[1, 2]",
+   "warnings": []
   },
   {
    "text": "```json\na: 1#b.c: x<data-x>[1, 2]</data>\": ",
    "value": {
     "a": "1#b.c: x<data-x>[1, 2]</data>\":"
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\nSure!Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data-x>[1, 2]Sure!```<database>```json\na: 1",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">[1, 2]a: 1: <data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "{\"a\": 1}\"</data>```",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "Here you go:```json\n{\"a\": 1}<DATA>```flat\nb.c: x<DATA><database>",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Here you go:a: 1",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "[1, 2]b.c: xt[2]{x,y}:\n  1, 2\n  3, 4<DATA>t[2]{x,y}:\n  1, 2\n  3, 4<data format=\"flat-notation\">a: 1```",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "a: 1",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "```\"```json\n: Here you go:Sure!t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]```",
-   "value": "Here you go:Sure!t[2]{x,y}:"
+   "value": "Here you go:Sure!t[2]{x,y}:",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Sure!<data format=\"flat-notation\"> a: 1<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "[1, 2]<database>\n[1, 2]: ```flat\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<data>b.c: x```flat\n ```",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\nt[2]{x,y}:\n  1, 2\n  3, 4a: 1```json\n\n<data-x><data-x>b.c: x",
@@ -619,37 +1009,114 @@
       "y": "4a: 1```json"
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 6,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"<data>Sure!\": \"",
    "value": {
     "<data>Sure!": "\""
-   }
+   },
+   "warnings": [
+    {
+     "message": "Invalid quoted string: kept as text",
+     "line": 1,
+     "column": 15
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```t[2]{x,y}:\n  1, 2\n  3, 4b.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "[1, 2][1, 2][1, 2]<data>b.c: x",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<database>t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]Here you go:<database>t[2]{x,y}:\n  1, 2\n  3, 4{\"a\": 1}<data format=\"flat-notation\">\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 5,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```json\n#t[2]{x,y}:\n  1, 2\n  3, 4<data format=\"flat-notation\">b.c: xSure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": " t[2]{x,y}:\n  1, 2\n  3, 4<DATA>[1, 2]<data-x>",
@@ -664,127 +1131,318 @@
       "y": "4<DATA>[1"
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected 2 values, got 3: the extra values are dropped",
+     "line": 3,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "a: 1<data format=\"flat-notation\">t[2]{x,y}:\n  1, 2\n  3, 4",
    "value": {
     "a": "1<data format=\"flat-notation\">t[2]{x,y}:"
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```json\n```flat\n[1, 2]</data><data>",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\">``````flat\n<database>b.c: x<data format=\"flat-notation\">\"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"{\"a\": 1}<database><data format=\"flat-notation\"><database><database><data format=\"flat-notation\">\"#\"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected '.' or ':' before key: the line is skipped",
+     "line": 1,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "a: 1",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "\n<data>#\"</data>\"<data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">##<data format=\"flat-notation\"><database>```",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"```json\n```a: 1",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "</data>\nSure!{\"a\": 1}Sure!<database>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```flat\n[1, 2] t[2]{x,y}:\n  1, 2\n  3, 4b.c: xa: 1",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 2,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": ",
-   "value": null
+   "value": null,
+   "warnings": [
+    {
+     "message": "Missing value: read as null",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "<DATA>```json\n\"\n```flat\na: 1```json\n<database><data>\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "#</data>a: 1<DATA>```json\n<DATA><data format=\"flat-notation\">Here you go:[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " <data format=\"flat-notation\">b.c: x{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\"> <DATA>```flat\n<data format=\"flat-notation\">```flat\n: ```<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}{\"a\": 1}{\"a\": 1}",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "{\"a\": 1}[1, 2]```json\n a: 1",
-   "value": {
-    "a": 1
-   }
+   "error": "ModelOutputError"
   },
   {
    "text": "```<data-x>#<DATA>Here you go:</data>[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "a: 1\"<DATA>Sure!t[2]{x,y}:\n  1, 2\n  3, 4<data-x><data>``````flat\n```",
    "value": {
     "a": "1\"<DATA>Sure!t[2]{x,y}:"
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<database>```flat\n<data-x>```<data><DATA><data format=\"flat-notation\"><data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data>b.c: x[1, 2]```flat\nHere you go:t[2]{x,y}:\n  1, 2\n  3, 4Sure!Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "<data>```flat\n<data format=\"flat-notation\">: ```Here you go:<DATA>Here you go:<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#<DATA> [1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data>```json\nb.c: x<data format=\"flat-notation\">{\"a\": 1}\n",
@@ -792,7 +1450,14 @@
     "b": {
      "c": "x<data format=\"flat-notation\">{\"a\": 1}"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n<data-x>[1, 2]<data>```json\nt[2]{x,y}:\n  1, 2\n  3, 4[1, 2]<data>",
@@ -807,43 +1472,123 @@
       "y": "4[1"
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    },
+    {
+     "message": "Expected 2 values, got 3: the extra values are dropped",
+     "line": 5,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]: ",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<database>t[2]{x,y}:\n  1, 2\n  3, 4<data><DATA>Here you go:``` <DATA>\"[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Here you go:t[2]{x,y}:\n  1, 2\n  3, 4b.c: x\"<DATA>```json\nSure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "``````flat\n```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4```",
@@ -858,90 +1603,186 @@
       "y": "4```"
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "#\n```json\n\"```json\n: ```json\n<database>```flat\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<data-x> Here you go:: \n<DATA>b.c: x[1, 2]\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<database>```flat\n##b.c: x\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}[1, 2]</data>```Sure!Sure!```json\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "```json\n```#",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "</data>```flat\n<data-x><database>```\"[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "Sure!<DATA>{\"a\": 1}<data-x>#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "[1, 2]",
    "value": [
     1,
     2
-   ]
+   ],
+   "warnings": []
   },
   {
    "text": "```json\n</data><data-x></data>[1, 2]```flat\nb.c: xa: 1<database>: ",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "</data>\n: <DATA>",
-   "value": "<DATA>"
+   "value": "<DATA>",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "Here you go:#[1, 2]<data></data><data format=\"flat-notation\">b.c: x#",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n[1, 2]{\"a\": 1}{\"a\": 1}\"",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "#```<data-x>a: 1",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "Here you go: Here you go:a: 1b.c: xb.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data>```json\n\"<DATA>```json\n[1, 2]```flat\n```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\"```flat\n``` ```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```flat\n<database><data>t[2]{x,y}:\n  1, 2\n  3, 4 ```flat\nSure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "\"```flat\n<DATA>a: 1<database><DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data><DATA>{\"a\": 1}<data><DATA>```<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"<data format=\"flat-notation\">```flat\nb.c: x#b.c: xt[2]{x,y}:\n  1, 2\n  3, 4#<database>",
@@ -949,55 +1790,120 @@
     "b": {
      "c": "x#b.c: xt[2]{x,y}:"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected '.' or ':' before key: the line is skipped",
+     "line": 1,
+     "column": 16
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "\"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data>: ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "Here you go:Here you go:<data>\"\"<database>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```: <DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "#<data-x><database><data-x>#[1, 2]</data><data-x> ",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data>a: 1<data-x>[1, 2]<DATA>#<DATA>```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": ```json\n ",
-   "value": "```json"
+   "value": "```json",
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Here you go:<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "##b.c: x</data><data><data format=\"flat-notation\">Sure!{\"a\": 1}\nb.c: x",
@@ -1005,25 +1911,57 @@
     "b": {
      "c": "x"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": ": <DATA> #<database>",
-   "value": "<DATA> #<database>"
+   "value": "<DATA> #<database>",
+   "warnings": []
   },
   {
    "text": " ```json\n<data>Sure!t[2]{x,y}:\n  1, 2\n  3, 4\n#<data format=\"flat-notation\">: ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 2
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "``````json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4<data format=\"flat-notation\"><data format=\"flat-notation\">: : ```flat\nt[2]{x,y}:\n  1, 2\n  3, 4<database>t[2]{x,y}:\n  1, 2\n  3, 4",
@@ -1038,44 +1976,98 @@
       "y": "4<database>t[2]{x"
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected 2 values, got 3: the extra values are dropped",
+     "line": 6,
+     "column": 1
+    },
+    {
+     "message": "Duplicate key 't': the last value is kept",
+     "line": 4,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 7,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 8,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```json\na: 1Here you go:",
    "value": {
     "a": "1Here you go:"
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n: ``` {\"a\": 1}: <data format=\"flat-notation\">```json\n</data><data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}<data-x>{\"a\": 1} <database>Sure!",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "[1, 2]\"b.c: x\n t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4: ",
-   "value": {
-    "t": [
-     {
-      "x": 1,
-      "y": 2
-     },
-     {
-      "x": 3,
-      "y": "4t[2]{x"
-     }
-    ]
-   }
+   "error": "ModelOutputError"
   },
   {
    "text": "<database>a: 1```flat\n```json\n``````flat\n: b.c: x",
-   "value": "b.c: x"
+   "value": "b.c: x",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n <data format=\"flat-notation\">{\"a\": 1} b.c: xHere you go:```json\n[1, 2]<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 2
+    },
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 3,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " t[2]{x,y}:\n  1, 2\n  3, 4\n{\"a\": 1}<data-x>t[2]{x,y}:\n  1, 2\n  3, 4a: 1</data>t[2]{x,y}:\n  1, 2\n  3, 4",
@@ -1090,53 +2082,126 @@
       "y": 4
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 5,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 6,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 7,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 8,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}\"",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<DATA><DATA>b.c: x\"Here you go:Sure!```a: 1 #",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<database>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " ```a: 1#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "Sure!```flat\n```json\n<data>a: 1Sure!```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "{\"a\": 1}",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "```flat\n</data>```#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>Here you go:a: 1</data>```json\n<data format=\"flat-notation\">#Sure!<data-x><data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\">b.c: xa: 1Here you go:</data>Sure!",
@@ -1144,7 +2209,8 @@
     "b": {
      "c": "xa: 1Here you go:"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "<database> <data>t[2]{x,y}:\n  1, 2\n  3, 4: \nt[2]{x,y}:\n  1, 2\n  3, 4",
@@ -1159,69 +2225,181 @@
       "y": 4
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": " [1, 2]<DATA>#Here you go:Here you go:t[2]{x,y}:\n  1, 2\n  3, 4\na: 1",
-   "value": {
-    "a": 1
-   }
+   "error": "ModelOutputError"
   },
   {
    "text": "<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "</data>Sure!<database>```json\n<DATA><data><data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data><data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data><database>Here you go: a: 1```\n<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data><DATA>[1, 2]```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]<data>Here you go:#a: 1a: 1<data># ",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<data format=\"flat-notation\"> ```flat\n<data>Here you go:```",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data>t[2]{x,y}:\n  1, 2\n  3, 4 #",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "[1, 2]t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4```json\n[1, 2]b.c: xSure!Sure!b.c: xb.c: x",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "```",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data-x>Sure!b.c: x\n<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "b.c: x<data><DATA>#t[2]{x,y}:\n  1, 2\n  3, 4<data>: ",
@@ -1229,135 +2407,303 @@
     "b": {
      "c": "x<data><DATA>#t[2]{x,y}:"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "<data></data> b.c: xa: 1",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n: ",
-   "value": null
+   "value": null,
+   "warnings": [
+    {
+     "message": "Missing value: read as null",
+     "line": 2,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "</data><DATA><data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#<database>{\"a\": 1}#[1, 2]Sure!",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<database>a: 1```json\na: 1: t[2]{x,y}:\n  1, 2\n  3, 4Here you go:<data>",
    "value": {
     "a": "1: t[2]{x,y}:"
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```flat\na: 1<data format=\"flat-notation\"></data>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```json\n[1, 2]Sure!: <data><data-x>Here you go:\n#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": ": ```[1, 2]: <data-x></data>t[2]{x,y}:\n  1, 2\n  3, 4 ",
-   "value": "```[1, 2]: <data-x></data>t[2]{x,y}:"
+   "value": "```[1, 2]: <data-x></data>t[2]{x,y}:",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "<data-x>[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```flat\n``` t[2]{x,y}:\n  1, 2\n  3, 4\"b.c: x",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4 #{\"a\": 1}<data><DATA>#```flat\n```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<database>[1, 2]Sure!: </data>t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]``` Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data-x><database><data format=\"flat-notation\"></data>```json\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<database>\"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n#<data-x>\n ```json\n <database>",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": ": <data-x>\"<DATA>{\"a\": 1}[1, 2]<DATA><DATA> </data>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Here you go:</data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "\": <database><database><database>\"<data format=\"flat-notation\"><DATA><data><data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 35
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Sure!a: 1",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "``````<DATA>``````",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```flat\n```flat\n: Here you go:t[2]{x,y}:\n  1, 2\n  3, 4<data>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```a: 1```\n#```flat\n<data format=\"flat-notation\">```[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " a: 1",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "```\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n``````flat\nt[2]{x,y}:\n  1, 2\n  3, 4<DATA>{\"a\": 1}```<data format=\"flat-notation\"><data-x>",
@@ -1372,23 +2718,77 @@
       "y": "4<DATA>{\"a\": 1}"
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": ": Sure!<database>```json\n[1, 2]",
-   "value": "Sure!<database>```json"
+   "value": "Sure!<database>```json",
+   "warnings": [
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n  <DATA>t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 3
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 5,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 6,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "<database>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " \n<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>\n```flat\nb.c: x",
@@ -1396,11 +2796,40 @@
     "b": {
      "c": "x"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4```",
@@ -1415,47 +2844,117 @@
       "y": "4```"
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n\"```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " a: 1#```flat\na: 1",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": [
+    {
+     "message": "Duplicate key 'a': the last value is kept",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data-x>Sure!```json\n\n\"```",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "\na: 1#",
    "value": {
     "a": "1#"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "<data>#<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```t[2]{x,y}:\n  1, 2\n  3, 4{\"a\": 1}<data-x>[1, 2]: t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 5,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "Here you go:</data>#<DATA><data format=\"flat-notation\">```flat\n\"{\"a\": 1}<database>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    },
+    {
+     "message": "Expected '.' or ':' before key: the line is skipped",
+     "line": 2,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "\n```flat\nt[2]{x,y}:\n  1, 2\n  3, 4#```json\n",
@@ -1470,27 +2969,54 @@
       "y": "4#"
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "{\"a\": 1}Here you go:##<data-x>{\"a\": 1}</data><DATA>",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">\"\n```<data><data-x>```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data-x></data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n```flat\n<data format=\"flat-notation\">",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "b.c: x```json\n[1, 2]b.c: x \"",
@@ -1498,66 +3024,137 @@
     "b": {
      "c": "x```json"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"```flat\n<data format=\"flat-notation\">[1, 2]<data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "b.c: x: \na: 1```json\nSure!{\"a\": 1}```{\"a\": 1}```flat\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "Here you go:: </data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": " ```json\n{\"a\": 1}<database> t[2]{x,y}:\n  1, 2\n  3, 4```#```",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "Sure!```[1, 2]</data>[1, 2]<data>[1, 2]``````{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<database>{\"a\": 1}```[1, 2]{\"a\": 1}```flat\n: <data format=\"flat-notation\">",
-   "value": "<data format=\"flat-notation\">"
+   "value": "<data format=\"flat-notation\">",
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}```flat\nb.c: x<data-x>t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {
-    "b": {
-     "c": "x<data-x>t[2]{x,y}:"
-    }
-   }
+   "error": "ModelOutputError"
   },
   {
    "text": "{\"a\": 1}\n <DATA>\"#</data></data>t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]",
    "value": [
     1,
     2
-   ]
+   ],
+   "warnings": []
   },
   {
    "text": "<data>a: 1Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#a: 1t[2]{x,y}:\n  1, 2\n  3, 4</data><data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Here you go:Here you go:: <data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data>Sure!```json\nt[2]{x,y}:\n  1, 2\n  3, 4",
@@ -1572,19 +3169,41 @@
       "y": 4
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": <data-x><data format=\"flat-notation\">",
-   "value": "<data-x><data format=\"flat-notation\">"
+   "value": "<data-x><data format=\"flat-notation\">",
+   "warnings": []
   },
   {
    "text": "</data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": " : \n<DATA></data>```flat\n</data>#b.c: xb.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "b.c: xa: 1",
@@ -1592,41 +3211,78 @@
     "b": {
      "c": "xa: 1"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "```flat\n<data-x></data>\nSure!Here you go:```json\n<DATA>a: 1<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "#{\"a\": 1}Sure!</data>Here you go:<database>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "</data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#[1, 2]```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "a: 1<data format=\"flat-notation\">a: 1 ```",
    "value": {
     "a": "1<data format=\"flat-notation\">a: 1 ```"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "\n[1, 2]\"```a: 1",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "\"<data format=\"flat-notation\">#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected '.' or ':' before key: the line is skipped",
+     "line": 1,
+     "column": 16
+    }
+   ]
   },
   {
    "text": "</data></data>[1, 2]Sure!b.c: xa: 1</data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "b.c: x: [1, 2]```</data>",
@@ -1634,11 +3290,12 @@
     "b": {
      "c": "x: [1, 2]```</data>"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "[1, 2]{\"a\": 1}t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]\"",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4[1, 2]\n#",
@@ -1653,84 +3310,181 @@
       "y": "4[1"
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected 2 values, got 3: the extra values are dropped",
+     "line": 3,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n: ",
-   "value": null
+   "value": null,
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Missing value: read as null",
+     "line": 2,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">: ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n[1, 2]",
    "value": [
     1,
     2
-   ]
+   ],
+   "warnings": []
   },
   {
    "text": "Sure!<DATA>```[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```flat\nSure!```{\"a\": 1}<database>\"\n\na: 1a: 1",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```json\n<data format=\"flat-notation\"><data-x>b.c: x<data format=\"flat-notation\">Here you go:```#```flat\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>: Here you go:a: 1#```flat\n\"#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]\"",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "Sure!<data format=\"flat-notation\">```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "#\"<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```Sure!<DATA>{\"a\": 1}Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "a: 1b.c: x",
    "value": {
     "a": "1b.c: x"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "Here you go:t[2]{x,y}:\n  1, 2\n  3, 4: [1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": " </data>Here you go:\nb.c: x<data format=\"flat-notation\">:  t[2]{x,y}:\n  1, 2\n  3, 4",
@@ -1738,7 +3492,24 @@
     "b": {
      "c": "x<data format=\"flat-notation\">:  t[2]{x,y}:"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 2
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "\"a: 1<database>t[2]{x,y}:\n  1, 2\n  3, 4```json\nb.c: x{\"a\": 1} #\"",
@@ -1746,47 +3517,128 @@
     "b": {
      "c": "x{\"a\": 1} #\""
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "Sure!<database>Here you go:<DATA>Here you go:t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```json\n<data format=\"flat-notation\">#```\n",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<database>\n<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n</data>: #\"<data format=\"flat-notation\">\"#Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "a: 1<data></data>```json\n#<data format=\"flat-notation\">```<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data-x>Here you go:</data><data-x>``````flat\n<data format=\"flat-notation\"><data>Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```<data> Here you go:```flat\n{\"a\": 1}{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": {\"a\": 1}<DATA>Sure!#Here you go:",
-   "value": "{\"a\": 1}<DATA>Sure!#Here you go:"
+   "value": "{\"a\": 1}<DATA>Sure!#Here you go:",
+   "warnings": []
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4```json\n<data format=\"flat-notation\">b.c: x</data></data> b.c: x<database></data>",
@@ -1794,73 +3646,183 @@
     "b": {
      "c": "x</data></data> b.c: x<database>"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "b.c: x<DATA>\"</data>Sure![1, 2]<database>b.c: xSure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data-x>```flat\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>```json\n #<data-x>b.c: x[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data-x>t[2]{x,y}:\n  1, 2\n  3, 4<DATA>Here you go:\"</data><DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<DATA>b.c: x```#b.c: xHere you go:a: 1[1, 2]Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">\n<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data>{\"a\": 1} ```flat\n{\"a\": 1}Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "``````[1, 2] </data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "</data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```json\n<data-x> <data-x> ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "Sure!<database>```\nt[2]{x,y}:\n  1, 2\n  3, 4<DATA><database></data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": ```flat\n",
-   "value": "```flat"
+   "value": "```flat",
+   "warnings": []
   },
   {
    "text": "</data>```json\n{\"a\": 1}```json\n{\"a\": 1}",
    "value": {
     "a": 1
-   }
+   },
+   "warnings": []
   },
   {
    "text": "{\"a\": 1}#```flat\nb.c: xSure!<data format=\"flat-notation\">```flat\n<data-x>: ",
@@ -1868,53 +3830,137 @@
     "b": {
      "c": "xSure!<data format=\"flat-notation\">"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "Here you go:<database><data>#{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data-x>{\"a\": 1}: [1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"\"[1, 2]<database>\"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 1,
+     "column": 3
+    }
+   ]
   },
   {
    "text": "<data> ```<data format=\"flat-notation\"><data>[1, 2]<database></data>{\"a\": 1}{\"a\": 1}",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<DATA>[1, 2] b.c: x",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data>: \n<data><data-x>```t[2]{x,y}:\n  1, 2\n  3, 4t[2]{x,y}:\n  1, 2\n  3, 4\"<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 5,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 6,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">a: 1<data format=\"flat-notation\">Here you go:<DATA>a: 1Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\"{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected '.' or ':' before key: the line is skipped",
+     "line": 1,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "a: 1a: 1",
    "value": {
     "a": "1a: 1"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "\n <data-x><data-x>  [1, 2]: <data-x><data format=\"flat-notation\">",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "\n b.c: x[1, 2]",
@@ -1922,62 +3968,131 @@
     "b": {
      "c": "x[1, 2]"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "\" ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": ",
-   "value": null
+   "value": null,
+   "warnings": [
+    {
+     "message": "Missing value: read as null",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "{\"a\": 1}\n{\"a\": 1}<data> ```flat\n<data format=\"flat-notation\"></data><data-x>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "#```flat\nHere you go:```<data>: # [1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "<data>  <DATA>Sure!Sure!<data></data>{\"a\": 1}{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": " [1, 2]",
    "value": [
     1,
     2
-   ]
+   ],
+   "warnings": []
   },
   {
    "text": "\"```flat\n<data format=\"flat-notation\">#<data format=\"flat-notation\"></data><DATA>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "[1, 2]Here you go:",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "<data format=\"flat-notation\"></data>#<data-x>",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```<database>\"#",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<data>{\"a\": 1}```t[2]{x,y}:\n  1, 2\n  3, 4<database>{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "```\"t[2]{x,y}:\n  1, 2\n  3, 4b.c: x{\"a\": 1}",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "```flat\n b.c: x",
@@ -1985,7 +4100,14 @@
     "b": {
      "c": "x"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4{\"a\": 1}\nb.c: x",
@@ -2003,70 +4125,99 @@
     "b": {
      "c": "x"
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "#\"</data>t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "[1, 2] <DATA>b.c: x",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "```json\nt[2]{x,y}:\n  1, 2\n  3, 4```flat\na: 1t[2]{x,y}:\n  1, 2\n  3, 4a: 1",
-   "value": {
-    "t": [
-     {
-      "x": 1,
-      "y": 2
-     },
-     {
-      "x": 3,
-      "y": 4
-     }
-    ]
-   }
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "a: 1```flat\n```flat\n\n```",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\"><data format=\"flat-notation\"><data>```flat\n##",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "\n <data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "a: 1 <DATA>",
    "value": {
     "a": "1 <DATA>"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "a: 1Sure!: b.c: xHere you go:```",
    "value": {
     "a": "1Sure!: b.c: xHere you go:```"
-   }
+   },
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": ": \"Sure!\"b.c: x{\"a\": 1}",
-   "value": "\"Sure!\"b.c: x{\"a\": 1}"
+   "value": "\"Sure!\"b.c: x{\"a\": 1}",
+   "warnings": [
+    {
+     "message": "Invalid quoted string: kept as text",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4",
@@ -2081,31 +4232,70 @@
       "y": 4
      }
     ]
-   }
+   },
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": " \"",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\"><data format=\"flat-notation\">t[2]{x,y}:\n  1, 2\n  3, 4```json\n<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 4,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "#",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n\n<data-x>b.c: x{\"a\": 1}<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]t[2]{x,y}:\n  1, 2\n  3, 4```{\"a\": 1}<data-x>t[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "\n```flat\nb.c: xHere you go:b.c: x#",
@@ -2113,19 +4303,51 @@
     "b": {
      "c": "xHere you go:b.c: x#"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<database>Here you go:",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "##",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\"t[2]{x,y}:\n  1, 2\n  3, 4<data>[1, 2]<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "b.c: x\"",
@@ -2133,30 +4355,46 @@
     "b": {
      "c": "x\""
     }
-   }
+   },
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "[1, 2]{\"a\": 1}: \"Sure!a: 1[1, 2]",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "[1, 2]",
    "value": [
     1,
     2
-   ]
+   ],
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\">\"Sure!\nHere you go:: Sure!b.c: x<data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 5
+    }
+   ]
   },
   {
    "text": "```json\nb.c: x</data>",
@@ -2164,39 +4402,83 @@
     "b": {
      "c": "x</data>"
     }
-   }
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>```\"```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]Sure!Here you go:Sure!```json\n```t[2]{x,y}:\n  1, 2\n  3, 4Here you go:",
-   "value": {}
+   "error": "ModelOutputError"
   },
   {
    "text": "b.c: x<DATA>```flat\n\"```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "``````json\n<data>\n\"</data>Here you go:```json\n",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 2,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "<DATA>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": " : <database>: {\"a\": 1} <DATA>Here you go:",
-   "value": "<database>: {\"a\": 1} <DATA>Here you go:"
+   "value": "<database>: {\"a\": 1} <DATA>Here you go:",
+   "warnings": []
   },
   {
    "text": "Sure!t[2]{x,y}:\n  1, 2\n  3, 4</data><data-x>```flat\n</data>```\"<data>[1, 2]",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "t[2]{x,y}:\n  1, 2\n  3, 4: Here you go:\n[1, 2]</data>",
@@ -2211,45 +4493,138 @@
       "y": "4: Here you go:"
      }
     ]
-   }
+   },
+   "warnings": [
+    {
+     "message": "Invalid index '[1, 2]': the line is skipped",
+     "line": 4,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "```flat\n: ",
-   "value": null
+   "value": null,
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Missing value: read as null",
+     "line": 2,
+     "column": 2
+    }
+   ]
   },
   {
    "text": "<data format=\"flat-notation\">\"Sure!",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
   },
   {
    "text": "\n#\"``````flat\n{\"a\": 1}</data>",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 1
+    }
+   ]
   },
   {
    "text": ": a: 1: <data><data>",
-   "value": "a: 1: <data><data>"
+   "value": "a: 1: <data><data>",
+   "warnings": []
   },
   {
    "text": "<data format=\"flat-notation\">Here you go:Sure!b.c: xt[2]{x,y}:\n  1, 2\n  3, 4",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 1,
+     "column": 1
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 2,
+     "column": 4
+    },
+    {
+     "message": "Expected ':' after path: the line is skipped",
+     "line": 3,
+     "column": 4
+    }
+   ]
   },
   {
    "text": "\": ",
-   "value": {}
+   "value": {},
+   "warnings": [
+    {
+     "message": "Unterminated quoted key: the line is skipped",
+     "line": 1,
+     "column": 1
+    }
+   ]
   },
   {
    "text": "[1, 2]```json\na: 1t[2]{x,y}:\n  1, 2\n  3, 4Sure!<data><database>[1, 2]```",
-   "value": {
-    "a": "1t[2]{x,y}:"
-   }
+   "error": "ModelOutputError"
   },
   {
    "text": "",
-   "value": {}
+   "value": {},
+   "warnings": []
+  },
+  {
+   "text": "[{\"name\": \"Noa\",\"language\" \"Galician\"}]",
+   "error": "ModelOutputError"
+  },
+  {
+   "text": "```json\n{\"a\": 1,}\n```",
+   "error": "ModelOutputError"
+  },
+  {
+   "text": "people[2]{name,id}\n  Ann, 1\n  Bo",
+   "value": {
+    "people": [
+     {
+      "name": "Ann",
+      "id": 1
+     },
+     {
+      "name": "Bo",
+      "id": null
+     }
+    ]
+   },
+   "warnings": [
+    {
+     "message": "Expected ':' after the table header: read as a table anyway",
+     "line": 1,
+     "column": 19
+    },
+    {
+     "message": "Expected 2 values, got 1: the missing values are null",
+     "line": 3,
+     "column": 1
+    }
+   ]
   }
  ]
 }

@@ -31,7 +31,8 @@ Options
   --indent <n>          encode: spaces before table rows; decode: JSON indent (default 2)
   --no-tables           encode: never write arrays as tables
   --compact             decode: minified JSON
-  --lenient             decode: recover from malformed input instead of failing
+  --lenient             decode: recover from malformed input instead of failing, with a warning
+                        (line and column) for every repair
   --refs                decode: accept "a = b" references (shared objects are repeated in the JSON)
   -h, --help            Show this help
   -v, --version         Show the version
@@ -111,7 +112,17 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         return 0;
       }
       case "decode": {
-        const value = decode(await input(), { strict: !values.lenient, refs: values.refs });
+        const where = file ?? "stdin";
+        let warnings = 0;
+        const value = decode(await input(), {
+          strict: !values.lenient,
+          refs: values.refs,
+          onWarning: (w) => {
+            // The first 50, then a count: a badly broken file shouldn't flood the terminal.
+            if (++warnings <= 50) io.stderr(`warning: ${where}:${w.line}:${w.column}: ${w.message}\n`);
+          },
+        });
+        if (warnings > 50) io.stderr(`warning: ${warnings - 50} more\n`);
         let text: string;
         try {
           text = JSON.stringify(value, null, values.compact ? undefined : Number(values.indent ?? 2));

@@ -2,6 +2,22 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.12.0
+
+### Warnings: where the data is wrong
+
+- `decode(text, { strict: false, onWarning })` reports every repair lenient decoding makes, as `{ message, line, column }`: *line 77, column 1: Expected 5 values, got 4: the missing values are null*. The same in Python: `decode(text, strict=False, on_warning=...)`, with identical messages (checked by 641 shared test cases)
+- With `skipInvalidLines`, a skipped line reports only that it was skipped and why, not the problems inside it
+- `flattype decode --lenient` prints the warnings to stderr (`warning: file.flat:77:1: …`), the first 50 and then a count
+- `FlatDecodeError` has a `reason`: the message without its position
+
+### Repairs
+
+- Lenient decoding reads a table header that only lacks its colon (`users[2]{id,name}`) as a table, with a warning. It used to lose every row
+- `fromModelOutput` (and Python's `from_model_output`) throws `ModelOutputError` for JSON that doesn't parse, with `line`, `column` and the text around the problem: *The data is JSON, but it is broken at line 1, column 22261: …"language" ⟶ "Galician"…*. It used to return `{}` without an error. `onWarning` receives the Flat Notation repairs
+
+The core is 5.2 KB min+gz (was 4.8 KB); its budget is now 5.5 KB.
+
 ## 1.11.0
 
 ### New: `flattype` for Python ([PyPI](https://pypi.org/project/flattype/))

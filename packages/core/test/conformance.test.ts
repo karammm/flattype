@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { DecodeOptions, EncodeOptions } from "../src/index.js";
+import type { DecodeOptions, EncodeOptions, FlatWarning } from "../src/index.js";
 import { decode, encode, FlatDecodeError } from "../src/index.js";
 
 /**
@@ -99,14 +99,24 @@ const handwritten = [
   "t[2]{x,x.y}:\n  1, 2\n  3, 4\nz: 1",
   "t: 1\nt.u[1]{x}:\n  1\nz: 2",
   "t: 1\nt.u[2]{x}:\n  1",
+  "[2]{name,id}\n  Ann, 1\n  Bo, 2",
+  "t[2]{a,b}\n  1, 2\n  3, 4\nz: 1",
+  "t[1]{a}  \n  1",
+  "t[1]{a} x\n  1",
+  'a: "x" y, z\nb[]: "p" q, r\nc[]: "open',
+  "t[2]{a,b}:\n  1\n  1, 2, 3",
+  "t[1]{a,a}:\n  1, 2",
+  "a[0]: 1\na[0]: 2\na[3]: 4",
 ];
 
 function decodeCase(text: string, options: DecodeOptions): Record<string, unknown> | undefined {
+  const warnings: FlatWarning[] = [];
   try {
-    const v = decode(text, options);
+    const v = decode(text, { ...options, onWarning: (w) => warnings.push(w) });
     if (!portable(v)) return undefined;
     const json = JSON.stringify(v);
-    return json.length > 20_000 ? undefined : { text, options, value: JSON.parse(json) };
+    if (json.length > 20_000) return undefined;
+    return options.strict === false ? { text, options, value: JSON.parse(json), warnings } : { text, options, value: JSON.parse(json) };
   } catch (e) {
     if (!(e instanceof FlatDecodeError)) throw e;
     return { text, options, error: e.message };

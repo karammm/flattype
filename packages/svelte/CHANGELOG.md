@@ -1,5 +1,14 @@
 # @flattype/svelte
 
+## 1.12.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/core@1.12.0
+  - @flattype/shared@1.12.0
+  - @flattype/http@1.12.0
+
 ## 1.11.0
 
 ### Patch Changes

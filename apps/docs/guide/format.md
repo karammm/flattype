@@ -137,7 +137,7 @@ A line `path = target` puts the object or array found at `target` at `path` as w
 
 Malformed input throws `FlatDecodeError`, which has a 1-based `line` and `column`.
 
-`decode(text, { strict: false })` instead recovers what it can. That's what `fromModelOutput` and `flattype decode --lenient` use.
+`decode(text, { strict: false })` instead recovers what it can. That's what `fromModelOutput` and `flattype decode --lenient` use. Every repair is reported to `onWarning` as `{ message, line, column }`, where the message names the problem and the repair (`Expected 5 values, got 4: the missing values are null`).
 
 | Problem | Strict | Lenient |
 | --- | --- | --- |
@@ -148,9 +148,10 @@ Malformed input throws `FlatDecodeError`, which has a 1-based `line` and `column
 | Wrong number of cells in a row | error | missing cells are `null` |
 | Unterminated quoted string | error | the raw text |
 | Reference without `refs: true` | error | skipped |
+| Table header without its `:` (nothing else on the line) | error | read as a table |
 | Reference to a missing path | error | `null` |
 
-A line that isn't an entry at all is an error in both modes. `fromModelOutput` skips such lines, for example prose around the data.
+A line that isn't an entry at all is an error in both modes, unless `skipInvalidLines: true` is set: then it is skipped (and reported), leaving no trace in the result. `fromModelOutput` uses that, for example for prose around the data.
 
 ## Streaming
 

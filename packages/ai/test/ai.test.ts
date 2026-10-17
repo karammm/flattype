@@ -3,7 +3,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { decode } from "@flattype/core";
 import { defineModel } from "@flattype/models";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { claudeToolResult, countTokens, fromModelOutput, LEGEND, outputInstructions, toolResult, toPrompt, type TokenCounter } from "../src/index.js";
+import { claudeToolResult, countTokens, fromModelOutput, LEGEND, ModelOutputError, outputInstructions, toolResult, toPrompt, type TokenCounter } from "../src/index.js";
 
 const orders = {
   total: 2,
@@ -49,6 +49,28 @@ describe("fromModelOutput", () => {
   it("doesn't hang on a tag that only looks like <data> at the very start", () => {
     expect(fromModelOutput("<database></data>")).toEqual({});
     expect(fromModelOutput("<data-x>a: 1</data>")).toEqual({});
+  });
+
+  it("throws a ModelOutputError that says where broken JSON breaks", () => {
+    const reply = 'Here:\n```json\n[{"name": "Noa","language" "Galician"}]\n```';
+    expect(() => fromModelOutput(reply)).toThrow(ModelOutputError);
+    try {
+      fromModelOutput(reply);
+    } catch (e) {
+      expect(e).toMatchObject({ line: 1, column: 28 });
+      expect((e as Error).message).toBe('The data is JSON, but it is broken at line 1, column 28: [{"name": "Noa","language" ⟶ "Galician"}]');
+    }
+  });
+
+  it("reports repaired slips through onWarning", () => {
+    const warnings: string[] = [];
+    const value = fromModelOutput("Here you go.\npeople[2]{name,id}\n  Ann, 1\n  Bo", { onWarning: (w) => warnings.push(`${w.line}: ${w.message}`) });
+    expect(value).toEqual({ people: [{ name: "Ann", id: 1 }, { name: "Bo", id: null }] });
+    expect(warnings).toEqual([
+      "1: Expected ':' after path: the line is skipped",
+      "2: Expected ':' after the table header: read as a table anyway",
+      "4: Expected 2 values, got 1: the missing values are null",
+    ]);
   });
 
   it("drops prose lines in one pass", () => {

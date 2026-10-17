@@ -147,13 +147,18 @@ customers = from_model_output(reply)  # or from_model_output(reply, Customer, ma
 
 - **`to_prompt(data)`:** the data as Flat Notation inside a `<data>` tag, with a one-line legend that explains the format.
 - **`output_instructions(example)`:** asks the model to answer in Flat Notation, with an example of the shape you expect.
-- **`from_model_output(reply)`:** finds the data in the reply (a `<data>` block, a code fence, or plain JSON instead) and skips prose lines around it. It runs in linear time, even on hostile replies.
+- **`from_model_output(reply, on_warning=...)`:** finds the data in the reply (a `<data>` block, a code fence, or plain JSON instead) and skips prose lines around it, reporting each repair. JSON that doesn't parse raises `ModelOutputError` with the line, the column and the text around it. It runs in linear time, even on hostile replies.
 - **`count_tokens(anthropic.Anthropic(), data)`:** compares JSON with Flat Notation using Claude's free token counter.
 - **`tool_result(data)` and `claude_tool_result(id, data)`:** tool results for MCP servers and the Claude API.
 
 ## More
 
-**Lenient decoding** for text from models or people: `decode(text, strict=False)` fills in what's missing instead of raising. Add `skip_invalid_lines=True` to drop lines that aren't Flat Notation.
+**Lenient decoding** for text from models or people: `decode(text, strict=False)` repairs what it can instead of raising, and `on_warning` says what it repaired and where. Add `skip_invalid_lines=True` to drop lines that aren't Flat Notation.
+
+```python
+people = flattype.decode(text, strict=False, on_warning=lambda w: print(f"line {w.line}: {w.message}"))
+# line 77: Expected 5 values, got 4: the missing values are null
+```
 
 **Streaming:** `Decoder` reads chunks as they arrive, and calls `on_row` for each table row as soon as its line is complete:
 

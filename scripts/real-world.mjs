@@ -9,6 +9,7 @@ import { brotliCompressSync, constants, gzipSync } from "node:zlib";
 import { encode as toon, decode as untoon } from "@toon-format/toon";
 import { decode, encode } from "../packages/core/dist/index.js";
 import { fromModelOutput } from "../packages/ai/dist/index.js";
+import { run as cli } from "../packages/cli/dist/index.js";
 
 const NAMES = ["64KB", "128KB", "256KB", "512KB", "1MB", "5MB"];
 // Both variants of each file are read: NAME.json (pretty-printed) and NAME-min.json.
@@ -91,9 +92,28 @@ try {
 } catch (e) {
   flatError = e.message;
 }
-const lenient = decode(badFlat, { strict: false });
+const flatWarnings = [];
+const lenient = decode(badFlat, { strict: false, onWarning: (w) => flatWarnings.push(w) });
 const intact = lenient.filter((r, i) => same(r, first[i])).length;
-const fromReply = JSON.stringify(fromModelOutput(broken));
+let replyError = "";
+try {
+  fromModelOutput(broken);
+} catch (e) {
+  replyError = e.message;
+}
+// The CLI on the same text, saved as people.flat.
+let cliWarnings = "";
+await cli(["decode", "--lenient", "people.flat"], {
+  readFile: async () => badFlat,
+  writeFile: async () => {},
+  stdin: async () => "",
+  stdout: () => {},
+  stderr: (t) => void (cliWarnings += t),
+});
+// The other slip that used to lose everything: a table header without its colon.
+const noColon = encode(first).replace(/^(\[\d+\]\{[^}]*\}):/, "$1");
+const headerWarnings = [];
+const headerValue = decode(noColon, { strict: false, onWarning: (w) => headerWarnings.push(w) });
 
 const md = `# Benchmark: Microsoft Edge demo JSON (64 KB to 5 MB, pretty and minified)
 
@@ -177,7 +197,7 @@ The demo site also has [missing-colon.json](${BASE}missing-colon.json): 64KB-min
 | --- | --- |
 | \`JSON.parse\` | Throws \`${jsonError}\`. **0 of ${first.length} records** are read, because JSON is one nested value: one wrong character anywhere invalidates the whole document. |
 | \`flattype encode missing-colon.json\` | Stops with the same message. FlatType reads JSON with \`JSON.parse\`, so it can't convert JSON that is already broken. |
-| \`fromModelOutput(text)\` (\`@flattype/ai\`) | Returns \`${fromReply}\`. The text looks like JSON, the JSON fails, and the Flat Notation fallback finds nothing either, so the data is lost without an error. |
+| \`fromModelOutput(text)\` (\`@flattype/ai\`) | Throws \`ModelOutputError\`: *${replyError.replace(/\|/g, "\\|")}*. The arrow marks the spot; \`error.line\` and \`error.column\` hold the position. (Before 1.12 it returned \`{}\` without an error.) |
 
 The same one-character slip **inside Flat Notation**, a missing comma in that record's row:
 
@@ -189,9 +209,16 @@ ${badRow.slice(0, 64)}…     (comma missing)
 | | What happens |
 | --- | --- |
 | \`decode(text)\` | Throws \`${flatError}\`, pointing at that record's line. |
-| \`decode(text, { strict: false })\` | Reads all ${lenient.length} records. **${intact} are exactly right**; the damaged one has its fields shifted by one (\`name\` is \`"${lenient[idx].name}"\`, the last field is \`null\`). |
+| \`decode(text, { strict: false, onWarning })\` | Reads all ${lenient.length} records. **${intact} are exactly right**; the damaged one has its fields shifted by one (\`name\` is \`"${lenient[idx].name}"\`, the last field is \`null\`), and \`onWarning\` says so: *line ${flatWarnings[0].line}, column ${flatWarnings[0].column}: ${flatWarnings[0].message}*. |
 
-Each record is one line, so a mistake stays in its line. That only holds for rows, though: if the colon at the end of the table header is missing, the header can't be read, and the rows can't be read without it.
+Each record is one line, so a mistake stays in its line, and the warning tells you which record to check. \`flattype decode --lenient\` prints the same warnings:
+
+\`\`\`
+$ flattype decode --lenient people.flat > people.json
+${cliWarnings.trim()}
+\`\`\`
+
+A missing colon on the **table header** itself no longer loses the rows either: lenient decoding reads all ${headerValue.length} records and warns *line ${headerWarnings[0].line}, column ${headerWarnings[0].column}: ${headerWarnings[0].message}*.
 
 ## Run it yourself
 

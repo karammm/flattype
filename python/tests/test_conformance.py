@@ -45,7 +45,10 @@ def test_decode_reads_the_same_value_or_error(case: dict[str, Any]) -> None:
             flattype.decode(case["text"], **kwargs)
         assert str(e.value) == case["error"]
     else:
-        assert same(flattype.decode(case["text"], **kwargs), case["value"])
+        warnings: list[flattype.FlatWarning] = []
+        assert same(flattype.decode(case["text"], **kwargs, on_warning=warnings.append), case["value"])
+        if "warnings" in case:
+            assert [{"message": w.message, "line": w.line, "column": w.column} for w in warnings] == case["warnings"]
 
 
 @pytest.mark.parametrize("case", CASES["refs"], ids=lambda c: repr(c["text"])[:40])
