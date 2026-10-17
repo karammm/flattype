@@ -33,6 +33,7 @@
   <a href="https://karammm.github.io/flattype/"><b>Playground</b></a> ·
   <a href="#quick-start"><b>Quick start</b></a> ·
   <a href="#the-format"><b>Format</b></a> ·
+  <a href="spec/SPEC.md"><b>Spec</b></a> ·
   <a href="#typed-models"><b>Models</b></a> ·
   <a href="#http"><b>HTTP</b></a> ·
   <a href="#react"><b>React</b></a> ·
@@ -301,6 +302,24 @@ Each row of a table is one line, so a slip stays in its line. A missing separato
 | With `skipInvalidLines: true`, a line that isn't Flat Notation | The line is skipped |
 
 `flattype decode --lenient file.flat` prints the same warnings, as `warning: file.flat:77:1: …`.
+
+### Specification and other languages
+
+[Flat Notation 1.0](spec/SPEC.md) is a complete specification, with the grammar, every error message, and the exact text an encoder writes. Any language can implement it. The [conformance suite](conformance/README.md) tests an implementation through a small adapter, so a port can show that it reads and writes exactly what this one does:
+
+```console
+$ node conformance/run.mjs -- python3 my_adapter.py
+  Decoder               1613 / 1613   ✓
+  Encoder                960 / 960    ✓
+  ...
+```
+
+| Language | Package | Conformance |
+| --- | --- | --- |
+| JavaScript, TypeScript | [`@flattype/core`](https://www.npmjs.com/package/@flattype/core) | every level |
+| Python | [`flattype`](https://pypi.org/project/flattype/) | every level |
+
+To build one for Go, Rust, Java or another language, start with [writing a port](spec/PORTING.md), then [get it listed](spec/IMPLEMENTATIONS.md#add-yours).
 
 ## Typed models
 

@@ -135,6 +135,13 @@ From comparing with [MessagePack](https://msgpack.org/).
 - `@flattype/core/types`: `replaceTypes`, `reviveDates`, `parseJson`, `stringifyJson`; `flattype.types` in Python
 - `"bigint"` and `"bytes"` model field types; `flatFetch` and the CLI keep big integers exact
 - MessagePack in the benchmarks
+
+## Flat Notation 1.0 specification ✅
+A release of the format, not of the packages: no package changes, so nothing new on npm or PyPI.
+- [`spec/SPEC.md`](spec/SPEC.md): the normative specification, with an [ABNF grammar](spec/grammar.abnf), every error message, and the exact canonical text
+- Conformance levels (Decoder, Encoder, Exact integers, Lenient, References, Messages) and a [runner](conformance/README.md) that tests an implementation in any language through a small adapter
+- [Writing a port](spec/PORTING.md), the [implementations page](spec/IMPLEMENTATIONS.md) and an issue template to get listed
+- CI checks the grammar against every case and the decoder on random documents, the spec's examples, and both reference implementations through the runner
 ---
 
 Have an idea or a use case that isn't covered? [Open an issue](https://github.com/karammm/flattype/issues).

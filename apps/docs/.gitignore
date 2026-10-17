@@ -12,3 +12,7 @@ guide/benchmarks.md
 .vitepress/dist
 public/
 guide/python.md
+guide/spec.md
+guide/porting.md
+guide/implementations.md
+guide/conformance.md

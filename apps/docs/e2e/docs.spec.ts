@@ -4,7 +4,8 @@ import { expect, test } from "@playwright/test";
 /** Accessibility (axe-core, WCAG 2.2 AA), broken links and phone layout for every documentation page. */
 const PAGES = [
   "", "guide/getting-started", "guide/format", "guide/models", "guide/http", "guide/react", "guide/vue", "guide/angular",
-  "guide/svelte-solid", "guide/llms", "guide/cli", "guide/python", "guide/benchmarks", "guide/security",
+  "guide/svelte-solid", "guide/llms", "guide/cli", "guide/python", "guide/benchmarks", "guide/security", "guide/spec",
+  "guide/conformance", "guide/porting", "guide/implementations",
 ];
 
 for (const scheme of ["light", "dark"] as const) {
@@ -34,6 +35,31 @@ test("internal links all resolve", async ({ page, request }) => {
     }
   }
   expect(seen.size).toBeGreaterThan(5);
+});
+
+test("links to headings all resolve", async ({ page }) => {
+  // The spec pages link to their sections a lot, and are written for GitHub's anchors as well.
+  const targets = new Map<string, Set<string>>();
+  for (const path of PAGES) {
+    await page.goto(path);
+    for (const [pathname, id] of await page.locator("a[href*='#']").evaluateAll((as) =>
+      as
+        .map((a) => a as HTMLAnchorElement)
+        .filter((a) => a.origin === location.origin && a.pathname.startsWith("/flattype/docs/") && a.hash.length > 1)
+        .map((a) => [a.pathname, decodeURIComponent(a.hash.slice(1))]),
+    )) {
+      if (!targets.has(pathname)) targets.set(pathname, new Set());
+      targets.get(pathname)!.add(id);
+    }
+  }
+  let checked = 0;
+  for (const [pathname, ids] of targets) {
+    await page.goto(pathname);
+    const missing = await page.evaluate((list) => list.filter((id) => !document.getElementById(id)), [...ids]);
+    expect(missing, `missing anchors on ${pathname}`).toEqual([]);
+    checked += ids.size;
+  }
+  expect(checked).toBeGreaterThan(30);
 });
 
 test("no page scrolls sideways on a phone", async ({ page, isMobile }) => {

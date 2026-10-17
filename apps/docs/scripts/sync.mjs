@@ -60,9 +60,32 @@ for (const [heading, slug] of Object.entries(PAGES)) {
   const title = { "getting-started": "Getting started", cli: "CLI and code generation", http: "HTTP" }[slug] ?? heading;
   writeFileSync(join(docs, "guide", `${slug}.md`), header(title) + rewrite(body) + "\n");
 }
+// The specification pages are the files in spec/ and conformance/, with links between them pointing at the docs.
+const SPEC = {
+  "spec/SPEC.md": "spec",
+  "spec/PORTING.md": "porting",
+  "spec/IMPLEMENTATIONS.md": "implementations",
+  "conformance/README.md": "conformance",
+};
+const root = join(docs, "../..");
+for (const [file, slug] of Object.entries(SPEC)) {
+  const dir = dirname(file);
+  const body = readFileSync(join(root, file), "utf8").replace(/\]\((?!https?:|#)([^)\s]+)\)/g, (_, target) => {
+    const [path, anchor] = target.split("#");
+    const resolved = join(dir, path).replace(/\\/g, "/");
+    const page = SPEC[resolved];
+    if (page) return `](/guide/${page}${anchor ? "#" + anchor : ""})`;
+    // Anything else in the repository: a file (blob) or a folder (tree) on GitHub.
+    const kind = /\.[a-z]+$/.test(resolved) ? "blob" : "tree";
+    return `](https://github.com/karammm/flattype/${kind}/main/${resolved}${anchor ? "#" + anchor : ""})`;
+  });
+  const note = `<!-- Generated from ${file} by scripts/sync.mjs. Edit that file instead. -->\n\n`;
+  writeFileSync(join(docs, "guide", `${slug}.md`), note + body);
+}
+
 // The video and logos live in docs/assets (the README uses them too); copy, don't duplicate them in git.
 mkdirSync(join(docs, "public"), { recursive: true });
 for (const file of ["flattype-intro.mp4", "mark.svg", "logo-light.svg", "logo-dark.svg"]) {
   copyFileSync(join(docs, "../../docs/assets", file), join(docs, "public", file));
 }
-console.log(`Synced ${Object.keys(PAGES).length} guide pages from README.md`);
+console.log(`Synced ${Object.keys(PAGES).length} guide pages from README.md and ${Object.keys(SPEC).length} from spec/ and conformance/`);

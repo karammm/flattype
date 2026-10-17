@@ -1,0 +1,44 @@
+name: List my implementation
+description: Add a Flat Notation implementation in another language to the implementations page.
+title: "Implementation: <language> (<package name>)"
+labels: ["implementation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for writing one! Listed implementations appear on the [implementations page](https://github.com/karammm/flattype/blob/main/spec/IMPLEMENTATIONS.md), with the levels of [Flat Notation 1.0](https://github.com/karammm/flattype/blob/main/spec/SPEC.md) they pass.
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      placeholder: Go
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Package and repository
+      description: Where to install it from, and where its source is.
+      placeholder: github.com/you/flatnotation (pkg.go.dev/github.com/you/flatnotation)
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Conformance runner output
+      description: The full output of `node conformance/run.mjs -- <your adapter>`, run on the current main branch.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: adapter
+    attributes:
+      label: Adapter
+      description: A link to the adapter you ran, so others can run it too.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Streaming support, known differences, or parts of the spec that were unclear.

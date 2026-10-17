@@ -71,6 +71,25 @@ jobs:
           uv build
           uvx twine check --strict dist/*
 
+  spec:
+    name: spec + conformance runner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v6
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@flattype/core
+      # Every document in the suite against spec/grammar.abnf, and the grammar printed in spec/SPEC.md.
+      - run: node conformance/grammar.mjs --cases
+      # The runner that ports in other languages use, against both reference implementations: every level.
+      - run: node conformance/run.mjs -- node conformance/adapters/javascript.mjs
+      - run: node conformance/run.mjs -- uv run --project python python conformance/adapters/python.py
+
   browsers:
     name: examples + real browsers
     runs-on: ubuntu-latest

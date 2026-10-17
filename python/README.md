@@ -199,7 +199,7 @@ Tuples are written as lists. `encode`, `decode`, `delimiter="|"` / `"\t"`, `inde
 
 ## Same text as JavaScript
 
-Every case in [`conformance/`](https://github.com/karammm/flattype/tree/main/conformance) is generated from `@flattype/core` and `@flattype/ai`, and the Python package must match it exactly. That's 990 encode cases, 3,215 decode cases (1,965 of them errors, compared message, line and column), 150 object graphs, 100 big-integer cases, and 425 prompt and model-reply cases. A few things follow from that:
+Every case in [`conformance/`](https://github.com/karammm/flattype/tree/main/conformance) is generated from `@flattype/core` and `@flattype/ai`, and the Python package must match it exactly. That's 990 encode cases, 3,255 decode cases (1,973 of them errors, compared message, line and column), 150 object graphs, 100 big-integer cases, and 430 prompt and model-reply cases. It passes every level of the [Flat Notation 1.0 specification](https://github.com/karammm/flattype/blob/main/spec/SPEC.md). A few things follow from that:
 
 - **Floats are written the way JavaScript writes them**, with `1e+21`, `1e-7` and `100`. So a float with no fractional part (`30.0`) decodes as the int `30`. Floats of 1e16 or more come back as an int with JavaScript's digits: the same number once converted to float, but not exactly equal to it.
 - **Ints are exact, however large.** JavaScript would round anything past 2⁵³. A literal longer than 4,300 digits is read as a float, so it can't hit Python's slow and limited `int()` path.
@@ -218,7 +218,7 @@ The win is in bytes on the wire and tokens in a prompt, not CPU time. Linear-tim
 
 ## Links
 
-- **Docs:** [karammm.github.io/flattype/docs](https://karammm.github.io/flattype/docs/), including the [format specification](https://karammm.github.io/flattype/docs/guide/format)
+- **Docs:** [karammm.github.io/flattype/docs](https://karammm.github.io/flattype/docs/), including the [format specification](https://karammm.github.io/flattype/docs/guide/spec)
 - **Playground:** [karammm.github.io/flattype](https://karammm.github.io/flattype/)
 - **Security:** [policy and guarantees](https://karammm.github.io/flattype/docs/guide/security)
 - **Changes:** [CHANGELOG](https://github.com/karammm/flattype/blob/main/CHANGELOG.md)

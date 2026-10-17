@@ -1,0 +1,84 @@
+; Flat Notation 1.0: the syntax of a line.
+; ABNF (RFC 5234), with %s"..." (RFC 7405) for case-sensitive text.
+; Terminals are Unicode code points. A document is split into lines at LF.
+; Which lines are table rows is in the specification (section 3.3).
+; conformance/grammar.mjs checks every case of the suite against this file.
+
+; Lines
+line            = line-body [ CR ]       ; one CR at the end of a line is ignored
+line-body       = blank / comment / entry
+row-line-comma  = cells-comma [ CR ]     ; the lines after a table header are its rows
+row-line-pipe   = cells-pipe [ CR ]
+row-line-tab    = cells-tab [ CR ]
+
+blank           = *sptab
+comment         = *sptab "#" *char
+entry           = *sptab ( pair / inline / header / reference )
+
+; Entries
+pair            = [ path ] ":" value
+inline          = [ path ] "[" "]" ":" cells-comma
+                / [ path ] "[" "|" "]" ":" cells-pipe
+                / [ path ] "[" HTAB "]" ":" cells-tab
+header          = header-comma / header-pipe / header-tab
+header-comma    = [ path ] "[" count "]" "{" field *( "," field ) "}" ":" *ws
+header-pipe     = [ path ] "[" count "|" "]" "{" field *( "|" field ) "}" ":" *ws
+header-tab      = [ path ] "[" count HTAB "]" "{" field *( HTAB field ) "}" ":" *ws
+reference       = path *SP "=" *SP ( path / "~" ) *SP
+
+; Paths
+path            = ( key / index ) *( "." key / index )
+key             = bare-key / string
+bare-key        = 1*( ALPHA / DIGIT / "_" / "$" / "-" )
+index           = "[" 1*DIGIT "]"
+count           = 1*DIGIT
+field           = *SP key *( "." key ) *SP
+
+; Values: one token, with the whitespace around it ignored
+value           = *ws scalar *ws
+scalar          = literal / number / string / text   ; the first that matches the whole token wins
+literal         = %s"null" / %s"true" / %s"false" / "{}" / "[]"
+number          = [ "-" ] ( "0" / %x31-39 *DIGIT ) [ "." 1*DIGIT ] [ "e" [ "+" / "-" ] 1*DIGIT ]   ; "e" or "E"
+text            = text-start [ *char nonws ]         ; any other token is that text, as a string
+
+; Strings: exactly JSON's (RFC 8259)
+string          = DQUOTE *( unescaped / escape ) DQUOTE
+unescaped       = %x20-21 / %x23-5B / %x5D-10FFFF
+escape          = "\" ( DQUOTE / "\" / "/" / %s"b" / %s"f" / %s"n" / %s"r" / %s"t" / %s"u" 4HEXDIG )
+
+; Cells: inline arrays and table rows. The delimiter splits the cells outside strings, and each cell is a
+; value. Before a string, only spaces and tabs may appear, and after it only spaces and tabs and the delimiter.
+cells-comma     = cell-comma *( "," cell-comma )
+cell-comma      = *sptab string *sptab
+                / *sptab ws-other *ws ( string-no-comma / text-no-comma ) *ws
+                / *sptab text-no-comma *ws
+cells-pipe      = cell-pipe *( "|" cell-pipe )
+cell-pipe       = *sptab string *sptab
+                / *sptab ws-other *ws ( string-no-pipe / text-no-pipe ) *ws
+                / *sptab text-no-pipe *ws
+cells-tab       = cell-tab *( HTAB cell-tab )        ; a tab separates cells, so it is not whitespace here
+cell-tab        = *SP string *SP
+                / *SP ws-other *ws-no-tab ( string / text-no-tab ) *ws-no-tab
+                / *SP text-no-tab *ws-no-tab
+
+string-no-comma = DQUOTE *( %x20-21 / %x23-2B / %x2D-5B / %x5D-10FFFF / escape ) DQUOTE
+string-no-pipe  = DQUOTE *( %x20-21 / %x23-5B / %x5D-7B / %x7D-10FFFF / escape ) DQUOTE
+text-no-comma   = text-start-no-comma [ *( %x00-09 / %x0B-2B / %x2D-10FFFF ) nonws-no-comma ]
+text-no-pipe    = text-start-no-pipe [ *( %x00-09 / %x0B-7B / %x7D-10FFFF ) nonws-no-pipe ]
+text-no-tab     = text-start [ *( %x00-08 / %x0B-10FFFF ) nonws ]
+
+; Characters
+char            = %x00-09 / %x0B-10FFFF  ; anything but LF
+sptab           = SP / HTAB
+ws              = SP / HTAB / ws-other   ; what JavaScript's String.prototype.trim removes
+ws-no-tab       = SP / ws-other
+ws-other        = %x0B-0D / %xA0 / %x1680 / %x2000-200A / %x2028-2029 / %x202F / %x205F / %x3000 / %xFEFF
+nonws           = ctl / %x21-7E / high
+text-start      = ctl / %x21 / %x23-7E / high                  ; not whitespace, not a quote
+text-start-no-comma = ctl / %x21 / %x23-2B / %x2D-7E / high
+text-start-no-pipe  = ctl / %x21 / %x23-7B / %x7D-7E / high
+nonws-no-comma  = ctl / %x21-2B / %x2D-7E / high
+nonws-no-pipe   = ctl / %x21-7B / %x7D-7E / high
+ctl             = %x00-08 / %x0E-1F      ; control characters that aren't whitespace (LF is never in a line)
+high            = %x7F-9F / %xA1-167F / %x1681-1FFF / %x200B-2027 / %x202A-202E / %x2030-205E
+                / %x2060-2FFF / %x3001-FEFE / %xFF00-10FFFF   ; everything above ASCII that isn't whitespace

@@ -1,6 +1,6 @@
 # Flat Notation format
 
-This page specifies Flat Notation as `@flattype/core` writes and reads it. **The format is stable:** text written by any 1.x version decodes the same way in every later 1.x version.
+This page is a tour of Flat Notation. The precise definition, with the grammar, every error and the exact text an encoder writes, is the [Flat Notation 1.0 specification](/guide/spec). **The format is stable:** text written by any 1.x version decodes the same way in every later 1.x version.
 
 - **Media type:** `text/x-flat` (send `charset=utf-8`)
 - **File extension:** `.flat`
@@ -118,7 +118,7 @@ Entries are applied in order, creating objects and arrays along their paths.
 - **Duplicates and conflicts are errors:** setting the same leaf twice, or using one path as both a value and a container.
 - **Keys are own properties,** including `__proto__`. Nothing is ever assigned to a prototype.
 
-Whatever `JSON.stringify` can write, `encode` writes as well, with the same rules: `toJSON` is called, then the `replacer` if there is one, `undefined` and functions are dropped (or become `null` in arrays), `NaN` and `Infinity` become `null`, and BigInt throws. Cycles throw too, unless `refs` is on. **`decode(encode(x))` deep-equals `JSON.parse(JSON.stringify(x))`** for every value. Property-based tests check this on every change.
+Whatever `JSON.stringify` can write, `encode` writes as well, with the same rules: `toJSON` is called, then the `replacer` if there is one, `undefined` and functions are dropped (or become `null` in arrays), `NaN` and `Infinity` become `null`, and a BigInt is written as its digits. Cycles throw, unless `refs` is on. **`decode(encode(x))` deep-equals `JSON.parse(JSON.stringify(x))`** for every value. Property-based tests check this on every change.
 
 A `reviver` passed to `decode` runs on the finished value, children before parents, in the order `JSON.parse` uses. A random-value test checks that the two call the reviver with the same keys and values in the same order.
 
@@ -160,3 +160,7 @@ A line that isn't an entry at all is an error in both modes, unless `skipInvalid
 ## Streaming
 
 `createDecoder()` reads the same format chunk by chunk, with chunks split anywhere, even inside a line or a character. It reports each table row as soon as its line is complete. The result is exactly what `decode` gives for the whole text.
+
+## Other languages
+
+The format is the same in every language. The [specification](/guide/spec) defines it, the [conformance suite](/guide/conformance) checks an implementation in any language, and [writing a port](/guide/porting) explains how to build one. JavaScript and Python are [implemented](/guide/implementations) today.

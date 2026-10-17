@@ -3,6 +3,14 @@ import { defineConfig } from "vitepress";
 
 const { version } = JSON.parse(readFileSync(new URL("../../../packages/core/package.json", import.meta.url), "utf8"));
 
+/** Heading anchors as GitHub makes them, so links in spec/*.md work on GitHub and here ("12.1 Document" -> "121-document"). */
+const slugify = (s: string): string =>
+  s
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, "")
+    .replace(/ /g, "-");
+
 export default defineConfig({
   title: "FlatType.js",
   description: "Flatten API JSON into compact, LLM-friendly key: value text and map it to typed models, in every frontend framework.",
@@ -14,12 +22,12 @@ export default defineConfig({
     ["link", { rel: "icon", type: "image/svg+xml", href: "/flattype/docs/mark.svg" }],
   ],
   // The default GitHub themes have comment colors below WCAG AA contrast.
-  markdown: { theme: { light: "github-light-high-contrast", dark: "github-dark-high-contrast" } },
+  markdown: { theme: { light: "github-light-high-contrast", dark: "github-dark-high-contrast" }, anchor: { slugify } },
   themeConfig: {
     logo: { src: "/mark.svg", alt: "" },
     nav: [
-      { text: "Guide", link: "/guide/getting-started", activeMatch: "/guide/" },
-      { text: "Format spec", link: "/guide/format" },
+      { text: "Guide", link: "/guide/getting-started", activeMatch: "^/guide/(?!spec|conformance|porting|implementations)" },
+      { text: "Spec", link: "/guide/spec", activeMatch: "^/guide/(spec|conformance|porting|implementations)" },
       { text: "Playground", link: "https://karammm.github.io/flattype/" },
       {
         text: `v${version}`,
@@ -51,6 +59,15 @@ export default defineConfig({
           { text: "Claude and LLMs", link: "/guide/llms" },
           { text: "CLI and code generation", link: "/guide/cli" },
           { text: "Python", link: "/guide/python" },
+        ],
+      },
+      {
+        text: "Specification",
+        items: [
+          { text: "Flat Notation 1.0", link: "/guide/spec" },
+          { text: "Conformance suite", link: "/guide/conformance" },
+          { text: "Write a port", link: "/guide/porting" },
+          { text: "Implementations", link: "/guide/implementations" },
         ],
       },
       {
