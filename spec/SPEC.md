@@ -62,7 +62,7 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**, **SHOULD NOT**, 
 - **Decoder:** turns a document into a value. **Encoder:** turns a value into a document.
 - **Code point:** a Unicode code point. Text is a sequence of code points, and every length, position and column in this document counts code points.
 - **Whitespace:** the code points listed in [appendix B](#appendix-b-whitespace), exactly those that JavaScript's `String.prototype.trim` removes. **Trimming** text removes whitespace from both ends.
-- `SP` is U+0020 (space), `HTAB` is U+0009 (tab), `LF` is U+000A and `CR` is U+000D.
+- `SP` is U+0020 (space), `HTAB` is U+0009 (tab), `LF` is U+000A and `CR` is U+000D. In examples, `⇥` stands for HTAB.
 - Grammar rules are written in ABNF ([RFC 5234](https://www.rfc-editor.org/rfc/rfc5234), with `%s` from [RFC 7405](https://www.rfc-editor.org/rfc/rfc7405)) and refer to [appendix A](#appendix-a-grammar).
 
 ## 2. Documents
@@ -105,7 +105,7 @@ An entry is a [path](#4-paths) followed by one of these, with the path's last pa
 
 ### 3.3 Tables
 
-A table header `path[N]{f1,f2,…}:` declares an array of N objects at `path`. The next N lines are its rows, whatever they contain. Each row holds N cells in field order, and becomes one object: the cell for field `f` is set at path `f` inside that row object ([section 6.3](#63-tables)).
+A table header `path[N]{f1,f2,…}:` declares an array of N objects at `path`. The next N lines are its rows, whatever they contain. Each row holds one cell per field, in field order, and becomes one object: the cell for field `f` is set at path `f` inside that row object ([section 6.3](#63-tables)).
 
 - **The count** N is one or more ASCII digits. Leading zeros are allowed (`[02]`). A count of 0 declares an empty array with no rows.
 - **The fields** are written between `{` and `}`. Each is one or more keys joined by `.`, never an index: `{id,user.name,"first name"}`. SP may surround each field (not HTAB, and no other whitespace).
@@ -127,7 +127,7 @@ a."b.c"                keys "a", "b.c"
 ```
 
 - **Bare keys** are one or more of `A`–`Z`, `a`–`z`, `0`–`9`, `_`, `$` and `-`. A bare key of digits is still a key: `a.0` is the key `"0"`, while `a[0]` is index 0.
-- **Quoted keys** are JSON strings (RFC 8259, section 7), with JSON escapes. Any key can be quoted, and every other key must be: `""`, `"a b"`, `"a.b"`, `"@type"`, `"[0]"`, `"é"`.
+- **Quoted keys** are JSON strings (RFC 8259, section 7), with JSON escapes. Any key can be quoted, and a key that isn't bare must be: `""`, `"a b"`, `"a.b"`, `"@type"`, `"[0]"`, `"é"`.
 - **Indexes** are one or more ASCII digits in brackets. Leading zeros are allowed and ignored (`[007]` is 7). The index is the nearest IEEE 754 double to the decimal number the digits form (so absurdly long indexes round, and are then out of range anyway).
 - **Terminals:** the brackets of an inline array (`[]`, `[|]`, `[⇥]`) and of a table header (`[N]{…}`, `[N|]{…}`, `[N⇥]{…}`) can only end a path. `[1|]` anywhere else is an error.
 
@@ -158,7 +158,7 @@ The text after an inline array's colon, and every table row, is a list of **cell
 
 1. Skip SP and HTAB (only SP when the delimiter is HTAB).
 2. **If the next code point is `"`,** the cell is a quoted string. It ends at the first `"` not preceded by an escaping `\`, and the quoted text MUST be a valid JSON string (`Invalid quoted string` otherwise, or `Unterminated string` if there is no closing quote). After it, only SP and HTAB may come (only SP for the HTAB delimiter) before the delimiter or the end of the text (`Expected delimiter after quoted string` otherwise). The delimiter can appear inside the quotes.
-3. **Otherwise,** the cell is the text up to the next delimiter (or the end), trimmed, read as a token ([section 5.1](#51-tokens)). An empty cell is `Missing value`. Such a token can still be a quoted string, if it starts with `"` after other whitespace (` "x"`), but then it can't contain the delimiter.
+3. **Otherwise,** the cell is the text up to the next delimiter (or the end), trimmed, read as a token ([section 5.1](#51-tokens)). An empty cell is `Missing value`. Such a token can still be a quoted string, when other whitespace (a no-break space, say) comes before its `"`, but then it can't contain the delimiter.
 4. If a delimiter follows, skip it and read the next cell. A delimiter at the very end means one more cell, which is empty: `a[]: x,` is `Missing value`.
 
 There is always at least one cell, so `a[]:` with nothing after it is `Missing value`. An empty array is written `a: []`.
