@@ -1,6 +1,7 @@
 // Renders docs/assets/flattype-intro.{mp4,gif} from scene.html. Every number and code sample in the
 // video is real output from the built packages, computed here.
 //   pnpm build && FFMPEG=/path/to/ffmpeg node scripts/video/record.mjs
+//   PREVIEW=25,28 node scripts/video/record.mjs      (just those seconds, as PNGs)
 // Needs ffmpeg (FFMPEG env var or on PATH) and Playwright's Chromium (`npx playwright install chromium`).
 import { execFileSync, spawn } from "node:child_process";
 import { createRequire } from "node:module";
@@ -16,7 +17,8 @@ import { flatExpress } from "../../packages/http/dist/index.js";
 import { run as runCLI } from "../../packages/cli/dist/index.js";
 import { readFile as readFileAsync } from "node:fs/promises";
 import express from "express";
-import { users } from "../../fixtures/index.mjs";
+import { gzipSync } from "node:zlib";
+import { contacts, users } from "../../fixtures/index.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const assets = join(here, "../../docs/assets");
@@ -41,6 +43,23 @@ const out = JSON.stringify(first, (k, v) => (k === "createdAt" ? `@Date(${v})` :
   /"@Date\((.*)\)"/,
   "Date(\"$1\")",
 );
+
+// Lists whose objects have different keys (Flat Notation 1.1), and the real sizes on the contacts fixture.
+const irregular = {
+  users: [{ id: 1, name: "Ana", phone: "+1-555-0100" }, { id: 2, name: "Ben" }, { id: 3, name: "Chen", city: "Tokyo" }],
+  events: [{ type: "push", commits: [{ sha: "a1b2" }] }, { type: "star", user: { login: "zoe" } }],
+};
+const irregularJson = ["{", '  "users": ['];
+irregular.users.forEach((u, i) => irregularJson.push("    " + JSON.stringify(u) + (i < irregular.users.length - 1 ? "," : "")));
+irregularJson.push("  ],", '  "events": [');
+irregular.events.forEach((e, i) => irregularJson.push("    " + JSON.stringify(e) + (i < irregular.events.length - 1 ? "," : "")));
+irregularJson.push("  ]", "}");
+const people = contacts(1000);
+const kb = (s) => (Buffer.byteLength(s) / 1000).toFixed(1) + " KB";
+const gz = (s) => (gzipSync(s, { level: 9 }).length / 1000).toFixed(1) + " KB";
+const peopleJson = JSON.stringify(people);
+const people11 = encode(people);
+const people10 = encode(people, { target: "1.0" });
 
 const big = users(1000);
 const bigJson = JSON.stringify(big).length;
@@ -138,7 +157,7 @@ const data = {
   notes: { 0: "plain key: value", 1: "keys written once; address.city is a nested path", 2: "then one row per user" },
   rules: [
     '<b>"1"</b> stays quoted because it is a string, so decode() gives back exactly the same JSON',
-    "Mixed arrays fall back to paths: <b>items[0].id: 1</b>",
+    "Keys some objects lack are optional fields: <b>{id,name,phone?}</b>",
     "decode(encode(x)) is checked against <b>JSON.parse</b> with thousands of random inputs",
   ],
   code: [
@@ -156,6 +175,13 @@ const data = {
     "const users = User.parseList(res.data);",
   ].join("\n"),
   out,
+  irregularJson: irregularJson.join("\n"),
+  irregularFlat: encode(irregular),
+  irregularNotes: [
+    `1,000 contacts, some keys missing: <b>${kb(people11)}</b> · before 1.14: ${kb(people10)} · JSON: ${kb(peopleJson)}`,
+    `Gzipped: <b>${gz(people11)}</b> · before 1.14: ${gz(people10)} · JSON: ${gz(peopleJson)}`,
+    'Older readers: <b>encode(x, { target: "1.0" })</b>, and servers pick it from <b>Accept</b>',
+  ],
   server: [
     'import express from "express";',
     'import { flatExpress } from "@flattype/http";',
@@ -275,6 +301,17 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.addInitScript((d) => (window.DATA = d), data);
 await page.goto(pathToFileURL(join(here, "scene.html")).href);
+// PREVIEW=25,28 renders only those seconds, as PNGs in the system temp folder, to check a scene quickly.
+if (process.env.PREVIEW) {
+  for (const t of process.env.PREVIEW.split(",").map(Number)) {
+    await page.evaluate((x) => window.render(x), t);
+    const file = join(tmpdir(), `flattype-video-${t}s.png`);
+    await page.screenshot({ path: file });
+    console.log(`wrote ${file}`);
+  }
+  await browser.close();
+  process.exit(0);
+}
 const duration = await page.evaluate(() => window.DURATION);
 const total = Math.round(duration * FPS);
 for (let i = 0; i < total; i++) {

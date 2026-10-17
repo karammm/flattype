@@ -77,6 +77,17 @@
     <div class="callouts" id="rules"></div>
   </section>
 
+  <!-- irregular lists (Flat Notation 1.1) -->
+  <section class="scene" id="si">
+    <div class="kicker">New in 1.14 · Flat Notation 1.1</div>
+    <h1>Objects with different keys? <em>Still compact.</em></h1>
+    <div class="row">
+      <div class="panel"><div class="bar"><span>response.json</span></div><pre id="irrJson" class="mid" style="height:290px"></pre></div>
+      <div class="panel"><div class="bar"><span>encode(response)</span><b>phone? · [+] items</b></div><pre id="irrFlat" class="mid" style="height:290px"></pre></div>
+    </div>
+    <div class="callouts" id="irrNotes" style="margin-top:16px;gap:10px"></div>
+  </section>
+
   <!-- 3 models -->
   <section class="scene" id="s3">
     <div class="kicker">Step 2 · @flattype/models</div>
@@ -140,7 +151,7 @@
     <h1 style="margin-top:22px">Plain TypeScript and Python. No third-party dependencies.</h1>
     <div class="cmd"><span class="p">$</span> npm install @flattype/models @flattype/http @flattype/react</div>
     <div class="cmd" style="margin-top:10px"><span class="p">$</span> pip install flattype</div>
-    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18+</span><span class="chip">Vue 3</span><span class="chip">Angular 19+</span><span class="chip">Svelte &amp; Solid</span><span class="chip">Python 3.9+</span></div>
+    <div class="chips"><span class="chip">Browser</span><span class="chip">Node 18+</span><span class="chip">Any framework</span><span class="chip">React 18+</span><span class="chip">Vue 3</span><span class="chip">Angular 19+</span><span class="chip">Svelte &amp; Solid</span><span class="chip">Python 3.9+</span><span class="chip">Spec 1.1</span></div>
     <div class="url">karammm.github.io/flattype · github.com/karammm/flattype</div>
   </section>
 
@@ -195,9 +206,9 @@
   const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 
   // [element id, start, end] in seconds.
-  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["s3", 20, 30], ["sh", 30, 40], ["sr", 40, 65.5], ["sc", 65.5, 72.5], ["sp", 72.5, 80], ["s4", 80, 87], ["s5", 87, 92]];
+  const S = [["s0", 0, 4], ["s1", 4, 13.5], ["s2", 13.5, 20], ["si", 20, 30], ["s3", 30, 40], ["sh", 40, 50], ["sr", 50, 75.5], ["sc", 75.5, 82.5], ["sp", 82.5, 90], ["s4", 90, 97], ["s5", 97, 102]];
   const start = (id) => S.find((x) => x[0] === id)[1];
-  window.DURATION = 92;
+  window.DURATION = 102;
 
   $("jsonBytes").textContent = D.jsonBytes + " bytes minified";
   $("flatBytes").textContent = D.flatBytes + " bytes";
@@ -211,6 +222,7 @@
   $("shots").innerHTML = D.fw.map((f) => '<img src="' + f.shot + '" style="width:100%;display:block;position:absolute;top:0;opacity:0">').join("");
   $("rules").innerHTML = D.rules.map((l) => '<div class="callout">' + l + "</div>").join("");
   $("llm").innerHTML = D.llm.map((l) => '<div class="callout">' + l + "</div>").join("");
+  $("irrNotes").innerHTML = D.irregularNotes.map((l) => '<div class="callout" style="font-size:17px">' + l + "</div>").join("");
 
   window.render = function (t) {
     S.forEach(([id, a, b], i) => {
@@ -224,6 +236,10 @@
     $("json").scrollTop = $("json").scrollHeight; // follow the typing, like a terminal
     $("flat").innerHTML = hlFlat(typed(D.flat, (l1 - 3.8) / 2.2));
     $("flatBytes").style.opacity = l1 > 6 ? 1 : 0;
+    const li = t - start("si");
+    $("irrJson").innerHTML = hlJson(typed(D.irregularJson, li / 2.2));
+    $("irrFlat").innerHTML = hlFlat(typed(D.irregularFlat, (li - 2.8) / 2));
+    document.querySelectorAll("#irrNotes .callout").forEach((c, i) => { c.style.opacity = clamp((li - 5.2 - i * 0.8) / 0.4); });
     const l3 = t - start("s3");
     $("code").innerHTML = hlTs(typed(D.code, l3 / 3.5));
     $("out").innerHTML = hlJson(typed(D.out, (l3 - 4) / 1.6));

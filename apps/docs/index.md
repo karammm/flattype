@@ -18,7 +18,7 @@ features:
   - { title: Small, details: "The core is 6.2 KB min+gz with no third-party dependencies. Every package ships ESM, CJS and types, with npm provenance.", link: /guide/getting-started#packages, linkText: Packages }
 ---
 
-<video class="intro-video" src="/flattype-intro.mp4" controls muted playsinline preload="metadata" aria-label="FlatType in 92 seconds"></video>
+<video class="intro-video" src="/flattype-intro.mp4" controls muted playsinline preload="metadata" aria-label="FlatType in 102 seconds"></video>
 
 ```ts
 import { encode } from "@flattype/core";

@@ -15,9 +15,9 @@
 
 <p align="center">
   <a href="https://github.com/karammm/flattype/raw/main/docs/assets/flattype-intro.mp4">
-    <img src="https://raw.githubusercontent.com/karammm/flattype/main/docs/assets/flattype-intro.gif" width="800" alt="FlatType in 92 seconds: an API response encoded to Flat Notation, typed models, a server answering in Flat Notation or JSON, framework apps, the CLI, a FastAPI app with FlatMiddleware, and the size comparison with JSON">
+    <img src="https://raw.githubusercontent.com/karammm/flattype/main/docs/assets/flattype-intro.gif" width="800" alt="FlatType in 102 seconds: an API response encoded to Flat Notation, lists with optional fields and [+] items, typed models, a server answering in Flat Notation or JSON, framework apps, the CLI, a FastAPI app with FlatMiddleware, and the size comparison with JSON">
   </a><br>
-  <sub>▶ <a href="https://github.com/karammm/flattype/raw/main/docs/assets/flattype-intro.mp4">Watch the 92-second intro</a>. The Python part (step 6) is a real FastAPI app.</sub>
+  <sub>▶ <a href="https://github.com/karammm/flattype/raw/main/docs/assets/flattype-intro.mp4">Watch the 102-second intro</a>. The Python part (step 6) is a real FastAPI app.</sub>
 </p>
 
 ---
