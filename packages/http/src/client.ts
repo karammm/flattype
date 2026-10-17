@@ -1,4 +1,5 @@
 import { decode, type JsonValue } from "@flattype/core";
+import { parseJson, stringifyJson } from "@flattype/core/types";
 import { ACCEPT, isFlatType } from "./negotiate.js";
 
 /** Anything with `parse` / `parseList`, such as a model from `@flattype/models`. */
@@ -23,16 +24,23 @@ export class HttpError extends Error {
 export interface FlatRequestInit extends RequestInit {
   /** A custom `fetch`, e.g. for tests or a polyfill. Defaults to the global one. */
   fetch?: typeof fetch;
+  /**
+   * Read integers beyond 2^53 as exact `BigInt`s, in Flat Notation and in JSON (where the engine supports
+   * JSON.parse source text access, e.g. Node 21+ and Chrome 114+). Default: on when a `model` is given,
+   * since models convert them for `"number"` fields and keep them for `"bigint"` and `"string"` fields.
+   */
+  bigint?: boolean;
 }
 
 /** Reads a response as Flat Notation, JSON or text, based on its `Content-Type`. */
-export async function readBody(res: Response): Promise<unknown> {
+export async function readBody(res: Response, options: { bigint?: boolean } = {}): Promise<unknown> {
   if (res.status === 204 || res.status === 205) return null;
   const text = await res.text();
   if (text === "") return null;
   const type = res.headers.get("content-type");
-  if (isFlatType(type)) return decode(text);
-  if (type && /[/+]json\b/i.test(type)) return JSON.parse(text) as JsonValue;
+  const bigint = options.bigint === true;
+  if (isFlatType(type)) return decode(text, { bigint });
+  if (type && /[/+]json\b/i.test(type)) return bigint ? parseJson(text) : (JSON.parse(text) as JsonValue);
   return text;
 }
 
@@ -58,9 +66,9 @@ export async function flatFetch(
   url: string | URL,
   init: FlatRequestInit & { model?: Parser<unknown>; list?: boolean } = {},
 ): Promise<unknown> {
-  const { fetch: f = fetch, model, list, ...rest } = init;
+  const { fetch: f = fetch, model, list, bigint = model !== undefined, ...rest } = init;
   const res = await f(url, withAccept(rest));
-  const body = await readBody(res);
+  const body = await readBody(res, { bigint });
   if (!res.ok) throw new HttpError(res.status, res.statusText, body, res);
   if (!model) return body;
   return list ? model.parseList(body) : model.parse(body);
@@ -92,7 +100,7 @@ export interface FlatClient {
 }
 
 /**
- * A small API client on top of `flatFetch`. Request bodies are sent as JSON.
+ * A small API client on top of `flatFetch`. Request bodies are sent as JSON (BigInts as their digits).
  *
  * ```ts
  * const api = createClient({ baseURL: "https://api.example.com" });
@@ -121,7 +129,7 @@ export function createClient(options: ClientOptions = {}): FlatClient {
     };
     if (body !== undefined) {
       if (!h.has("content-type")) h.set("content-type", "application/json");
-      init.body = JSON.stringify(body);
+      init.body = stringifyJson(body);
     }
     if (model) {
       init.model = model;

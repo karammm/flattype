@@ -1,4 +1,5 @@
 import { decode, encode, stats, type Delimiter } from "@flattype/core";
+import { parseJson, stringifyJson } from "@flattype/core/types";
 import { infer, toSource } from "@flattype/models";
 import { parseArgs } from "node:util";
 import { gzipSync } from "node:zlib";
@@ -88,9 +89,10 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
     if (values.out) await io.writeFile(values.out, body);
     else io.stdout(body);
   };
-  const json = (text: string, source: string): unknown => {
+  // Integers beyond 2^53 stay exact both ways (JSON input needs Node 21+).
+  const json = (text: string, source: string, exact = true): unknown => {
     try {
-      return JSON.parse(text);
+      return exact ? parseJson(text) : JSON.parse(text);
     } catch (error) {
       throw new Error(`${source} is not valid JSON: ${(error as Error).message}`);
     }
@@ -117,6 +119,7 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         const value = decode(await input(), {
           strict: !values.lenient,
           refs: values.refs,
+          bigint: true,
           onWarning: (w) => {
             // The first 50, then a count: a badly broken file shouldn't flood the terminal.
             if (++warnings <= 50) io.stderr(`warning: ${where}:${w.line}:${w.column}: ${w.message}\n`);
@@ -125,7 +128,7 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         if (warnings > 50) io.stderr(`warning: ${warnings - 50} more\n`);
         let text: string;
         try {
-          text = JSON.stringify(value, null, values.compact ? undefined : Number(values.indent ?? 2));
+          text = stringifyJson(value, values.compact ? undefined : Number(values.indent ?? 2));
         } catch {
           throw new Error("The references form a cycle, which JSON can't represent");
         }
@@ -133,7 +136,7 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         return 0;
       }
       case "stats": {
-        const value = json(await input(), file ?? "stdin");
+        const value = json(await input(), file ?? "stdin", false);
         const s = stats(value);
         const jsonText = JSON.stringify(value);
         const flatText = encode(value);
@@ -153,7 +156,7 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         if (values.sample && values.openapi) throw new Error("Use either --sample or --openapi, not both");
         if (values.sample) {
           const text = await io.readFile(values.sample);
-          const sample = isFlatLike(text) ? decode(text, { strict: false }) : json(text, values.sample);
+          const sample = isFlatLike(text) ? decode(text, { strict: false, bigint: true }) : json(text, values.sample);
           await output(toSource(infer(sample), values.name ?? "Model"));
           return 0;
         }

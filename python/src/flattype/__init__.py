@@ -37,7 +37,7 @@ __all__ = [
     "unflatten",
 ]
 
-__version__ = "1.12.0"
+__version__ = "1.13.0"
 
 #: Media type for Flat Notation over HTTP.
 MEDIA_TYPE = "text/x-flat"

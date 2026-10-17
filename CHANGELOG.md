@@ -2,6 +2,31 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.13.0
+
+Ideas from comparing with [MessagePack](https://msgpack.org/): exact 64-bit integers and ready-made extension types, without changing the format.
+
+### Exact integers
+
+- `encode` writes a `BigInt` as its digits (it used to throw, like `JSON.stringify`). `decode(text, { bigint: true })` reads every integer beyond 2⁵³ as an exact `BigInt` instead of rounding it; smaller integers stay numbers. Works in tables, inline arrays, the streaming decoder and lenient mode. Python ints were already exact, and 100 new shared conformance cases check that both languages write and read the same digits
+- `@flattype/models`: a `"bigint"` field type. Parsing Flat Notation keeps big integers exact; a number that was already rounded (from `JSON.parse`) is refused with *beyond 2^53 and already rounded*, not silently accepted. `"number"` fields convert BigInts, `"string"` fields keep their digits, and `infer` picks `"bigint"` for big integers
+- `flatFetch` and `createClient` keep big integers exact when a `model` is given (or with `bigint: true`), in Flat Notation and, on engines with JSON.parse source text access (Node 21+, Chrome 114+), in JSON. Request bodies write BigInts as digits
+- `flattype decode` and `flattype encode` keep big integers exact both ways (JSON input needs Node 21+)
+
+### Built-in types: `@flattype/core/types`
+
+- `replaceTypes`: a replacer for `encode` or `JSON.stringify` that writes `Map`, `Set`, `Uint8Array` / `Buffer` / `ArrayBuffer` (base64), other typed arrays and `Error`s as plain data
+- `reviveDates`: a reviver that turns date-time strings with a zone (including Python's microseconds) into `Date`s
+- `parseJson` / `stringifyJson`: JSON that keeps big integers exact
+- `@flattype/models`: a `"bytes"` field type (base64 or URL-safe base64 → `Uint8Array`, and back). The CLI maps OpenAPI `format: byte` to it
+- Python: `flattype.types.default` for `encode(x, default=...)` (`datetime` written exactly as JavaScript writes dates, `bytes`, `set`, `Decimal`, `UUID`, enums, dataclasses, Pydantic models) and `flattype.types.revive_dates`
+
+### Benchmarks
+
+- MessagePack in the [Edge demo benchmark](https://github.com/karammm/flattype/blob/main/benchmarks/edge-json-dummy-data.md): 5% smaller than minified JSON before compression, 11% larger after gzip. Flat Notation is 14% and 2% smaller
+
+The core grew by 28 bytes (still 5.2 KB min+gz): the helpers are a separate entry point, `@flattype/core/types`.
+
 ## 1.12.0
 
 ### Warnings: where the data is wrong

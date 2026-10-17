@@ -51,6 +51,11 @@ export interface DecodeOptions {
    * line…), with its line and column, so you can tell the user where the data is wrong.
    */
   onWarning?: (warning: FlatWarning) => void;
+  /**
+   * Read integers beyond 2^53 (`Number.MAX_SAFE_INTEGER`) as exact `BigInt`s instead of rounding them, e.g. 64-bit
+   * IDs from a Python, Go or Java backend. Smaller integers stay numbers. Default `false`.
+   */
+  bigint?: boolean;
   /** Called for every value after decoding, bottom-up, exactly like the second argument of `JSON.parse`. */
   reviver?: Reviver;
   /**
@@ -63,7 +68,7 @@ export interface DecodeOptions {
 }
 
 /** A leaf in a flattened record: a primitive, or an empty object/array that has no leaves of its own. */
-export type FlatLeaf = JsonPrimitive | Record<string, never> | never[];
+export type FlatLeaf = JsonPrimitive | bigint | Record<string, never> | never[];
 
 /** Path → leaf, e.g. `{ "user.name": "John", "tags[0]": "a" }`. */
 export type FlatRecord = Record<string, FlatLeaf>;

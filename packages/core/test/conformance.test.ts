@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { DecodeOptions, EncodeOptions, FlatWarning } from "../src/index.js";
 import { decode, encode, FlatDecodeError } from "../src/index.js";
+import { stringifyJson } from "../src/types.js";
 
 /**
  * conformance/cases.json: what this implementation writes and reads, for other implementations (the Python
@@ -140,12 +141,33 @@ function build(): unknown {
     for (const [from, to, k] of links) (nodes[from % nodes.length] as Record<string, unknown>)[k] = nodes[to % nodes.length];
     return { text: encode({ nodes, first: nodes[0] }, { refs: true }) };
   });
-  return { encode: encodeCases, decode: decodeCases, refs: refCases };
+  // Integers of any size: written as their digits, and read back exactly (`{ bigint: true }` in JavaScript).
+  const integer = fc.oneof(fc.bigInt({ min: -(2n ** 128n), max: 2n ** 128n }), fc.constantFrom(2n ** 53n - 1n, 2n ** 53n, 2n ** 53n + 1n, -(2n ** 63n), 2n ** 64n - 1n));
+  const bigValue = fc.oneof(
+    fc.dictionary(key, integer, { minKeys: 1 }),
+    fc.record({ ids: fc.array(integer, { minLength: 1 }) }),
+    fc.record({ rows: fc.array(fc.record({ id: integer, n: fc.integer() }), { minLength: 1, maxLength: 4 }) }),
+  );
+  const bigintCases = fc.sample(bigValue, { seed: SEED, numRuns: 100 }).map((v) => {
+    const text = encode(v);
+    expect(decode(text, { bigint: true })).toEqual(normalize(v));
+    return { value: v, text };
+  });
+  return { encode: encodeCases, decode: decodeCases, refs: refCases, bigint: bigintCases };
+}
+
+/** What `decode(text, { bigint: true })` gives for `v`: BigInts within 2^53 become numbers. */
+function normalize(v: unknown): unknown {
+  if (typeof v === "bigint") return v >= -(2n ** 53n) + 1n && v <= 2n ** 53n - 1n ? Number(v) : v;
+  if (Array.isArray(v)) return v.map(normalize);
+  if (v !== null && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, normalize(x)]));
+  return v;
 }
 
 describe("conformance cases", () => {
   it("conformance/cases.json is up to date", () => {
-    const next = JSON.stringify(build(), null, 1) + "\n";
+    // BigInts are written as plain JSON digits: Python's json module reads them exactly.
+    const next = stringifyJson(build(), 1) + "\n";
     if (process.env.UPDATE_CONFORMANCE) writeFileSync(FILE, next);
     const current = readFileSync(FILE, "utf8");
     expect(current === next, "conformance/cases.json is stale: run UPDATE_CONFORMANCE=1 pnpm --filter @flattype/core test").toBe(true);

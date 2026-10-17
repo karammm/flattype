@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { join } from "node:path";
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
+import { decode as unpack, encode as pack } from "@msgpack/msgpack";
 import { encode as toon, decode as untoon } from "@toon-format/toon";
 import { decode, encode } from "../packages/core/dist/index.js";
 import { fromModelOutput } from "../packages/ai/dist/index.js";
@@ -16,7 +17,7 @@ const NAMES = ["64KB", "128KB", "256KB", "512KB", "1MB", "5MB"];
 const BASE = "https://microsoftedge.github.io/Demos/json-dummy-data/";
 const dir = process.argv[2];
 
-const bytes = (s) => Buffer.byteLength(s);
+const bytes = (s) => (typeof s === "string" ? Buffer.byteLength(s) : s.length);
 const gz = (s) => gzipSync(s, { level: 9 }).length;
 const br = (s) => brotliCompressSync(s, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }).length;
 const kb = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(2)} MB` : `${(n / 1024).toFixed(1)} KB`);
@@ -48,7 +49,10 @@ for (const name of NAMES) {
   const flat = encode(value);
   const flatTab = encode(value, { delimiter: "\t" });
   const t = toon(value);
-  if (!same(decode(flat), value) || !same(decode(flatTab), value) || !same(untoon(t), value)) throw new Error(`${name}: round trip failed`);
+  const mp = pack(value);
+  if (!same(decode(flat), value) || !same(decode(flatTab), value) || !same(untoon(t), value) || !same(unpack(mp), value)) {
+    throw new Error(`${name}: round trip failed`);
+  }
   rows.push({
     name,
     records: value.length,
@@ -58,9 +62,20 @@ for (const name of NAMES) {
     flat: bytes(flat),
     flatTab: bytes(flatTab),
     toon: bytes(t),
-    gz: { served: gz(served), servedMin: gz(servedMin), min: gz(min), flat: gz(flat), flatTab: gz(flatTab), toon: gz(t) },
-    br: { servedMin: br(servedMin), min: br(min), flat: br(flat), flatTab: br(flatTab) },
-    ms: name === "5MB" ? { parse: time(() => JSON.parse(min)), decode: time(() => decode(flat)), stringify: time(() => JSON.stringify(value)), encode: time(() => encode(value)) } : undefined,
+    mp: bytes(mp),
+    gz: { served: gz(served), servedMin: gz(servedMin), min: gz(min), flat: gz(flat), flatTab: gz(flatTab), toon: gz(t), mp: gz(mp) },
+    br: { servedMin: br(servedMin), min: br(min), flat: br(flat), flatTab: br(flatTab), mp: br(mp) },
+    ms:
+      name === "5MB"
+        ? {
+            parse: time(() => JSON.parse(min)),
+            decode: time(() => decode(flat)),
+            unpack: time(() => unpack(mp)),
+            stringify: time(() => JSON.stringify(value)),
+            encode: time(() => encode(value)),
+            pack: time(() => pack(value)),
+          }
+        : undefined,
     sample: name === "64KB" ? { json: JSON.stringify(value.slice(0, 2), null, 2), flat: encode(value.slice(0, 2)) } : undefined,
   });
 }
@@ -127,6 +142,7 @@ The [JSON dummy data](https://github.com/MicrosoftEdge/Demos/tree/main/json-dumm
 | 5MB-min.json, as served | **${kb(big.servedMin)}** | −${pct(big.servedMin, big.served)} | |
 | JSON fully minified (\`JSON.stringify\`) | ${kb(big.min)} | −${pct(big.min, big.served)} | −${pct(big.min, big.servedMin)} |
 | TOON | ${kb(big.toon)} | −${pct(big.toon, big.served)} | −${pct(big.toon, big.servedMin)} |
+| MessagePack (binary) | ${kb(big.mp)} | −${pct(big.mp, big.served)} | −${pct(big.mp, big.servedMin)} |
 | **Flat Notation** | **${kb(big.flat)}** | **−${pct(big.flat, big.served)}** | **−${pct(big.flat, big.servedMin)}** |
 | Flat Notation, tab-separated | ${kb(big.flatTab)} | −${pct(big.flatTab, big.served)} | −${pct(big.flatTab, big.servedMin)} |
 
@@ -170,9 +186,11 @@ Also note that **the files repeat the same ${unique} records**: 5MB.json is thos
 
 Gzip and brotli already remove most of JSON's repeated keys, so the difference almost disappears once a response is compressed. (Brotli also notices the repeated records, so every file compresses to about the same size.)
 
-| File | -min.json, gzip | Flat Notation, gzip | Saved | -min.json, brotli | Flat Notation, brotli | Saved |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-${rows.map((r) => `| ${r.name} | ${kb(r.gz.servedMin)} | ${kb(r.gz.flat)} | ${pct(r.gz.flat, r.gz.servedMin)} | ${kb(r.br.servedMin)} | ${kb(r.br.flat)} | ${pct(r.br.flat, r.br.servedMin)} |`).join("\n")}
+| File | -min.json, gzip | MessagePack, gzip | Flat Notation, gzip | Saved | -min.json, brotli | Flat Notation, brotli | Saved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+${rows.map((r) => `| ${r.name} | ${kb(r.gz.servedMin)} | ${kb(r.gz.mp)} | ${kb(r.gz.flat)} | ${pct(r.gz.flat, r.gz.servedMin)} | ${kb(r.br.servedMin)} | ${kb(r.br.flat)} | ${pct(r.br.flat, r.br.servedMin)} |`).join("\n")}
+
+MessagePack is ${pct(big.mp, big.min)} smaller than minified JSON before compression, but ${pct(big.gz.mp, big.gz.min).replace(" larger", "")} *larger* after gzip: its binary length prefixes compress worse than text, and like JSON it repeats every key in every record. Flat Notation writes the keys once, in the table header.
 
 So the large savings are for text that isn't compressed, above all **LLM prompts**: models are billed by token, not by gzip size. On the wire, Flat Notation is a modest win on top of compression.
 
@@ -182,10 +200,12 @@ So the large savings are for text that isn't compressed, above all **LLM prompts
 | --- | ---: |
 | \`JSON.parse\` (native) | ${big.ms.parse.toFixed(1)} ms |
 | \`decode\` (Flat Notation) | ${big.ms.decode.toFixed(1)} ms |
+| MessagePack \`decode\` | ${big.ms.unpack.toFixed(1)} ms |
 | \`JSON.stringify\` (native) | ${big.ms.stringify.toFixed(1)} ms |
 | \`encode\` (Flat Notation) | ${big.ms.encode.toFixed(1)} ms |
+| MessagePack \`encode\` | ${big.ms.pack.toFixed(1)} ms |
 
-Measured on Node ${process.versions.node}, ${cpus()[0].model.trim()}, best of 7 runs. \`JSON.parse\` and \`JSON.stringify\` are built into the engine. FlatType is plain JavaScript.
+Measured on Node ${process.versions.node}, ${cpus()[0].model.trim()}, best of 7 runs. \`JSON.parse\` and \`JSON.stringify\` are built into the engine. FlatType and MessagePack ([\`@msgpack/msgpack\`](https://www.npmjs.com/package/@msgpack/msgpack)) are plain JavaScript.
 
 The [Python package](../python) writes the same ${kb(big.flat)} byte for byte (\`pip install flattype\`; the SHA-256 of both outputs matched when this page was written).
 

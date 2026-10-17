@@ -88,6 +88,10 @@ So `zip: 10001` is a number and `zip: "10001"` is a string. `version: 1.0.0` and
 
 Colons, `#` and other punctuation are fine unquoted in a value: `url: http://x.io/a#b`.
 
+**Integers have no size limit.** The format is text, so `id: 18446744073709551617` is that exact integer. How it is read depends on the language: JavaScript numbers round past 2⁵³ (as with `JSON.parse`) unless you decode with `{ bigint: true }`, which gives a `BigInt` for every integer that a number can't hold exactly. Python ints are always exact. Encoders write a `BigInt` (or a Python int) as its digits. An integer longer than 4,300 characters is read as a number (a float) by both, so a hostile document can't make the decoder slow.
+
+**There are no other types.** Dates, bytes, sets and maps travel as strings, arrays and objects, so every reader sees the same plain values. [`@flattype/core/types`](https://github.com/karammm/flattype#big-integers-dates-bytes-and-other-types) and `flattype.types` convert them at each end, and models (`"date"`, `"bytes"`, `"bigint"` fields) give them their types back.
+
 ## Inline arrays
 
 `path[]: v1, v2, v3` is an array of primitives. Cells are split on the delimiter outside quoted strings, and each cell is trimmed and read like a value.

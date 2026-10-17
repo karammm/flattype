@@ -22,7 +22,7 @@ def _encode_options(o: dict[str, Any]) -> dict[str, Any]:
 
 
 def test_there_are_cases() -> None:
-    assert len(CASES["encode"]) > 500 and len(CASES["decode"]) > 1000 and len(CASES["refs"]) > 100
+    assert len(CASES["encode"]) > 500 and len(CASES["decode"]) > 1000 and len(CASES["refs"]) > 100 and len(CASES["bigint"]) >= 100
 
 
 @pytest.mark.parametrize("case", CASES["encode"], ids=lambda c: repr(c["text"])[:40])
@@ -66,3 +66,10 @@ def test_streaming_matches_whole() -> None:
             for i in range(0, len(text), size):
                 d.write(text[i : i + size])
             assert same(d.end(), flattype.decode(text))
+
+
+@pytest.mark.parametrize("case", CASES["bigint"], ids=lambda c: repr(c["text"])[:40])
+def test_integers_of_any_size_are_exact(case: dict[str, Any]) -> None:
+    # Compared with ==, not same(): every digit has to match.
+    assert flattype.encode(case["value"]) == case["text"]
+    assert flattype.decode(case["text"]) == case["value"]

@@ -181,11 +181,25 @@ flattype.encode(team, refs=True)
 # members[0] = lead
 ```
 
-**Other types:** `encode(x, default=fn)` works like `json.dumps(default=...)`. Tuples are written as lists. `encode`, `decode`, `delimiter="|"` / `"\t"`, `indent`, `tabular=False`, `flatten` / `unflatten` and `stats` match the JavaScript options.
+**Dates, bytes and other types:** `encode(x, default=fn)` works like `json.dumps(default=...)`, and `flattype.types.default` is a ready-made one. It writes `datetime` exactly the way JavaScript writes dates, so a TypeScript frontend reads the same text, and handles `bytes` (base64), `set`, `Decimal`, `UUID`, enums, dataclasses and Pydantic models. `revive_dates` turns date-time strings back into aware `datetime`s:
+
+```python
+from datetime import datetime, timezone
+from flattype.types import default, revive_dates
+
+text = flattype.encode({"at": datetime(2026, 1, 1, 9, tzinfo=timezone.utc), "avatar": b"hi"}, default=default)
+# at: 2026-01-01T09:00:00.000Z
+# avatar: aGk=
+revive_dates(flattype.decode(text))  # {'at': datetime.datetime(2026, 1, 1, 9, 0, tzinfo=datetime.timezone.utc), 'avatar': 'aGk='}
+```
+
+**Big integers** need nothing: Python ints are written and read exactly, however large. JavaScript reads them exactly with `decode(text, { bigint: true })` or a `"bigint"` model field, so 64-bit IDs survive the trip to the browser.
+
+Tuples are written as lists. `encode`, `decode`, `delimiter="|"` / `"\t"`, `indent`, `tabular=False`, `flatten` / `unflatten` and `stats` match the JavaScript options.
 
 ## Same text as JavaScript
 
-Every case in [`conformance/`](https://github.com/karammm/flattype/tree/main/conformance) is generated from `@flattype/core` and `@flattype/ai`, and the Python package must match it exactly. That's 990 encode cases, 3,215 decode cases (1,965 of them errors, compared message, line and column), 150 object graphs, and 425 prompt and model-reply cases. A few things follow from that:
+Every case in [`conformance/`](https://github.com/karammm/flattype/tree/main/conformance) is generated from `@flattype/core` and `@flattype/ai`, and the Python package must match it exactly. That's 990 encode cases, 3,215 decode cases (1,965 of them errors, compared message, line and column), 150 object graphs, 100 big-integer cases, and 425 prompt and model-reply cases. A few things follow from that:
 
 - **Floats are written the way JavaScript writes them**, with `1e+21`, `1e-7` and `100`. So a float with no fractional part (`30.0`) decodes as the int `30`. Floats of 1e16 or more come back as an int with JavaScript's digits: the same number once converted to float, but not exactly equal to it.
 - **Ints are exact, however large.** JavaScript would round anything past 2⁵³. A literal longer than 4,300 digits is read as a float, so it can't hit Python's slow and limited `int()` path.

@@ -10,6 +10,7 @@ The [JSON dummy data](https://github.com/MicrosoftEdge/Demos/tree/main/json-dumm
 | 5MB-min.json, as served | **4.43 MB** | −10% | |
 | JSON fully minified (`JSON.stringify`) | 4.35 MB | −11% | −2% |
 | TOON | 3.67 MB | −25% | −17% |
+| MessagePack (binary) | 4.14 MB | −15% | −6% |
 | **Flat Notation** | **3.73 MB** | **−24%** | **−16%** |
 | Flat Notation, tab-separated | 3.64 MB | −26% | −18% |
 
@@ -75,14 +76,16 @@ Also note that **the files repeat the same 197 records**: 5MB.json is those 197 
 
 Gzip and brotli already remove most of JSON's repeated keys, so the difference almost disappears once a response is compressed. (Brotli also notices the repeated records, so every file compresses to about the same size.)
 
-| File | -min.json, gzip | Flat Notation, gzip | Saved | -min.json, brotli | Flat Notation, brotli | Saved |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 64KB | 9.1 KB | 8.9 KB | 2% | 7.8 KB | 7.8 KB | 1% |
-| 128KB | 31.4 KB | 30.9 KB | 2% | 7.9 KB | 7.8 KB | 1% |
-| 256KB | 31.5 KB | 30.9 KB | 2% | 7.9 KB | 7.8 KB | 1% |
-| 512KB | 61.2 KB | 60.1 KB | 2% | 7.9 KB | 7.8 KB | 1% |
-| 1MB | 120.8 KB | 118.5 KB | 2% | 7.9 KB | 7.8 KB | 1% |
-| 5MB | 597.0 KB | 585.9 KB | 2% | 7.9 KB | 8.0 KB | 0% |
+| File | -min.json, gzip | MessagePack, gzip | Flat Notation, gzip | Saved | -min.json, brotli | Flat Notation, brotli | Saved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64KB | 9.1 KB | 10.0 KB | 8.9 KB | 2% | 7.8 KB | 7.8 KB | 1% |
+| 128KB | 31.4 KB | 34.7 KB | 30.9 KB | 2% | 7.9 KB | 7.8 KB | 1% |
+| 256KB | 31.5 KB | 34.7 KB | 30.9 KB | 2% | 7.9 KB | 7.8 KB | 1% |
+| 512KB | 61.2 KB | 67.7 KB | 60.1 KB | 2% | 7.9 KB | 7.8 KB | 1% |
+| 1MB | 120.8 KB | 133.6 KB | 118.5 KB | 2% | 7.9 KB | 7.8 KB | 1% |
+| 5MB | 597.0 KB | 660.9 KB | 585.9 KB | 2% | 7.9 KB | 8.0 KB | 0% |
+
+MessagePack is 5% smaller than minified JSON before compression, but 11% *larger* after gzip: its binary length prefixes compress worse than text, and like JSON it repeats every key in every record. Flat Notation writes the keys once, in the table header.
 
 So the large savings are for text that isn't compressed, above all **LLM prompts**: models are billed by token, not by gzip size. On the wire, Flat Notation is a modest win on top of compression.
 
@@ -90,12 +93,14 @@ So the large savings are for text that isn't compressed, above all **LLM prompts
 
 | | Time |
 | --- | ---: |
-| `JSON.parse` (native) | 4.3 ms |
-| `decode` (Flat Notation) | 12.3 ms |
-| `JSON.stringify` (native) | 4.4 ms |
-| `encode` (Flat Notation) | 11.5 ms |
+| `JSON.parse` (native) | 4.2 ms |
+| `decode` (Flat Notation) | 11.9 ms |
+| MessagePack `decode` | 8.6 ms |
+| `JSON.stringify` (native) | 4.3 ms |
+| `encode` (Flat Notation) | 11.1 ms |
+| MessagePack `encode` | 10.3 ms |
 
-Measured on Node 24.15.0, Apple M4, best of 7 runs. `JSON.parse` and `JSON.stringify` are built into the engine. FlatType is plain JavaScript.
+Measured on Node 24.0.0, Apple M4, best of 7 runs. `JSON.parse` and `JSON.stringify` are built into the engine. FlatType and MessagePack ([`@msgpack/msgpack`](https://www.npmjs.com/package/@msgpack/msgpack)) are plain JavaScript.
 
 The [Python package](../python) writes the same 3.73 MB byte for byte (`pip install flattype`; the SHA-256 of both outputs matched when this page was written).
 

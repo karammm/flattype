@@ -73,15 +73,21 @@ describe("encode", () => {
     expect(decode(encode(rows, { delimiter: "|" }))).toEqual(rows);
   });
 
-  it("rejects circular structures, BigInt and undefined roots", () => {
+  it("rejects circular structures and undefined roots", () => {
     const a: Record<string, unknown> = {};
     a.self = a;
     expect(() => encode(a)).toThrow(/circular/);
     const b: Record<string, unknown> = { x: 1 };
     b.inner = { b };
     expect(() => encode([b, b])).toThrow(/circular/);
-    expect(() => encode({ n: 1n })).toThrow(/BigInt/);
     expect(() => encode(undefined)).toThrow(TypeError);
+  });
+
+  it("writes a BigInt as its digits, in values, inline arrays and tables", () => {
+    const id = 2n ** 64n + 1n;
+    expect(encode({ id, small: 5n, neg: -id })).toBe("id: 18446744073709551617\nsmall: 5\nneg: -18446744073709551617");
+    expect(encode({ ids: [id, 1n] })).toBe("ids[]: 18446744073709551617, 1");
+    expect(encode({ users: [{ id }, { id: 2n }] })).toBe("users[2]{id}:\n  18446744073709551617\n  2");
   });
 
   it("allows the same object twice when it is not a cycle", () => {

@@ -25,6 +25,7 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   const keep = options.keepRows !== false;
   const onRow = options.onRow;
   const refs = options.refs === true;
+  const big = options.bigint === true;
   // Lenient only: a line that can't be read is dropped, as if it weren't there.
   const skip = !strict && options.skipInvalidLines === true;
   const holder: { root?: unknown } = {};
@@ -88,7 +89,7 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     if (table) {
       const { t } = table;
       const width = t.fields.length;
-      const row = cells(text, t.delimiter, problem, lineNo, 1);
+      const row = cells(text, t.delimiter, problem, lineNo, 1, big);
       if (row.length !== width) {
         problem(`Expected ${width} values, got ${row.length}`, lineNo, 1, row.length < width ? "the missing values are null" : "the extra values are dropped");
       }
@@ -120,9 +121,9 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     }
     const value = colon ? text.slice(end + 1) : "";
     if (terminal.kind === "value") {
-      put(segments, scalar(value.trim(), problem, lineNo, end + 2), lineNo);
+      put(segments, scalar(value.trim(), problem, lineNo, end + 2, big), lineNo);
     } else if (terminal.kind === "inline") {
-      put(segments, cells(value, terminal.delimiter, problem, lineNo, end + 2), lineNo);
+      put(segments, cells(value, terminal.delimiter, problem, lineNo, end + 2, big), lineNo);
     } else {
       if (value.trim() !== "") problem("Table rows go on the following lines", lineNo, end + 2, "the text after the header is ignored");
       table = { at: lineNo, segments, t: terminal, path: formatPath(segments), rows: [], read: 0 };
@@ -196,12 +197,12 @@ function stripCR(line: string): string {
   return line.charCodeAt(line.length - 1) === 13 ? line.slice(0, -1) : line;
 }
 
-function scalar(tok: string, problem: Warn, line: number, column: number): unknown {
+function scalar(tok: string, problem: Warn, line: number, column: number, big: boolean): unknown {
   if (tok === "") {
     problem("Missing value", line, column, "read as null");
     return null;
   }
-  const v = parseScalar(tok);
+  const v = parseScalar(tok, big);
   if (v === undefined) {
     problem("Invalid quoted string", line, column, "kept as text");
     return tok;
@@ -210,7 +211,7 @@ function scalar(tok: string, problem: Warn, line: number, column: number): unkno
 }
 
 /** Splits `a, "b, c", 3` on the delimiter, honouring quotes. */
-function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, column: number): unknown[] {
+function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, column: number, big: boolean): unknown[] {
   const out: unknown[] = [];
   const n = s.length;
   const isSpace = (c: number): boolean => c === 32 || (c === 9 && delimiter !== "\t");
@@ -224,7 +225,7 @@ function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, col
         out.push(s.slice(i + 1));
         return out;
       }
-      out.push(scalar(s.slice(i, close + 1), problem, line, column + i));
+      out.push(scalar(s.slice(i, close + 1), problem, line, column + i, big));
       i = close + 1;
       while (i < n && isSpace(s.charCodeAt(i))) i++;
       if (i < n && s[i] !== delimiter) problem("Expected delimiter after quoted string", line, column + i, "the text after it is dropped");
@@ -233,7 +234,7 @@ function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, col
     } else {
       const next = s.indexOf(delimiter, i);
       const j = next < 0 ? n : next;
-      out.push(scalar(s.slice(i, j).trim(), problem, line, column + i));
+      out.push(scalar(s.slice(i, j).trim(), problem, line, column + i, big));
       i = j;
     }
     if (i >= n) return out;

@@ -44,6 +44,17 @@ describe("encode / decode", () => {
     expect(JSON.parse(r.written["out.json"]!)).toEqual(users);
   });
 
+  it("keeps integers beyond 2^53 exact both ways", async () => {
+    const big = "18446744073709551617";
+    expect((await cli(["decode", "--compact"], { stdin: `id: ${big}\nn: 5` })).out).toBe(`{"id":${big},"n":5}\n`);
+    const hasSource = (() => {
+      let seen = false;
+      JSON.parse("1", (_k, v, ctx?: { source?: string }) => ((seen = ctx?.source === "1"), v));
+      return seen;
+    })();
+    if (hasSource) expect((await cli(["encode"], { stdin: `{"id":${big}}` })).out).toBe(`id: ${big}\n`);
+  });
+
   it("reports bad input clearly", async () => {
     const bad = await cli(["encode"], { stdin: "{oops" });
     expect(bad.code).toBe(1);

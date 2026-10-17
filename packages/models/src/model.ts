@@ -19,11 +19,14 @@ interface Field {
   default: unknown;
 }
 
-const PRIMITIVES = new Set(["string", "number", "integer", "boolean", "date", "any"]);
+const PRIMITIVES = new Set(["string", "number", "integer", "bigint", "boolean", "date", "bytes", "any"]);
 const FAIL = Symbol("fail");
 // No overlapping quantifiers (`\d+\.?\d*` would backtrack quadratically on long digit runs).
 const NUMERIC = /^\s*[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\s*$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
+const INTEGER = /^\s*-?\d+\s*$/;
+// Standard or URL-safe base64, padding optional.
+const BASE64 = /^[A-Za-z0-9+/_-]*={0,2}$/;
 
 export function isModel(v: unknown): v is Model<unknown> {
   return typeof v === "object" && v !== null && (v as { __model?: unknown }).__model === true;
@@ -81,14 +84,22 @@ function convertPrimitive(p: Primitive, v: unknown, coerce: boolean): unknown {
       return v;
     case "string":
       if (typeof v === "string") return v;
-      return coerce && (typeof v === "number" || typeof v === "boolean") ? String(v) : FAIL;
+      return coerce && (typeof v === "number" || typeof v === "boolean" || typeof v === "bigint") ? String(v) : FAIL;
     case "number":
     case "integer": {
-      let n: unknown = v;
+      let n: unknown = typeof v === "bigint" ? Number(v) : v;
       if (typeof v === "string" && coerce && NUMERIC.test(v)) n = Number(v);
       if (typeof n !== "number" || !Number.isFinite(n)) return FAIL;
       return p === "integer" && !Number.isInteger(n) ? FAIL : n;
     }
+    case "bigint":
+      if (typeof v === "bigint") return v;
+      // A number beyond 2^53 has already been rounded: refuse it rather than return the wrong digits.
+      if (typeof v === "number") return Number.isSafeInteger(v) ? BigInt(v) : FAIL;
+      return coerce && typeof v === "string" && v.length <= 4300 && INTEGER.test(v) ? BigInt(v.trim()) : FAIL;
+    case "bytes":
+      if (v instanceof Uint8Array) return v;
+      return typeof v === "string" && BASE64.test(v) ? fromBase64(v) : FAIL;
     case "boolean":
       if (typeof v === "boolean") return v;
       if (!coerce) return FAIL;
@@ -104,6 +115,29 @@ function convertPrimitive(p: Primitive, v: unknown, coerce: boolean): unknown {
       return FAIL;
     }
   }
+}
+
+function fromBase64(s: string): Uint8Array | typeof FAIL {
+  let bin: string;
+  try {
+    bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
+  } catch {
+    return FAIL;
+  }
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+/** A number beyond 2^53 in the input is already rounded: say so instead of a bare "got number". */
+function describeFor(p: string, v: unknown): string {
+  return p === "bigint" && typeof v === "number" && Number.isInteger(v) ? `number ${v}, which is beyond 2^53 and already rounded: decode with { bigint: true }` : describe(v);
 }
 
 function join(path: string, key: string | number): string {
@@ -127,7 +161,7 @@ export function defineModel<const S extends Shape>(shape: S, options: ModelOptio
   function convert(c: Compiled, v: unknown, path: string, issues: Issue[]): unknown {
     if (c.t === "prim") {
       const out = convertPrimitive(c.p, v, opts.coerce);
-      if (out === FAIL) issues.push({ path, message: `Expected ${c.p}, got ${describe(v)}` });
+      if (out === FAIL) issues.push({ path, message: `Expected ${c.p}, got ${describeFor(c.p, v)}` });
       return out;
     }
     if (c.t === "model") return (c.m as unknown as Internal).read(v, path, issues);
@@ -168,13 +202,14 @@ export function defineModel<const S extends Shape>(shape: S, options: ModelOptio
 
   function write(c: Compiled, v: unknown): unknown {
     if (v === null || v === undefined) return null;
-    if (c.t === "prim") return v instanceof Date ? v.toISOString() : v;
+    if (c.t === "prim") return v instanceof Date ? v.toISOString() : v instanceof Uint8Array ? toBase64(v) : v;
     if (c.t === "model") return c.m.serialize(v);
     return (v as unknown[]).map((x) => write(c.of, x));
   }
 
   const parseOrThrow = (input: unknown, list: boolean): unknown => {
-    const data = typeof input === "string" ? decode(input) : input;
+    // Big integers stay exact: `"bigint"` fields keep them, `"number"` fields convert them as before.
+    const data = typeof input === "string" ? decode(input, { bigint: true }) : input;
     const issues: Issue[] = [];
     let out: unknown;
     if (list) {

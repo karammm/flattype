@@ -6,7 +6,7 @@ const ascii = (options: { charset?: string }): void => {
 };
 
 export default defineConfig([
-  { entry: ["src/index.ts"], format: ["esm", "cjs"], dts: true, clean: true, esbuildOptions: ascii },
+  { entry: ["src/index.ts", "src/types.ts"], format: ["esm", "cjs"], dts: true, clean: true, esbuildOptions: ascii },
   // For a plain <script> tag or a CDN: everything on a `FlatType` global.
   {
     entry: { flattype: "src/index.ts" },

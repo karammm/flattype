@@ -128,6 +128,13 @@ From testing with Microsoft's [missing-colon.json](https://microsoftedge.github.
 - A table header without its colon is read as a table in lenient mode
 - `fromModelOutput` throws `ModelOutputError` saying where broken JSON breaks, instead of returning `{}`
 - `flattype decode --lenient` prints the warnings
+
+## v1.13.0: Exact integers and built-in types ✅
+From comparing with [MessagePack](https://msgpack.org/).
+- `decode(text, { bigint: true })` and BigInt encoding: 64-bit IDs arrive exact, as they already do in Python
+- `@flattype/core/types`: `replaceTypes`, `reviveDates`, `parseJson`, `stringifyJson`; `flattype.types` in Python
+- `"bigint"` and `"bytes"` model field types; `flatFetch` and the CLI keep big integers exact
+- MessagePack in the benchmarks
 ---
 
 Have an idea or a use case that isn't covered? [Open an issue](https://github.com/karammm/flattype/issues).

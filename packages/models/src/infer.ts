@@ -23,6 +23,8 @@ function nodeOf(v: unknown): Node {
       return { k: "prim", p: ISO.test(v) && !Number.isNaN(Date.parse(v)) ? "date" : "string", nullable: false };
     case "number":
       return { k: "prim", p: "number", nullable: false };
+    case "bigint":
+      return { k: "prim", p: "bigint", nullable: false };
     case "boolean":
       return { k: "prim", p: "boolean", nullable: false };
     case "object": {
@@ -40,7 +42,9 @@ function merge(a: Node, b: Node): Node {
   if (b.k === "null") return { ...a, nullable: true };
   const nullable = a.nullable || b.nullable;
   if (a.k === "prim" && b.k === "prim") {
-    return { k: "prim", p: a.p === b.p ? a.p : "any", nullable };
+    // IDs that are sometimes small and sometimes beyond 2^53 are BigInts.
+    const big = (a.p === "bigint" && b.p === "number") || (a.p === "number" && b.p === "bigint");
+    return { k: "prim", p: a.p === b.p ? a.p : big ? "bigint" : "any", nullable };
   }
   if (a.k === "array" && b.k === "array") {
     const of = a.of && b.of ? merge(a.of, b.of) : (a.of ?? b.of);
@@ -96,7 +100,7 @@ function toModel(node: Extract<Node, { k: "object" }>, keys: KeyStyle): Model<un
  * Pass the result to `toSource` to get TypeScript you can commit.
  */
 export function infer(sample: unknown, options: { keys?: KeyStyle } = {}): Model<Record<string, unknown>> {
-  const data = typeof sample === "string" ? decode(sample) : sample;
+  const data = typeof sample === "string" ? decode(sample, { bigint: true }) : sample;
   let node = nodeOf(data);
   if (node.k === "array") node = node.of ?? { k: "null" };
   if (node.k !== "object") throw new TypeError("infer() needs an object or an array of objects");

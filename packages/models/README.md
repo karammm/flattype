@@ -239,6 +239,42 @@ const order = decode(text, {
 
 For typed results with validation, [`@flattype/models`](#typed-models) is usually the better fit.
 
+### Big integers, dates, bytes and other types
+
+JSON has no type for a 64-bit ID, a date or a byte array. MessagePack solves this with binary extension types. Flat Notation keeps the text plain and solves it at the two ends instead.
+
+**Big integers are exact.** A `BigInt` is written as its digits, and `decode(text, { bigint: true })` reads any integer beyond 2⁵³ back as a `BigInt` instead of rounding it the way `JSON.parse` does. Python reads them exactly with no option. So a 64-bit ID from a Python, Go or Java backend arrives intact:
+
+```ts
+encode({ id: 18446744073709551617n });           // id: 18446744073709551617
+decode("id: 18446744073709551617");               // { id: 18446744073709552000 }  rounded, like JSON
+decode("id: 18446744073709551617", { bigint: true }); // { id: 18446744073709551617n }
+```
+
+Smaller integers stay numbers. Models do this automatically (a `"bigint"` field is always a `BigInt`), and so do `flatFetch` and the CLI.
+
+**Other types come from `@flattype/core/types`,** a replacer and a reviver that work with `encode` and `decode` as well as with `JSON.stringify` and `JSON.parse`:
+
+```ts
+import { parseJson, replaceTypes, reviveDates, stringifyJson } from "@flattype/core/types";
+
+encode({ tags: new Set(["a", "b"]), avatar: new Uint8Array([104, 105]), seen: new Map([["alice", 1]]) }, { replacer: replaceTypes });
+// tags[]: a, b
+// avatar: aGk=
+// seen.alice: 1
+
+decode("at: 2026-01-01T09:00:00.000Z", { reviver: reviveDates }); // { at: Date }
+```
+
+| Helper | What it does |
+| --- | --- |
+| `replaceTypes` | `Map` → object (or `[key, value]` pairs), `Set` → array, `Uint8Array` / `Buffer` / `ArrayBuffer` → base64, other typed arrays → arrays, `Error` → `{ name, message }` |
+| `reviveDates` | Date-time strings with a zone (`…Z`, `…+01:00`, Python's microseconds too) → `Date`. Date-only strings stay strings. |
+| `parseJson` | `JSON.parse` that keeps big integers exact (Node 21+, Chrome 114+) |
+| `stringifyJson` | `JSON.stringify` that writes BigInts as digits instead of throwing |
+
+Python has the same helpers: `encode(x, default=flattype.types.default)` handles `datetime` (written exactly as JavaScript writes dates), `bytes`, `set`, `Decimal`, `UUID`, enums and dataclasses, and `flattype.types.revive_dates` turns the strings back into `datetime`s.
+
 ### Broken input: where the data is wrong
 
 `decode` is strict by default: the first problem throws a `FlatDecodeError` with its line and column. With `strict: false` it repairs what it can instead, and `onWarning` tells you what it repaired and where:
@@ -282,13 +318,15 @@ const User = defineModel({
   nickname: { type: "string", optional: true },  // left out when missing
   address: Address,                              // nested model
   tags: ["string"],                              // array
+  orderId: "bigint",                             // exact 64-bit IDs (BigInt)
+  avatar: "bytes?",                              // base64 → Uint8Array
 });
 type User = Infer<typeof User>;
 
 User.parse(json);          // a JSON value or a Flat Notation string
 User.parseList(json.data); // arrays, including Flat Notation tables
 User.safeParse(json);      // { ok: true, value } | { ok: false, error }
-User.serialize(user);      // back to API JSON (dates as ISO strings)
+User.serialize(user);      // back to API JSON (dates as ISO strings, bytes as base64)
 User.encode(users);        // straight to Flat Notation
 ```
 
@@ -672,6 +710,7 @@ Numbers measured on every docs build are on the [benchmarks page](https://karamm
 - **The savings come from lists.** A single small object is about the same size as JSON.
 - **Gzip already removes most of JSON's repeated keys,** so gzipped network sizes come out close. FlatType makes the biggest difference where text isn't compressed: LLM prompts and tool results, logs, caches and local storage.
 - **`JSON.parse` is native code, so it's still faster.** FlatType decodes at about half its speed and about 8× faster than the TOON reference decoder.
+- **MessagePack is binary, and bigger than you'd think.** It saves 5% before compression on the Edge files below but comes out 11% *larger* than JSON after gzip, because it repeats every key like JSON does. Flat Notation is text you can read, log and put in a prompt.
 
 
 ### Real-world files: Microsoft's Edge demo JSON

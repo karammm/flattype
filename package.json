@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.11",
+    "@msgpack/msgpack": "^3.1.2",
     "@toon-format/toon": "^2.1.0",
     "@types/node": "^22.10.2",
     "esbuild": "^0.24.2",

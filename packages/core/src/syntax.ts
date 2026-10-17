@@ -70,14 +70,20 @@ export function formatPrimitive(v: unknown, delimiter?: string): string {
     case "boolean":
       return v ? "true" : "false";
     case "bigint":
-      throw new TypeError("Do not know how to serialize a BigInt");
+      // Written as its digits, so it decodes exactly with { bigint: true } (and in Python).
+      return String(v);
     default:
       return "null";
   }
 }
 
-/** Parses one trimmed bare or quoted token. Returns `undefined` when a quoted token is malformed. */
-export function parseScalar(tok: string): unknown {
+const INTEGER = /^-?\d+$/;
+
+/**
+ * Parses one trimmed bare or quoted token. Returns `undefined` when a quoted token is malformed.
+ * With `big`, an integer beyond 2^53 is a BigInt instead of a rounded number (up to 4,300 digits, like Python).
+ */
+export function parseScalar(tok: string, big?: boolean): unknown {
   switch (tok) {
     case "null":
       return null;
@@ -97,7 +103,9 @@ export function parseScalar(tok: string): unknown {
       return undefined;
     }
   }
-  return NUMBER.test(tok) ? Number(tok) : tok;
+  if (!NUMBER.test(tok)) return tok;
+  const n = Number(tok);
+  return big && !Number.isSafeInteger(n) && tok.length <= 4300 && INTEGER.test(tok) ? BigInt(tok) : n;
 }
 
 /** Index of the closing quote of the JSON string starting at `start`, or -1. */

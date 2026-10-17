@@ -1,7 +1,10 @@
 import type { EncodeOptions } from "@flattype/shared";
 
-/** Built-in field types. Append `?` (e.g. `"string?"`) to also allow `null`; a missing value becomes `null`. */
-export type Primitive = "string" | "number" | "integer" | "boolean" | "date" | "any";
+/**
+ * Built-in field types. Append `?` (e.g. `"string?"`) to also allow `null`; a missing value becomes `null`.
+ * `"bigint"` is an exact integer of any size (a `BigInt`), and `"bytes"` a base64 string read as a `Uint8Array`.
+ */
+export type Primitive = "string" | "number" | "integer" | "bigint" | "boolean" | "date" | "bytes" | "any";
 
 /** How a field is declared: a type name, a nested model, `[spec]` for an array, or the long form. */
 export type Spec = Primitive | `${Primitive}?` | Model<any> | readonly [Spec] | FieldOptions;
@@ -50,7 +53,7 @@ export interface Model<T> {
   safeParse(input: unknown): SafeResult<T>;
   /** Maps an array (or Flat Notation for one). Throws `ModelError`. */
   parseList(input: unknown): T[];
-  /** Turns a typed object back into API-shaped JSON (dates as ISO strings, API key names). */
+  /** Turns a typed object back into API-shaped data (dates as ISO strings, bytes as base64, API key names). */
   serialize(value: T): Record<string, unknown>;
   /** `serialize`, then Flat Notation. */
   encode(value: T | T[], options?: EncodeOptions): string;
@@ -62,11 +65,15 @@ type PrimitiveOut<P> = P extends "string"
   ? string
   : P extends "number" | "integer"
     ? number
-    : P extends "boolean"
-      ? boolean
-      : P extends "date"
-        ? Date
-        : unknown;
+    : P extends "bigint"
+      ? bigint
+      : P extends "boolean"
+        ? boolean
+        : P extends "date"
+          ? Date
+          : P extends "bytes"
+            ? Uint8Array
+            : unknown;
 
 type TypeOut<S> =
   S extends Model<infer T>

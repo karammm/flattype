@@ -107,7 +107,7 @@ export function fromOpenAPI(document: unknown, options: { schemas?: string[] } =
     if (type === undefined && (schema.properties || schema.allOf)) type = "object";
     switch (type) {
       case "string":
-        return { spec: schema.format === "date-time" || schema.format === "date" ? "date" : "string", nullable };
+        return { spec: schema.format === "date-time" || schema.format === "date" ? "date" : schema.format === "byte" ? "bytes" : "string", nullable };
       case "integer":
         return { spec: "integer", nullable };
       case "number":

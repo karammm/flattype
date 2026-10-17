@@ -21,7 +21,6 @@ export function flatten(value: unknown): FlatRecord {
       v = (v as { toJSON(): unknown }).toJSON();
     }
     if (v === null || typeof v !== "object") {
-      if (typeof v === "bigint") throw new TypeError("Do not know how to serialize a BigInt");
       const leaf = typeof v === "number" ? (Number.isFinite(v) ? v + 0 : null) : v;
       const skip = leaf === undefined || typeof leaf === "function" || typeof leaf === "symbol";
       put(path, skip ? null : (leaf as FlatRecord[string]));

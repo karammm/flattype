@@ -1,5 +1,11 @@
 # @flattype/shared
 
+## 1.13.0
+
+### Minor Changes
+
+- Exact integers and built-in types. `encode` writes a `BigInt` as its digits and `decode(text, { bigint: true })` reads integers beyond 2^53 as exact BigInts. New `@flattype/core/types`: `replaceTypes` (Map, Set, bytes, errors), `reviveDates`, `parseJson` and `stringifyJson`. Models gain `"bigint"` and `"bytes"` field types and keep big integers exact when parsing Flat Notation. `flatFetch` keeps them exact when a model is given (or with `bigint: true`), and the CLI keeps them exact both ways.
+
 ## 1.12.0
 
 ### Minor Changes
