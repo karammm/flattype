@@ -646,6 +646,19 @@ Numbers measured on every docs build are on the [benchmarks page](https://karamm
 - **Gzip already removes most of JSON's repeated keys,** so gzipped network sizes come out close. FlatType makes the biggest difference where text isn't compressed: LLM prompts and tool results, logs, caches and local storage.
 - **`JSON.parse` is native code, so it's still faster.** FlatType decodes at about half its speed and about 8× faster than the TOON reference decoder.
 
+
+### Real-world files: Microsoft's Edge demo JSON
+
+[Six public files from 64 KB to 5 MB](https://github.com/karammm/flattype/blob/main/benchmarks/edge-json-dummy-data.md), each a list of people with a long `bio` text:
+
+| File | JSON as served | Flat Notation | Saved |
+| --- | ---: | ---: | ---: |
+| 5MB.json (15,840 records) | 4.89 MB | 3.73 MB | 24% |
+| 1MB.json (3,168 records) | 1002.2 KB | 763.1 KB | 24% |
+| 64KB.json (197 records) | 62.3 KB | 47.5 KB | 24% |
+
+That's 14% less than minified JSON. Long text leaves fewer keys to remove, so the saving is smaller than on typical API lists. Once a response is gzipped, the two are within 2% of each other. [Full report, with every size, compression and timing](https://github.com/karammm/flattype/blob/main/benchmarks/edge-json-dummy-data.md).
+
 ## Development
 
 ```bash
