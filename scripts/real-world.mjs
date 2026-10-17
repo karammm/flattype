@@ -10,6 +10,7 @@ import { encode as toon, decode as untoon } from "@toon-format/toon";
 import { decode, encode } from "../packages/core/dist/index.js";
 
 const NAMES = ["64KB", "128KB", "256KB", "512KB", "1MB", "5MB"];
+// Both variants of each file are read: NAME.json (pretty-printed) and NAME-min.json.
 const BASE = "https://microsoftedge.github.io/Demos/json-dummy-data/";
 const dir = process.argv[2];
 
@@ -35,8 +36,12 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 const rows = [];
 for (const name of NAMES) {
-  const served = dir ? readFileSync(join(dir, `${name}.json`), "utf8") : await (await fetch(`${BASE}${name}.json`)).text();
+  const load = async (file) => (dir ? readFileSync(join(dir, file), "utf8") : await (await fetch(`${BASE}${file}`)).text());
+  const served = await load(`${name}.json`);
+  // The site's "minified" variant, as served (it still has a space after each colon).
+  const servedMin = await load(`${name}-min.json`);
   const value = JSON.parse(served);
+  if (!same(JSON.parse(servedMin), value)) throw new Error(`${name}-min.json holds different data`);
   const min = JSON.stringify(value);
   const flat = encode(value);
   const flatTab = encode(value, { delimiter: "\t" });
@@ -46,12 +51,13 @@ for (const name of NAMES) {
     name,
     records: value.length,
     served: bytes(served),
+    servedMin: bytes(servedMin),
     min: bytes(min),
     flat: bytes(flat),
     flatTab: bytes(flatTab),
     toon: bytes(t),
-    gz: { served: gz(served), min: gz(min), flat: gz(flat), flatTab: gz(flatTab), toon: gz(t) },
-    br: { min: br(min), flat: br(flat), flatTab: br(flatTab) },
+    gz: { served: gz(served), servedMin: gz(servedMin), min: gz(min), flat: gz(flat), flatTab: gz(flatTab), toon: gz(t) },
+    br: { servedMin: br(servedMin), min: br(min), flat: br(flat), flatTab: br(flatTab) },
     ms: name === "5MB" ? { parse: time(() => JSON.parse(min)), decode: time(() => decode(flat)), stringify: time(() => JSON.stringify(value)), encode: time(() => encode(value)) } : undefined,
     sample: name === "64KB" ? { json: JSON.stringify(value.slice(0, 2), null, 2), flat: encode(value.slice(0, 2)) } : undefined,
   });
@@ -62,29 +68,33 @@ const big = rows.find((r) => r.name === "5MB");
 const first = JSON.parse(dir ? readFileSync(join(dir, "64KB.json"), "utf8") : await (await fetch(`${BASE}64KB.json`)).text());
 const unique = first.length;
 const bioShare = first.reduce((a, x) => a + x.bio.length, 0) / first.reduce((a, x) => a + JSON.stringify(x).length, 0);
-const md = `# Benchmark: Microsoft Edge demo JSON (64 KB to 5 MB)
+const md = `# Benchmark: Microsoft Edge demo JSON (64 KB to 5 MB, pretty and minified)
 
-The [JSON dummy data](https://github.com/MicrosoftEdge/Demos/tree/main/json-dummy-data) files from Microsoft's Edge demos, converted with \`@flattype/core\`. Every file is a list of people with the same five fields, the most common shape of an API response. Every number below was measured by [\`scripts/real-world.mjs\`](../scripts/real-world.mjs) on the real files, and every conversion was decoded again and checked to equal the original.
+The [JSON dummy data](https://github.com/MicrosoftEdge/Demos/tree/main/json-dummy-data) files from Microsoft's Edge demos, both the pretty-printed \`.json\` and the \`-min.json\` versions, converted with \`@flattype/core\`. Every file is a list of people with the same five fields, the most common shape of an API response. Every number below was measured by [\`scripts/real-world.mjs\`](../scripts/real-world.mjs) on the real files, and every conversion was decoded again and checked to equal the original.
 
 ## The 5 MB file
 
-| | Size | vs. the file as served | vs. minified JSON |
+| | Size | vs. 5MB.json | vs. 5MB-min.json |
 | --- | ---: | ---: | ---: |
-| JSON as served (pretty-printed) | **${kb(big.served)}** | | |
-| JSON, minified | ${kb(big.min)} | −${pct(big.min, big.served)} | |
-| TOON | ${kb(big.toon)} | −${pct(big.toon, big.served)} | −${pct(big.toon, big.min)} |
-| **Flat Notation** | **${kb(big.flat)}** | **−${pct(big.flat, big.served)}** | **−${pct(big.flat, big.min)}** |
-| Flat Notation, tab-separated | ${kb(big.flatTab)} | −${pct(big.flatTab, big.served)} | −${pct(big.flatTab, big.min)} |
+| 5MB.json, as served (pretty-printed) | **${kb(big.served)}** | | |
+| 5MB-min.json, as served | **${kb(big.servedMin)}** | −${pct(big.servedMin, big.served)} | |
+| JSON fully minified (\`JSON.stringify\`) | ${kb(big.min)} | −${pct(big.min, big.served)} | −${pct(big.min, big.servedMin)} |
+| TOON | ${kb(big.toon)} | −${pct(big.toon, big.served)} | −${pct(big.toon, big.servedMin)} |
+| **Flat Notation** | **${kb(big.flat)}** | **−${pct(big.flat, big.served)}** | **−${pct(big.flat, big.servedMin)}** |
+| Flat Notation, tab-separated | ${kb(big.flatTab)} | −${pct(big.flatTab, big.served)} | −${pct(big.flatTab, big.servedMin)} |
 
-**${kb(big.served)} becomes ${kb(big.flat)}**: ${(big.served - big.flat).toLocaleString("en-US")} bytes fewer for the same ${big.records.toLocaleString("en-US")} records, or ${pct(big.flat, big.served)} smaller than the file as served and ${pct(big.flat, big.min)} smaller than minified JSON. That is what a model reads when you paste the data into a prompt, and what a browser downloads without compression.
+- **From the pretty file:** ${kb(big.served)} becomes ${kb(big.flat)}, ${(big.served - big.flat).toLocaleString("en-US")} bytes fewer (${pct(big.flat, big.served)}).
+- **From the minified file:** ${kb(big.servedMin)} becomes ${kb(big.flat)}, ${(big.servedMin - big.flat).toLocaleString("en-US")} bytes fewer (${pct(big.flat, big.servedMin)}). The site's minified files still have a space after every colon (\`"name": "Adeel Solangi"\`), so they're ${Math.round((big.servedMin / big.min - 1) * 100)}% bigger than JSON with no spaces at all. Even against that, Flat Notation is ${pct(big.flat, big.min)} smaller.
+
+That's for the same ${big.records.toLocaleString("en-US")} records: what a model reads when you paste the data into a prompt, and what a browser downloads without compression.
 
 ## All six files
 
-| File | Records | JSON as served | JSON minified | TOON | **Flat Notation** | Saved vs. served | Saved vs. minified |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-${rows.map((r) => `| ${r.name}.json | ${r.records.toLocaleString("en-US")} | ${kb(r.served)} | ${kb(r.min)} | ${kb(r.toon)} | **${kb(r.flat)}** | **${pct(r.flat, r.served)}** | ${pct(r.flat, r.min)} |`).join("\n")}
+| File | Records | .json (pretty) | -min.json | JSON, no spaces | TOON | **Flat Notation** | Saved vs. .json | Saved vs. -min.json |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+${rows.map((r) => `| ${r.name} | ${r.records.toLocaleString("en-US")} | ${kb(r.served)} | ${kb(r.servedMin)} | ${kb(r.min)} | ${kb(r.toon)} | **${kb(r.flat)}** | **${pct(r.flat, r.served)}** | **${pct(r.flat, r.servedMin)}** |`).join("\n")}
 
-The saving is the same at every size, because it comes from the shape: the five keys are written once in a table header instead of once per record. (The file named 128KB.json is really ${kb(rows[1].served)}, almost the same data as 256KB.json.)
+The saving is the same at every size, because it comes from the shape: the five keys are written once in a table header instead of once per record. (The files named 128KB are really ${kb(rows[1].served)} and ${kb(rows[1].servedMin)}, almost the same data as the 256KB ones.)
 
 ## What it looks like
 
@@ -100,7 +110,7 @@ ${rows[0].sample.flat}
 
 The \`bio\` text contains commas, so it is quoted in comma-separated rows. With \`encode(data, { delimiter: "\\t" })\` the quotes go away, which saves another ${pct(big.flatTab, big.flat)}.
 
-## Why 24% and not 45%
+## Why about a quarter, not half
 
 Flat Notation saves the most where keys are a large part of the data. Here they aren't:
 - **Long text dominates.** The \`bio\` field is ${Math.round(bioShare * 100)}% of every record, and no format can shrink the text itself. Only the keys, quotes and braces around it go away.
@@ -113,9 +123,9 @@ Also note that **the files repeat the same ${unique} records**: 5MB.json is thos
 
 Gzip and brotli already remove most of JSON's repeated keys, so the difference almost disappears once a response is compressed. (Brotli also notices the repeated records, so every file compresses to about the same size.)
 
-| File | JSON minified, gzip | Flat Notation, gzip | Saved | JSON minified, brotli | Flat Notation, brotli | Saved |
+| File | -min.json, gzip | Flat Notation, gzip | Saved | -min.json, brotli | Flat Notation, brotli | Saved |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-${rows.map((r) => `| ${r.name}.json | ${kb(r.gz.min)} | ${kb(r.gz.flat)} | ${pct(r.gz.flat, r.gz.min)} | ${kb(r.br.min)} | ${kb(r.br.flat)} | ${pct(r.br.flat, r.br.min)} |`).join("\n")}
+${rows.map((r) => `| ${r.name} | ${kb(r.gz.servedMin)} | ${kb(r.gz.flat)} | ${pct(r.gz.flat, r.gz.servedMin)} | ${kb(r.br.servedMin)} | ${kb(r.br.flat)} | ${pct(r.br.flat, r.br.servedMin)} |`).join("\n")}
 
 So the large savings are for text that isn't compressed, above all **LLM prompts**: models are billed by token, not by gzip size. On the wire, Flat Notation is a modest win on top of compression.
 
