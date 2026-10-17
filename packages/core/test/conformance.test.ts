@@ -209,7 +209,13 @@ function normalize(v: unknown): unknown {
 describe("conformance cases", () => {
   it("still reads and writes the frozen 1.0 suite", () => {
     const frozen = parseJson(readFileSync(FROZEN, "utf8")) as Record<string, { text: string; value?: unknown; options?: Record<string, unknown>; error?: string }[]>;
-    for (const c of [...frozen.encode!, ...frozen.bigint!]) {
+    // Integers beyond 2^53 need JSON.parse source text access (Node 21+) to be read exactly.
+    const sourceText = (() => {
+      let ok = false;
+      JSON.parse("1", (_k, v, ctx?: { source?: string }) => ((ok = typeof ctx?.source === "string"), v));
+      return ok;
+    })();
+    for (const c of [...frozen.encode!, ...(sourceText ? frozen.bigint! : [])]) {
       expect(encode(c.value, { ...(c.options as EncodeOptions), target: "1.0" })).toBe(c.text);
     }
     // 1.1 only adds syntax: every 1.0 document means the same. Lines starting with "." were errors and still

@@ -2,6 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import type { Delimiter, FlatWarning } from "../src/index.js";
 import { createDecoder, decode, encode, FlatDecodeError } from "../src/index.js";
+import { asJson } from "./json.js";
 
 /** Flat Notation 1.1: tables with optional fields, `[+]` items and `.` lines. */
 const RUNS = Number(process.env.FUZZ_RUNS ?? 1500);
@@ -95,7 +96,7 @@ describe("encoding irregular lists", () => {
     fc.assert(
       fc.property(value, fc.constantFrom<Delimiter>(",", "|", "\t"), fc.constantFrom<"1.0" | "1.1">("1.0", "1.1"), (v, delimiter, target) => {
         const text = encode(v, { delimiter, target });
-        expect(decode(text)).toEqual(JSON.parse(JSON.stringify(v)));
+        expect(decode(text)).toEqual(asJson(v));
       }),
       { numRuns: RUNS },
     );
