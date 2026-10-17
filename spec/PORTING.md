@@ -11,7 +11,7 @@ What you get:
 
 ## 1. Plan the levels
 
-The suite checks [six levels](SPEC.md#14-conformance), and a port can stop after any of them:
+The suite checks [six levels](SPEC.md#14-conformance) (plus one for unpaired surrogates, which most languages skip, section 4), and a port can stop after any of them:
 
 1. **Decoder** (required). Strict decoding of values, with errors at the right line and column. Most of the work is here.
 2. **Encoder.** The canonical text, byte for byte. Mostly string quoting and number formatting.
@@ -24,13 +24,13 @@ Build in that order, and run the suite after each step with `--only`.
 
 ## 2. The decoder
 
-The reference decoders are single-pass and line-based, with no regular expressions that can backtrack. This structure works in any language.
+The reference decoders are single-pass and line-based, with no regular expressions that can backtrack badly. This structure works in any language.
 
 ### 2.1 Lines
 
 Keep the unfinished last line in a buffer. When a chunk arrives, search **only the new chunk** for LF, so a long line delivered in many small chunks stays linear. Then hand each complete line, without a trailing CR, to the line reader. At the end, the buffer is the last line (possibly empty).
 
-In Python, appending to a string in a loop is quadratic: the buffer is a list of pieces, joined once per line.
+In Python, appending to a string in a loop can be quadratic, so the buffer is a list of pieces, joined once per line.
 
 ### 2.2 The line reader
 
