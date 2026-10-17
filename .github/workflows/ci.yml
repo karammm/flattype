@@ -40,10 +40,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build --filter="./packages/*"
-      # 50,000 random values per encode option, 200,000 random documents through the decoder.
-      - run: pnpm --filter @flattype/core exec vitest run test/roundtrip.test.ts test/security.test.ts
+      # 50,000 random values per encode option, 200,000 random documents through the decoder, and the grammar
+      # against the decoder on 50,000 more (a new seed every run).
+      - run: pnpm --filter @flattype/core exec vitest run test/roundtrip.test.ts test/security.test.ts test/irregular.test.ts test/grammar.test.ts
         env:
           FUZZ_RUNS: "50000"
+          FUZZ_SEED: ${{ github.run_id }}
       # Timing tests run alone so nothing else competes for the CPU.
       - run: pnpm --filter @flattype/core --filter @flattype/models --filter @flattype/ai --workspace-concurrency=1 test:perf
 

@@ -5,7 +5,7 @@ This guide is for anyone writing Flat Notation for another language: Go, Rust, J
 What you get:
 
 - **[The specification](SPEC.md),** with an [ABNF grammar](grammar.abnf) for the syntax of a line.
-- **[The conformance suite](../conformance/README.md):** about 5,600 checks generated from the JavaScript implementation, and a runner that tests your implementation from any language through a small adapter.
+- **[The conformance suite](../conformance/README.md):** about 7,700 checks generated from the JavaScript implementation, and a runner that tests your implementation from any language through a small adapter. The suite of [Flat Notation 1.0](https://github.com/karammm/flattype/blob/spec-v1.0/spec/SPEC.md) is kept too, if you start with 1.0.
 - **A grammar checker,** [`conformance/grammar.mjs`](../conformance/grammar.mjs), that tells you whether a document your encoder wrote is valid.
 - **Two reference implementations** to read: [TypeScript](../packages/core/src) (about 800 lines for the format) and [Python](../python/src/flattype) (about 1,000, no dependencies). The Python one is the better model for most languages, because it had to spell out everything JavaScript does implicitly.
 
@@ -39,14 +39,17 @@ read_line(text):
   if a table is open:          read text as a row (2.5); return
   skip SP and HTAB
   if nothing is left, or "#":  return
+  if "." comes first:          start from the open item (2.7), and read the path after the "."
   (segments, terminal, end) ← parse_path(text, pos)
-  if terminal is plain and "=" follows after SP: reference (2.7); return
+  replace each [+] in segments by its index (2.7)
+  if terminal is plain and "=" follows after SP: reference (2.9); return
   if text[end] ≠ ":":          error "Expected ':' after path" at end
   rest ← text after the colon
   plain   → assign(segments, token(trim(rest)))
   inline  → assign(segments, cells(rest, delimiter))
   table   → if trim(rest) ≠ "": problem "Table rows go on the following lines"
             open a table (assign at once if its count is 0)
+  the line worked: it opens an item if it had [+], keeps the item if it started with ".", or ends it
 ```
 
 ### 2.3 Paths
@@ -59,7 +62,7 @@ An index is digits converted to a **double**, not an integer: messages print it 
 
 Implement `assign` and `SLOT` exactly as [section 6.1](SPEC.md#61-assignment) writes them, **iteratively**: one line can hold a path with 100,000 segments. The root is the `root` slot of a holder object, which is why errors at the root say `'root'`.
 
-Containers need one property beyond JSON: a reference placeholder (2.7) must be distinguishable from an object.
+Containers need one property beyond JSON: a reference placeholder (2.9) must be distinguishable from an object.
 
 ### 2.5 Cells and tables
 
@@ -86,7 +89,23 @@ Writing the decoder this way from the start makes the lenient level a few dozen 
 
 For **skipping invalid lines**, run each line's assignments twice: once in a dry mode that raises every error but writes nothing (it creates containers but never attaches them), and then for real. If the dry run raises, drop the line. Hold the line's warnings until it has been read, so a dropped line reports only `the line is skipped`.
 
-### 2.7 References
+### 2.7 Items: `[+]` and `.` lines
+
+A `[+]` segment becomes a number before the line is applied: walk the path from where it starts, without creating anything, and use the length of the array found there (0 if there is none). The line then opens an item, the element at its last `[+]`.
+
+**Don't store the item as a path.** If a `.` line prepends the item's path and assigns from the root, a document with one 100,000-segment `[+]` path followed by 100,000 short `.` lines takes 10¹⁰ steps. Instead, keep where the item lives: the array and the index, found once, the first time a `.` line needs it. A `.` line then assigns from that slot, and costs only its own length. The reference decoders keep the path only to report table paths to `onRow`, and build it only when someone asked for that.
+
+Also check:
+- an absolute line that doesn't open an item ends the current one;
+- a line that fails changes nothing, so set the new item only once the line has been read;
+- a reference can't start with `.`;
+- a dropped table (when skipping invalid lines) ends its item.
+
+### 2.8 Optional fields
+
+The header parser records which fields end in `?`. When splitting a row, an empty unquoted cell in an optional field is a marker for "absent", not `Missing value`, and the row object simply doesn't get that key.
+
+### 2.9 References
 
 A reference assigns a placeholder object and records it. At the end of the document, resolve the placeholders in order, as [section 8.2](SPEC.md#82-meaning) describes. Two JavaScript habits are part of the rules:
 
@@ -97,7 +116,9 @@ A reference assigns a placeholder object and records it. At the end of the docum
 
 A recursive walk is natural ([section 12](SPEC.md#12-encoding)). The decisions are local:
 
-- **Tables:** for an array that isn't all primitives, collect each item's leaf paths and values. Give up on the first item that is not an object, has an array or empty object inside, or has different leaf paths from the first item. Only then write the header and rows.
+- **Tables:** for an array that isn't all primitives, collect each item's leaf paths and values. Give up on the first item that is not an object or has an array or empty object inside. If the items' leaf paths differ, merge them into one header ([section 12.5](SPEC.md#125-tables)): the algorithm is short, but follow it exactly, since the order of the header is part of the canonical text. Then write the header and rows.
+- **Items:** write each item of an array that isn't inline or a table at `p[i]`, then rewrite its lines: `p[+]` on the first, and the `p[i]` prefix removed from the others (table rows excluded). Skip the rewrite for an item inside another item, for an array of arrays, and for an item with a reference among two or more lines. Marking table rows as you write them (the reference encoders prefix them with a newline, which no other line can contain) keeps this simple.
+- **`target: "1.0"`** turns both off. Test it against the frozen 1.0 suite: the output must not change by a byte.
 - **Separators:** join cells with `", "`, `" | "` or a tab, but join the header's fields with the bare delimiter (`{a,b}`, `{a|b}`).
 - **Cycles:** keep the set of containers on the current path, and reject a cycle unless references are on.
 
@@ -180,7 +201,7 @@ Each of these broke a test in the Python port at least once.
 
 - [ ] The suite passes at the levels you claim, with no failures.
 - [ ] `decode(encode(x)) == x` holds in a property test with thousands of random values.
-- [ ] Decoding is linear on hostile inputs (section 4).
+- [ ] Decoding is linear on hostile inputs (section 4), including many `.` lines after a very deep `[+]` item.
 - [ ] References and lenient decoding, if you offer them, are off by default.
 - [ ] Your README says which levels of Flat Notation 1.0 it passes, and links here.
 

@@ -30,7 +30,7 @@ describe("flatInterceptor", () => {
     const { http, backend } = setup();
     const result = firstValueFrom(http.get("/api/users"));
     const req = backend.expectOne("/api/users");
-    expect(req.request.headers.get("Accept")).toBe("text/x-flat, application/json;q=0.9, */*;q=0.1");
+    expect(req.request.headers.get("Accept")).toBe("text/x-flat; version=1.1, application/json;q=0.9, */*;q=0.1");
     expect(req.request.responseType).toBe("text");
     req.flush(encode(users), { headers: flat });
     expect(await result).toEqual(users);

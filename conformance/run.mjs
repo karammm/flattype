@@ -6,6 +6,7 @@
 //   node conformance/run.mjs -- node conformance/adapters/javascript.mjs
 //   node conformance/run.mjs -- uv run --project python python conformance/adapters/python.py
 //   node conformance/run.mjs --only decoder,encoder -- ./target/release/flat-conformance
+//   node conformance/run.mjs --cases conformance/1.0/cases.json -- ./my-adapter    (the frozen 1.0 suite)
 //
 // The adapter reads one JSON request per line on stdin and writes one JSON response per line on stdout.
 // conformance/README.md describes the protocol and the levels.
@@ -151,8 +152,8 @@ function decodeOptions(o) {
   return { strict: o.strict !== false, refs: o.refs === true, skipInvalidLines: o.skipInvalidLines === true };
 }
 
-function encodeOptions(o) {
-  return { delimiter: o.delimiter ?? ",", indent: o.indent ?? 2, tabular: o.tabular !== "off", refs: false };
+function encodeOptions(o, version) {
+  return { delimiter: o.delimiter ?? ",", indent: o.indent ?? 2, tabular: o.tabular !== "off", refs: false, target: o.target ?? version };
 }
 
 /**
@@ -205,6 +206,8 @@ async function main() {
   if (!hasSource) usage("This runner needs Node.js 21 or later (JSON.parse source text access), to compare big integers exactly.");
 
   const cases = parseJson(readFileSync(file, "utf8"));
+  // The 1.0 suite (conformance/1.0/cases.json) has no version field.
+  const version = cases.version ?? "1.0";
   const levels = Object.fromEntries(LEVELS.map(([k]) => [k, { passed: 0, failed: 0, unsupported: 0, failures: [] }]));
   const adapter = new Adapter(command);
   const record = (level, problem, text) => {
@@ -230,7 +233,7 @@ async function main() {
   for (const c of cases.encode) {
     jobs.push({
       level: "encoder",
-      run: () => ask({ op: "encode", value: c.value, options: encodeOptions(c.options) }),
+      run: () => ask({ op: "encode", value: c.value, options: encodeOptions(c.options, version) }),
       check: (r) => sameText(c.text, r),
       text: c.text,
       value: c.value,
@@ -247,7 +250,7 @@ async function main() {
   for (const c of cases.bigint) {
     jobs.push({
       level: "integers",
-      run: () => ask({ op: "encode", value: c.value, options: encodeOptions({}) }),
+      run: () => ask({ op: "encode", value: c.value, options: encodeOptions({}, version) }),
       check: (r) => sameText(c.text, r),
       text: c.text,
     });
@@ -261,7 +264,7 @@ async function main() {
   for (const c of cases.refs) {
     jobs.push({
       level: "refs",
-      run: () => ask({ op: "reencode", text: c.text, options: { refs: true } }),
+      run: () => ask({ op: "reencode", text: c.text, options: { refs: true, target: version } }),
       check: (r) => sameText(c.text, r),
       text: c.text,
     });
@@ -269,7 +272,7 @@ async function main() {
 
   for (const job of jobs) if (hasLone(job.text) || hasLone(job.value)) job.level = "surrogates";
 
-  console.log(`Flat Notation 1.0 conformance: ${command.join(" ")}\n`);
+  console.log(`Flat Notation ${version} conformance: ${command.join(" ")}\n`);
   let crashed;
   for (const job of jobs) {
     if (!only.has(job.level)) continue;

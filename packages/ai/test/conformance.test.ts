@@ -13,12 +13,18 @@ const SEED = 20261016;
 
 const piece = fc.constantFrom(
   "<data>", "</data>", '<data format="flat-notation">', "<database>", "<DATA>", "<data-x>", "```", "```json\n", "```flat\n", "\n",
-  "a: 1", "b.c: x", "t[2]{x,y}:\n  1, 2\n  3, 4", '{"a": 1}', "[1, 2]", "Here you go:", "Sure!", " ", ": ", "#", '"',
+  "a: 1", "b.c: x", "t[2]{x,y}:\n  1, 2\n  3, 4", "e[+].x: 1", ".y: 2", "u[2]{id,p?}:\n  1, 2\n  3,", '{"a": 1}', "[1, 2]", "Here you go:", "Sure!", " ", ": ", "#", '"',
 );
 const reply = fc.array(piece, { maxLength: 12 }).map((p) => p.join(""));
 
 function build(): unknown {
-  const values = [{ name: "John", age: 30 }, { orders: [{ id: 1, customer: "Alice", amount: 120.5 }, { id: 2, customer: "Bob, Jr.", amount: 80 }] }, [1, "x"], 42];
+  const values = [
+    { name: "John", age: 30 },
+    { orders: [{ id: 1, customer: "Alice", amount: 120.5 }, { id: 2, customer: "Bob, Jr.", amount: 80 }] },
+    [1, "x"],
+    42,
+    { users: [{ id: 1, phone: "555" }, { id: 2 }], events: [{ type: "push", commits: [{ sha: "a1" }] }, { type: "star", user: "u" }] },
+  ];
   const prompts = values.flatMap((value) =>
     [{}, { name: 'or"ders&<' }, { legend: false }, { tag: false }, { delimiter: "|" }].map((options) => ({ value, options, text: toPrompt(value, options as never) })),
   );
@@ -33,6 +39,8 @@ function build(): unknown {
     '[{"name": "Noa","language" "Galician"}]',
     "```json\n{\"a\": 1,}\n```",
     "people[2]{name,id}\n  Ann, 1\n  Bo",
+    "<data>\nevents[+].type: push\n.repo: r\nevents[+].type: star\n</data>",
+    "Here you go:\nusers[2]{id,phone?}:\n  1, 555\n  2,\nThat's all.",
   ].map((text) => {
     const warnings: FlatWarning[] = [];
     try {

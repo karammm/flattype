@@ -1,5 +1,5 @@
 import type { Decoder, DecoderOptions, DecodeOptions, Delimiter, FlatWarning, JsonValue } from "@flattype/shared";
-import { assign, parsePath, Ref, resolveRefs, type Segment, type Terminal } from "./path.js";
+import { APPEND, assign, isKeyStart, parsePath, Ref, resolveAppends, resolveRefs, type Segment, type Slot, type Terminal } from "./path.js";
 import { revive } from "./revive.js";
 import { FlatDecodeError, formatKey, parseScalar, scanString, type Warn } from "./syntax.js";
 
@@ -14,6 +14,17 @@ export function decode(text: string, options: DecodeOptions = {}): JsonValue {
 }
 
 type Table = Extract<Terminal, { kind: "table" }>;
+
+/**
+ * The item a `[+]` line opened, which `.path` lines continue: `path` (ending with the appended index) from where
+ * that line started. Its place is found once and kept, so a `.path` line costs only its own length.
+ */
+interface Item {
+  from: Slot | undefined;
+  path: Segment[];
+  prev: Item | undefined;
+  slot?: Slot;
+}
 
 /**
  * Incremental decoder: `write` chunks as they arrive (any split, even mid-line), then `end()`.
@@ -47,25 +58,43 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
   const pending: Ref[] = [];
   let lineNo = 0;
   let rest = "";
+  // The item that `.path` lines continue.
+  let anchor: Item | undefined;
   // The table whose rows are being read.
-  let table: { at: number; segments: Segment[]; t: Table; path: string; rows: unknown[]; read: number } | undefined;
+  let table:
+    | { at: number; from: Slot | undefined; segments: Segment[]; t: Table; path: string; rows: unknown[]; read: number; opens: boolean }
+    | undefined;
 
   /** `assign` into the result. When skipping lines, checked first, so a line that fails changes nothing. */
-  const put = (segments: Segment[], value: unknown, at: number): void => {
-    if (skip) assign(holder, segments, value, strict, at, true);
-    assign(holder, segments, value, strict, at, false, warn);
+  const put = (from: Slot | undefined, segments: Segment[], value: unknown, at: number): void => {
+    if (skip) assign(holder, segments, value, strict, at, true, undefined, from);
+    assign(holder, segments, value, strict, at, false, warn, from);
   };
+
+  /** Where `item` is: found from where its line started, once. Undefined if it isn't there. */
+  const place = (item: Item): Slot | undefined => {
+    if (item.slot) return item.slot;
+    let cur: unknown = item.from ? (item.from.parent as Record<string, unknown>)[item.from.key as string] : holder.root;
+    for (let i = 0; i < item.path.length - 1 && cur !== null && typeof cur === "object"; i++) cur = (cur as Record<string, unknown>)[item.path[i] as string];
+    if (!Array.isArray(cur)) return undefined;
+    return (item.slot = { parent: cur, key: item.path[item.path.length - 1]! });
+  };
+
+  /** The whole path of an item, for `onRow`. */
+  const whole = (item: Item | undefined): Segment[] => (item ? [...whole(item.prev), ...item.path] : []);
 
   const closeTable = (): void => {
     // Cleared first: a table whose path can't be written is dropped, not left half-open.
     const t = table!;
     table = undefined;
-    if (!skip) return put(t.segments, t.rows, t.at);
+    if (!skip) return put(t.from, t.segments, t.rows, t.at);
     try {
-      put(t.segments, t.rows, t.at);
+      put(t.from, t.segments, t.rows, t.at);
     } catch (e) {
       if (!(e instanceof FlatDecodeError)) throw e;
       warn?.(e.reason, e.line, e.column, "the table is dropped");
+      // The item a dropped table would have opened doesn't exist.
+      if (t.opens) anchor = undefined;
     }
   };
 
@@ -89,12 +118,15 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     if (table) {
       const { t } = table;
       const width = t.fields.length;
-      const row = cells(text, t.delimiter, problem, lineNo, 1, big);
+      const row = cells(text, t.delimiter, problem, lineNo, 1, big, t.optional);
       if (row.length !== width) {
         problem(`Expected ${width} values, got ${row.length}`, lineNo, 1, row.length < width ? "the missing values are null" : "the extra values are dropped");
       }
       const obj: { root?: unknown } = { root: {} };
-      for (let f = 0; f < width; f++) assign(obj, t.fields[f]!, f < row.length ? row[f] : null, strict, lineNo, false, warn);
+      for (let f = 0; f < width; f++) {
+        const v = f < row.length ? row[f] : null;
+        if (v !== ABSENT) assign(obj, t.fields[f]!, v, strict, lineNo, false, warn);
+      }
       if (keep) table.rows.push(obj.root);
       onRow?.({ path: table.path, index: table.read, value: obj.root as JsonValue });
       if (++table.read === t.count) closeTable();
@@ -104,11 +136,32 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     while (text.charCodeAt(pos) === 32 || text.charCodeAt(pos) === 9) pos++;
     if (pos === text.length || text.charCodeAt(pos) === 35) return; // blank or # comment
 
-    const { segments, terminal, end } = parsePath(text, pos, lineNo);
+    // `.path` continues the item the last `[+]` line opened: it starts there, not at the root.
+    const relative = text.charCodeAt(pos) === 46;
+    let from: Slot | undefined;
+    let rawPath: (Segment | typeof APPEND)[];
+    let end: number;
+    let terminal: Terminal;
+    if (relative) {
+      if (!anchor) throw new FlatDecodeError("A '.' path needs a [+] item before it", lineNo, pos + 1);
+      if (!isKeyStart(text.charCodeAt(++pos))) throw new FlatDecodeError("Expected a key after '.'", lineNo, pos + 1);
+      ({ segments: rawPath, terminal, end } = parsePath(text, pos, lineNo));
+      from = place(anchor);
+      // Only after a line that failed, which can't open an item: treated as no item.
+      if (!from) throw new FlatDecodeError("A '.' path needs a [+] item before it", lineNo, pos);
+    } else {
+      ({ segments: rawPath, terminal, end } = parsePath(text, pos, lineNo));
+    }
+    const last = rawPath.lastIndexOf(APPEND);
+    const segments = last < 0 ? (rawPath as Segment[]) : resolveAppends(from ? (from.parent as Record<string, unknown>)[from.key as string] : holder.root, rawPath);
+    // Set once the line has been read: a line that fails changes nothing.
+    const next: Item | undefined = last >= 0 ? { from, path: segments.slice(0, last + 1), prev: from ? anchor : undefined } : relative ? anchor : undefined;
     let eq = end;
     while (text.charCodeAt(eq) === 32) eq++;
     if (terminal.kind === "value" && text.charCodeAt(eq) === 61) {
-      reference(segments, text, eq);
+      if (relative) throw new FlatDecodeError("A reference can't start with '.'", lineNo, pos);
+      // A reference that is refused (lenient, without refs) is a skipped line: it changes nothing.
+      if (reference(segments, text, eq)) anchor = next;
       return;
     }
     const colon = text.charCodeAt(end) === 58;
@@ -121,19 +174,27 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
     }
     const value = colon ? text.slice(end + 1) : "";
     if (terminal.kind === "value") {
-      put(segments, scalar(value.trim(), problem, lineNo, end + 2, big), lineNo);
+      put(from, segments, scalar(value.trim(), problem, lineNo, end + 2, big), lineNo);
     } else if (terminal.kind === "inline") {
-      put(segments, cells(value, terminal.delimiter, problem, lineNo, end + 2, big), lineNo);
+      put(from, segments, cells(value, terminal.delimiter, problem, lineNo, end + 2, big), lineNo);
     } else {
       if (value.trim() !== "") problem("Table rows go on the following lines", lineNo, end + 2, "the text after the header is ignored");
-      table = { at: lineNo, segments, t: terminal, path: formatPath(segments), rows: [], read: 0 };
+      // The path only matters to onRow; for a `.path` table it is the item's path and the rest.
+      const path = !onRow ? "" : formatPath(from ? [...whole(anchor), ...segments] : segments);
+      anchor = next;
+      table = { at: lineNo, from, segments, t: terminal, path, rows: [], read: 0, opens: last >= 0 };
       if (terminal.count === 0) closeTable();
+      return;
     }
+    anchor = next;
   };
 
   /** `path = target` (`~` is the root). */
-  const reference = (segments: Segment[], text: string, eq: number): void => {
-    if (!refs) return problem("References need { refs: true }", lineNo, eq + 1, "the line is skipped");
+  const reference = (segments: Segment[], text: string, eq: number): boolean => {
+    if (!refs) {
+      problem("References need { refs: true }", lineNo, eq + 1, "the line is skipped");
+      return false;
+    }
     if (segments.length === 0) throw new FlatDecodeError("The root can't be a reference", lineNo, eq + 1);
     let pos = eq + 1;
     while (text.charCodeAt(pos) === 32) pos++;
@@ -144,17 +205,18 @@ export function createDecoder(options: DecoderOptions = {}): Decoder {
       end = pos + 1;
     } else {
       const p = parsePath(text, pos, lineNo);
-      if (p.terminal.kind !== "value" || p.segments.length === 0) {
+      if (p.terminal.kind !== "value" || p.segments.length === 0 || p.segments.includes(APPEND)) {
         throw new FlatDecodeError("Expected a path or '~' after '='", lineNo, pos + 1);
       }
-      target = p.segments;
+      target = p.segments as Segment[];
       end = p.end;
     }
     while (text.charCodeAt(end) === 32) end++;
     if (end !== text.length) throw new FlatDecodeError("Unexpected text after reference", lineNo, end + 1);
     const ref = new Ref(segments, target, lineNo);
-    put(segments, ref, lineNo);
+    put(undefined, segments, ref, lineNo);
     pending.push(ref);
+    return true;
   };
 
   return {
@@ -210,8 +272,11 @@ function scalar(tok: string, problem: Warn, line: number, column: number, big: b
   return v;
 }
 
-/** Splits `a, "b, c", 3` on the delimiter, honouring quotes. */
-function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, column: number, big: boolean): unknown[] {
+/** An empty cell in an optional table field (`phone?`): the key is left out of the row. */
+const ABSENT: unique symbol = Symbol("absent");
+
+/** Splits `a, "b, c", 3` on the delimiter, honouring quotes. With `optional`, an empty cell there is ABSENT. */
+function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, column: number, big: boolean, optional?: boolean[]): unknown[] {
   const out: unknown[] = [];
   const n = s.length;
   const isSpace = (c: number): boolean => c === 32 || (c === 9 && delimiter !== "\t");
@@ -234,7 +299,8 @@ function cells(s: string, delimiter: Delimiter, problem: Warn, line: number, col
     } else {
       const next = s.indexOf(delimiter, i);
       const j = next < 0 ? n : next;
-      out.push(scalar(s.slice(i, j).trim(), problem, line, column + i, big));
+      const tok = s.slice(i, j).trim();
+      out.push(tok === "" && optional?.[out.length] ? ABSENT : scalar(tok, problem, line, column + i, big));
       i = j;
     }
     if (i >= n) return out;

@@ -1,11 +1,13 @@
 # Implementations
 
-These implementations of [Flat Notation 1.0](SPEC.md) pass the [conformance suite](../conformance/README.md) at the levels shown. CI checks every row marked "CI" on each change.
+These implementations of [Flat Notation](SPEC.md) pass the [conformance suite](../conformance/README.md) at the levels shown. CI checks every row marked "CI" on each change.
 
-| Language | Package | Decoder | Encoder | Exact integers | Lenient | References | Messages | Checked |
-| --- | --- | :---: | :---: | :---: | :---: | :---: | :---: | --- |
-| JavaScript, TypeScript | [`@flattype/core`](https://www.npmjs.com/package/@flattype/core) | ✓ | ✓ | ✓ ¹ | ✓ | ✓ | ✓ | CI |
-| Python | [`flattype`](https://pypi.org/project/flattype/) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | CI |
+| Language | Package | Version | Decoder | Encoder | Exact integers | Lenient | References | Messages | Checked |
+| --- | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | --- |
+| JavaScript, TypeScript | [`@flattype/core`](https://www.npmjs.com/package/@flattype/core) 1.14+ | 1.1 | ✓ | ✓ | ✓ ¹ | ✓ | ✓ | ✓ | CI |
+| Python | [`flattype`](https://pypi.org/project/flattype/) 1.14+ | 1.1 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | CI |
+
+Versions 1.13 of both packages implement Flat Notation 1.0.
 
 ¹ With `decode(text, { bigint: true })`. By default, integers beyond 2⁵³ round, as with `JSON.parse`.
 

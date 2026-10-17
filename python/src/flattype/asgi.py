@@ -15,7 +15,7 @@ from collections.abc import Awaitable, MutableMapping
 from typing import Any, Callable
 
 from ._encode import encode
-from .negotiate import add_vary, prefers_flat
+from .negotiate import add_vary, flat_version, prefers_flat
 
 Scope = MutableMapping[str, Any]
 Message = MutableMapping[str, Any]
@@ -40,7 +40,8 @@ def _without(headers: list[tuple[bytes, bytes]], *names: bytes) -> list[tuple[by
 
 class FlatMiddleware:
     """Answers in Flat Notation when the client asks for it. Encode options (``delimiter``, ``indent``, ``tabular``)
-    are passed to :func:`flattype.encode`."""
+    are passed to :func:`flattype.encode`. The text is written for the version the client says it reads in its
+    ``Accept`` header (``text/x-flat; version=1.1``), so older clients get 1.0 text."""
 
     def __init__(self, app: ASGIApp, **encode_options: Any) -> None:
         self.app = app
@@ -51,7 +52,10 @@ class FlatMiddleware:
             await self.app(scope, receive, send)
             return
         accept = _header(list(scope.get("headers") or []), b"accept")
-        wanted = prefers_flat(accept.decode("latin-1") if accept else None)
+        accept_text = accept.decode("latin-1") if accept else None
+        wanted = prefers_flat(accept_text)
+        # Written for a version the client reads: clients before 1.14 get 1.0 text.
+        options = {**self.options, "target": "1.0" if self.options.get("target") == "1.0" else flat_version(accept_text)}
         start: Message | None = None
         body: list[bytes] = []
         passthrough = True
@@ -81,7 +85,7 @@ class FlatMiddleware:
             assert start is not None
             raw = b"".join(body)
             try:
-                payload = encode(json.loads(raw), **self.options).encode("utf-8")
+                payload = encode(json.loads(raw), **options).encode("utf-8")
                 headers = _without(start["headers"], b"content-type", b"content-length")
                 headers += [(b"content-type", CONTENT_TYPE), (b"content-length", str(len(payload)).encode())]
                 start = {**start, "headers": headers}

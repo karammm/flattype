@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from ._path import Ref, Segment, assign, check, parse_path, resolve_refs, show_number
+from ._path import APPEND, Ref, Segment, Slot, assign, check, is_key_start, parse_path, resolve_appends, resolve_refs, show_number
 from ._syntax import INVALID, FlatDecodeError, FlatWarning, Warn, format_key, js_trim, parse_scalar, scan_string
 
 
@@ -20,14 +20,42 @@ class TableRow:
     value: Any
 
 
-class _Table:
-    __slots__ = ("at", "segments", "count", "delimiter", "fields", "path", "rows", "read", "keys")
+class _Item:
+    """The item a ``[+]`` line opened, which ``.path`` lines continue: ``path`` (ending with the appended index) from
+    where that line started. Its place is found once and kept, so a ``.path`` line costs only its own length."""
 
-    def __init__(self, at: int, segments: list[Segment], terminal: tuple[Any, ...]) -> None:
+    __slots__ = ("start", "path", "prev", "slot")
+
+    def __init__(self, start: Slot | None, path: list[Segment], prev: _Item | None) -> None:
+        self.start = start
+        self.path = path
+        self.prev = prev
+        self.slot: Slot | None = None
+
+
+def _whole(item: _Item | None) -> list[Segment]:
+    """The whole path of an item, for ``on_row``."""
+    out: list[Segment] = []
+    while item is not None:
+        out[:0] = item.path
+        item = item.prev
+    return out
+
+
+class _Table:
+    __slots__ = ("at", "start", "segments", "count", "delimiter", "fields", "optional", "path", "rows", "read", "keys", "opens")
+
+    def __init__(
+        self, at: int, start: Slot | None, segments: list[Segment], terminal: tuple[Any, ...], path: str, opens: bool
+    ) -> None:
         self.at = at
+        self.start = start
+        self.opens = opens
         self.segments = segments
-        _, self.count, self.delimiter, self.fields = terminal
-        self.path = _format_path(segments)
+        _, self.count, self.delimiter, self.fields, optional = terminal
+        # The optional fields (``phone?``), or None when there are none.
+        self.optional: list[bool] | None = optional if any(optional) else None
+        self.path = path
         self.rows: list[Any] = []
         self.read = 0
         # Fields that are plain keys or dot paths that can't conflict (the usual case) are built directly, without
@@ -71,6 +99,8 @@ class Decoder:
         self._rest: list[str] = []
         self._table: _Table | None = None
         self._pending: list[Ref] = []
+        # The item that ``.path`` lines continue.
+        self._anchor: _Item | None = None
         # Lenient repairs, reported to on_warning. When skipping lines, a line's warnings wait until it has been
         # read, so a line that is dropped reports only that.
         self._on_warning = None if strict else on_warning
@@ -123,11 +153,24 @@ class Decoder:
             resolve_refs(self._holder, self._pending, self._strict, self._warn)
         return self._holder.get("root", {})
 
-    def _put(self, segments: list[Segment], value: Any, at: int) -> None:
+    def _put(self, start: Slot | None, segments: list[Segment], value: Any, at: int) -> None:
         """``assign`` into the result. When skipping lines, checked first, so a line that fails changes nothing."""
         if self._skip:
-            check(self._holder, segments, self._strict, at)
-        assign(self._holder, segments, value, self._strict, at, self._warn)
+            check(self._holder, segments, self._strict, at, start)
+        assign(self._holder, segments, value, self._strict, at, self._warn, start)
+
+    def _place(self, item: _Item) -> Slot | None:
+        """Where ``item`` is: found from where its line started, once. None if it isn't there."""
+        if item.slot is not None:
+            return item.slot
+        start = item.start
+        cur: Any = self._holder.get("root") if start is None else _get(start[0], start[1])
+        for seg in item.path[:-1]:
+            cur = _get(cur, seg)
+        if not isinstance(cur, list):
+            return None
+        item.slot = (cur, item.path[-1])
+        return item.slot
 
     def _close_table(self) -> None:
         # Cleared first: a table whose path can't be written is dropped, not left half-open.
@@ -135,13 +178,16 @@ class Decoder:
         assert t is not None
         self._table = None
         if not self._skip:
-            self._put(t.segments, t.rows, t.at)
+            self._put(t.start, t.segments, t.rows, t.at)
             return
         try:
-            self._put(t.segments, t.rows, t.at)
+            self._put(t.start, t.segments, t.rows, t.at)
         except FlatDecodeError as e:
             if self._warn:
                 self._warn(e.reason, e.line, e.column, "the table is dropped")
+            # The item a dropped table would have opened doesn't exist.
+            if t.opens:
+                self._anchor = None
 
     def _line(self, raw: str) -> None:
         self._line_no += 1
@@ -168,7 +214,7 @@ class Decoder:
         t = self._table
         if t is not None:
             width = len(t.fields)
-            row = _cells(text, t.delimiter, self._problem, line_no, 1)
+            row = _cells(text, t.delimiter, self._problem, line_no, 1, t.optional)
             if len(row) != width:
                 repair = "the missing values are null" if len(row) < width else "the extra values are dropped"
                 self._problem(f"Expected {width} values, got {len(row)}", line_no, 1, repair)
@@ -177,6 +223,8 @@ class Decoder:
             if t.keys is not None:
                 value: Any = {}
                 for path, cell in zip(t.keys, row):
+                    if cell is _ABSENT:
+                        continue
                     d = value
                     for k in path[:-1]:
                         d = d.setdefault(k, {})
@@ -184,7 +232,8 @@ class Decoder:
             else:
                 obj: dict[str, Any] = {"root": {}}
                 for f in range(width):
-                    assign(obj, t.fields[f], row[f], strict, line_no, self._warn)
+                    if row[f] is not _ABSENT:
+                        assign(obj, t.fields[f], row[f], strict, line_no, self._warn)
                 value = obj["root"]
             if self._keep:
                 t.rows.append(value)
@@ -201,12 +250,49 @@ class Decoder:
         if pos == n or text[pos] == "#":
             return  # blank or # comment
 
-        segments, terminal, end = parse_path(text, pos, line_no)
+        # ``.path`` continues the item the last ``[+]`` line opened: it starts there, not at the root.
+        relative = text[pos] == "."
+        anchor = self._anchor
+        start: Slot | None = None
+        if relative:
+            if anchor is None:
+                raise FlatDecodeError("A '.' path needs a [+] item before it", line_no, pos + 1)
+            pos += 1
+            if not is_key_start(text[pos] if pos < n else ""):
+                raise FlatDecodeError("Expected a key after '.'", line_no, pos + 1)
+            raw_path, terminal, end = parse_path(text, pos, line_no)
+            start = self._place(anchor)
+            # Only after a line that failed, which can't open an item: treated as no item.
+            if start is None:
+                raise FlatDecodeError("A '.' path needs a [+] item before it", line_no, pos)
+        else:
+            raw_path, terminal, end = parse_path(text, pos, line_no)
+        last = -1
+        for i, seg in enumerate(raw_path):
+            if seg is APPEND:
+                last = i
+        if last < 0:
+            segments: list[Segment] = raw_path
+        else:
+            origin = self._holder.get("root") if start is None else _get(start[0], start[1])
+            segments = resolve_appends(origin, raw_path)
+        # Set once the line has been read: a line that fails changes nothing.
+        nxt = (
+            _Item(start, segments[: last + 1], anchor if start is not None else None)
+            if last >= 0
+            else anchor
+            if relative
+            else None
+        )
         eq = end
         while eq < n and text[eq] == " ":
             eq += 1
         if terminal[0] == "value" and eq < n and text[eq] == "=":
-            self._reference(segments, text, eq)
+            if relative:
+                raise FlatDecodeError("A reference can't start with '.'", line_no, pos)
+            # A reference that is refused (lenient, without refs) is a skipped line: it changes nothing.
+            if self._reference(segments, text, eq):
+                self._anchor = nxt
             return
         colon = end < n and text[end] == ":"
         if not colon:
@@ -218,23 +304,28 @@ class Decoder:
         value = text[end + 1 :] if colon else ""
         kind = terminal[0]
         if kind == "value":
-            self._put(segments, _scalar(js_trim(value), self._problem, line_no, end + 2), line_no)
+            self._put(start, segments, _scalar(js_trim(value), self._problem, line_no, end + 2), line_no)
         elif kind == "inline":
-            self._put(segments, _cells(value, terminal[1], self._problem, line_no, end + 2), line_no)
+            self._put(start, segments, _cells(value, terminal[1], self._problem, line_no, end + 2), line_no)
         else:
             if js_trim(value) != "":
                 repair = "the text after the header is ignored"
                 self._problem("Table rows go on the following lines", line_no, end + 2, repair)
-            self._table = _Table(line_no, segments, terminal)
+            # The path only matters to on_row; for a ``.path`` table it is the item's path and the rest.
+            shown = "" if self._on_row is None else _format_path(_whole(anchor) + segments if start is not None else segments)
+            self._anchor = nxt
+            self._table = _Table(line_no, start, segments, terminal, shown, last >= 0)
             if terminal[1] == 0:
                 self._close_table()
+            return
+        self._anchor = nxt
 
-    def _reference(self, segments: list[Segment], text: str, eq: int) -> None:
-        """``path = target`` (``~`` is the root)."""
+    def _reference(self, segments: list[Segment], text: str, eq: int) -> bool:
+        """``path = target`` (``~`` is the root). False if it was refused (lenient, without refs)."""
         line_no = self._line_no
         if not self._refs:
             self._problem("References need { refs: true }", line_no, eq + 1, "the line is skipped")
-            return
+            return False
         if not segments:
             raise FlatDecodeError("The root can't be a reference", line_no, eq + 1)
         pos = eq + 1
@@ -246,15 +337,16 @@ class Decoder:
             end = pos + 1
         else:
             target, terminal, end = parse_path(text, pos, line_no)
-            if terminal[0] != "value" or not target:
+            if terminal[0] != "value" or not target or any(seg is APPEND for seg in target):
                 raise FlatDecodeError("Expected a path or '~' after '='", line_no, pos + 1)
         while end < n and text[end] == " ":
             end += 1
         if end != n:
             raise FlatDecodeError("Unexpected text after reference", line_no, end + 1)
         ref = Ref(segments, target, line_no)
-        self._put(segments, ref, line_no)
+        self._put(None, segments, ref, line_no)
         self._pending.append(ref)
+        return True
 
 
 def decode(
@@ -278,6 +370,13 @@ def decode(
     return d.end()
 
 
+def _get(container: Any, seg: Segment) -> Any:
+    """``container[seg]``, or None where there is nothing."""
+    if isinstance(seg, str):
+        return container.get(seg) if isinstance(container, dict) else None
+    return container[int(seg)] if isinstance(container, list) and 0 <= seg < len(container) else None
+
+
 def _format_path(segments: list[Segment]) -> str:
     out = ""
     for s in segments:
@@ -299,13 +398,23 @@ def _scalar(tok: str, problem: Warn, line: int, column: int) -> Any:
     return v
 
 
-def _cells(s: str, delimiter: str, problem: Warn, line: int, column: int) -> list[Any]:
-    """Splits ``a, "b, c", 3`` on the delimiter, honouring quotes."""
+#: An empty cell in an optional table field (``phone?``): the key is left out of the row.
+_ABSENT: Any = object()
+
+
+def _cells(s: str, delimiter: str, problem: Warn, line: int, column: int, optional: list[bool] | None = None) -> list[Any]:
+    """Splits ``a, "b, c", 3`` on the delimiter, honouring quotes. With ``optional``, an empty cell there is absent."""
     if '"' not in s:
         # No quotes: a plain split gives the same cells. (Column numbers are only needed for errors.)
         parts = [js_trim(x) for x in s.split(delimiter)]
+        if optional is not None:
+            parts_or_absent: list[Any] = [
+                _ABSENT if p == "" and k < len(optional) and optional[k] else p for k, p in enumerate(parts)
+            ]
+            if "" not in parts_or_absent:
+                return [p if p is _ABSENT else _scalar(p, problem, line, column) for p in parts_or_absent]
         # An empty cell is a problem that needs its column: the full scan below has it.
-        if "" not in parts:
+        elif "" not in parts:
             return [_scalar(p, problem, line, column) for p in parts]
     out: list[Any] = []
     n = len(s)
@@ -331,7 +440,13 @@ def _cells(s: str, delimiter: str, problem: Warn, line: int, column: int) -> lis
         else:
             nxt = s.find(delimiter, i)
             j = n if nxt < 0 else nxt
-            out.append(_scalar(js_trim(s[i:j]), problem, line, column + i))
+            tok = js_trim(s[i:j])
+            k = len(out)
+            out.append(
+                _ABSENT
+                if tok == "" and optional is not None and k < len(optional) and optional[k]
+                else _scalar(tok, problem, line, column + i)
+            )
             i = j
         if i >= n:
             return out

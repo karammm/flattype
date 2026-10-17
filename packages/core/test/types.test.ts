@@ -27,7 +27,7 @@ describe("replaceTypes", () => {
       [
         "tags[]: a, b",
         "byName.alice: 1",
-        "byId[0][]: 1, alice",
+        "byId[+][]: 1, alice",
         "avatar: aGn/",
         "buffer: aGk=",
         "raw: AQI=",

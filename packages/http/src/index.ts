@@ -3,4 +3,4 @@ export type { ClientOptions, FlatClient, FlatRequestInit, Parser, RequestOptions
 export { streamRows } from "./stream.js";
 export { flatAxios, type AxiosLike } from "./axios.js";
 export { flatExpress, flatFastify, flatHono, negotiate } from "./server.js";
-export { ACCEPT, CONTENT_TYPE, prefersFlat } from "./negotiate.js";
+export { ACCEPT, CONTENT_TYPE, flatVersion, prefersFlat, responseOptions } from "./negotiate.js";

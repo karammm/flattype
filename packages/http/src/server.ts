@@ -1,5 +1,5 @@
 import { encode, type EncodeOptions } from "@flattype/core";
-import { addVary, CONTENT_TYPE, prefersFlat } from "./negotiate.js";
+import { addVary, CONTENT_TYPE, prefersFlat, responseOptions } from "./negotiate.js";
 
 /**
  * For any fetch-API server (Hono, Bun, Deno, Next.js route handlers, Cloudflare Workers…):
@@ -14,7 +14,7 @@ export async function negotiate(request: Request | string | null | undefined, re
   if (!prefersFlat(accept) || !/[/+]json\b/i.test(type) || !response.body) {
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
-  const body = encode(await response.json(), options);
+  const body = encode(await response.json(), responseOptions(accept, options));
   headers.set("content-type", CONTENT_TYPE);
   headers.delete("content-length");
   return new Response(body, { status: response.status, statusText: response.statusText, headers });
@@ -46,7 +46,7 @@ export function flatExpress(options?: EncodeOptions) {
     if (prefersFlat(req.headers.accept)) {
       res.json = (body: unknown) => {
         res.setHeader("Content-Type", CONTENT_TYPE);
-        return res.send(encode(body, options));
+        return res.send(encode(body, responseOptions(req.headers.accept, options)));
       };
     }
     next();
@@ -76,7 +76,8 @@ export const flatFastify = Object.assign(
     app.addHook("preSerialization", async (request, reply, payload) => {
       if (prefersFlat(request.headers.accept)) {
         reply.header("content-type", CONTENT_TYPE);
-        reply.serializer((value: unknown) => encode(value, options));
+        const encodeOptions = responseOptions(request.headers.accept, options);
+        reply.serializer((value: unknown) => encode(value, encodeOptions));
       }
       return payload;
     });

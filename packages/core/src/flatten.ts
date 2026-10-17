@@ -1,5 +1,5 @@
 import type { FlatRecord, JsonValue } from "@flattype/shared";
-import { assign, parsePath } from "./path.js";
+import { APPEND, assign, parsePath, type Segment } from "./path.js";
 import { FlatDecodeError, joinKey } from "./syntax.js";
 
 /**
@@ -55,11 +55,11 @@ export function unflatten(record: FlatRecord): JsonValue {
   for (const path of Object.keys(record)) {
     n++;
     const { segments, terminal, end } = parsePath(path, 0, n);
-    if (terminal.kind !== "value" || end !== path.length) {
+    if (terminal.kind !== "value" || end !== path.length || segments.includes(APPEND)) {
       throw new FlatDecodeError(`Invalid path '${path}'`, n, end + 1);
     }
     const leaf = record[path];
-    assign(holder, segments, Array.isArray(leaf) ? [] : leaf !== null && typeof leaf === "object" ? {} : leaf, true, n);
+    assign(holder, segments as Segment[], Array.isArray(leaf) ? [] : leaf !== null && typeof leaf === "object" ? {} : leaf, true, n);
   }
   return ("root" in holder ? holder.root : {}) as JsonValue;
 }

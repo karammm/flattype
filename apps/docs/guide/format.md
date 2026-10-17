@@ -1,6 +1,6 @@
 # Flat Notation format
 
-This page is a tour of Flat Notation. The precise definition, with the grammar, every error and the exact text an encoder writes, is the [Flat Notation 1.0 specification](/guide/spec). **The format is stable:** text written by any 1.x version decodes the same way in every later 1.x version.
+This page is a tour of Flat Notation. The precise definition, with the grammar, every error and the exact text an encoder writes, is the [Flat Notation 1.1 specification](/guide/spec). **The format is stable:** text written by any 1.x version decodes the same way in every later 1.x version.
 
 - **Media type:** `text/x-flat` (send `charset=utf-8`)
 - **File extension:** `.flat`
@@ -15,13 +15,13 @@ zip: "10001"
 user.address.city: Paris
 "first name": John
 tags[]: admin, editor
-items[0].id: 1
-items[1]: 2
+items[+].id: 1
+items[+]: 2
 empty: {}
 none: []
-users[2]{id,name}:
-  1, Alice
-  2, Bob
+users[2]{id,name,phone?}:
+  1, Alice, 555-0100
+  2, Bob,
 ```
 
 decodes to
@@ -30,7 +30,7 @@ decodes to
 {
   "name": "John", "zip": "10001", "user": { "address": { "city": "Paris" } }, "first name": "John",
   "tags": ["admin", "editor"], "items": [{ "id": 1 }, 2], "empty": {}, "none": [],
-  "users": [{ "id": 1, "name": "Alice" }, { "id": 2, "name": "Bob" }]
+  "users": [{ "id": 1, "name": "Alice", "phone": "555-0100" }, { "id": 2, "name": "Bob" }]
 }
 ```
 
@@ -52,13 +52,13 @@ entry   = path ":" [ value ]
         | path "=" ( path | "~" )                 (* reference, needs refs: true *)
         | path "[" mark "]" ":" cells            (* inline array *)
         | path "[" count mark "]" "{" fields "}" ":"  (* table header *)
-path    = [ ( key | index ) { "." key | index } ]
-index   = "[" digits "]"
+path    = [ ( key | index ) { "." key | index } ] | "." key { "." key | index }   (* "." continues the [+] item *)
+index   = "[" digits "]" | "[+]"                  (* [+]: the next element *)
 key     = bare | json-string
 bare    = 1*( "A"–"Z" | "a"–"z" | "0"–"9" | "_" | "$" | "-" )
 mark    = "" | "|" | TAB          (* the delimiter: "" means "," *)
 fields  = field { mark-or-comma field }
-field   = key { "." key }
+field   = key { "." key } [ "?" ]                (* "?": optional *)
 ```
 
 - **Path parts:** `a.b` is key `b` inside object `a`, and `a[0]` is the first element of array `a`. A key that isn't bare is written as a JSON string: `"first name"`, `"a.b"`, `"@type"`.
@@ -109,7 +109,27 @@ path[count]{field1,field2.sub}:
 - **Shape:** an array of `count` objects. The next `count` lines are its rows, one object per row, with values in field order.
 - **Fields** are dot paths inside each row object, so nested objects flatten into the header.
 - **Indentation is cosmetic:** rows are counted, not detected by their indent. The default indent is 2 spaces.
-- **When the encoder writes a table:** for an array of objects that all have the same leaf paths in the same order, with only primitive values, at least one key, and no arrays or empty objects inside. Any other array is written with indexed paths (`items[0].id: 1`).
+- **Optional fields:** a field written `phone?` may have an empty cell, which means that row has no such key. `null` and `""` are values, written as such.
+- **When the encoder writes a table:** for an array of objects with only primitive values inside (and no arrays or empty objects), whose keys fit one header: each object's keys in the header's order, at least one key in every object, and a header at most twice as wide as the widest object. Keys some objects lack become optional fields.
+
+## Items
+
+A list that can't be a table is written one item at a time. `[+]` is the next element of an array, and the lines after it that start with `.` continue that element, so the item's path isn't repeated with a new index on every line (which makes gzip much less effective):
+
+```
+events[+].type: push
+.repo: org/app
+.commits[1]{sha,message}:
+  a1f, fix typo
+events[+].type: star
+.user.login: ann
+```
+
+Any line whose path doesn't start with `.` ends the item; blank lines, comments and table rows don't. A reference can't start with `.`, so an item that contains one is written with its index (`events[3].owner = users[0]`).
+
+## Versions
+
+This page describes Flat Notation 1.1 (FlatType 1.14 and later), which adds optional table fields and items to 1.0. Every 1.0 document decodes the same way, but older decoders can't read the new syntax. `encode(value, { target: "1.0" })` writes 1.0 text for them, and the HTTP servers do that automatically for clients that don't send `Accept: text/x-flat; version=1.1`.
 
 ## Building the value
 

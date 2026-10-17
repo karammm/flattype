@@ -24,13 +24,44 @@ describe("encode", () => {
     expect(encode({ users })).toBe("users[2]{id,name,role.title}:\n  1, Alice, Admin\n  2, Bob, Dev");
   });
 
-  it("falls back to indexed paths for mixed arrays", () => {
-    expect(encode({ a: [{ x: 1 }, { y: 2 }, 3] })).toBe("a[0].x: 1\na[1].y: 2\na[2]: 3");
-    expect(encode({ a: [[1, 2], []] })).toBe("a[0][]: 1, 2\na[1]: []");
+  it("writes mixed arrays item by item, with [+]", () => {
+    expect(encode({ a: [{ x: 1 }, { y: 2 }, 3] })).toBe("a[+].x: 1\na[+].y: 2\na[+]: 3");
+    expect(encode({ a: [[1, 2], []] })).toBe("a[+][]: 1, 2\na[+]: []");
+    expect(encode({ a: [{ x: 1, k: [{ p: 1 }, 2] }, { y: 2 }] })).toBe("a[+].x: 1\n.k[0].p: 1\n.k[1]: 2\na[+].y: 2");
+    // An array of arrays goes on with an index, so it keeps its indexes.
+    expect(encode([[1, { a: 1 }], 2])).toBe("[0][0]: 1\n[0][1].a: 1\n[+]: 2");
+  });
+
+  it("writes tables whose rows have different keys, with optional fields", () => {
+    const users = [{ id: 1, name: "Ann", phone: "555" }, { id: 2, name: "Bo" }, { id: 3, address: { city: "Paris" }, name: "Cy" }];
+    const text = encode({ users });
+    expect(text).toBe('users[3]{id,address.city?,name,phone?}:\n  1, , Ann, "555"\n  2, , Bo,\n  3, Paris, Cy,');
+    expect(decode(text)).toEqual({ users });
+    expect(encode({ u: [{ id: 1, a: 1 }, { id: 2 }] }, { delimiter: "|" })).toBe("u[2|]{id|a?}:\n  1 | 1\n  2 |");
+  });
+
+  it("only makes a table when the keys fit one header", () => {
+    // No key in every row, keys in different orders, a key inside another, or a header too wide: [+] items.
+    expect(encode([{ a: 1 }, { b: 2 }])).toBe("[+].a: 1\n[+].b: 2");
+    expect(encode([{ id: 1, a: 1, b: 2 }, { id: 2, b: 3, a: 4 }])).toBe("[+].id: 1\n.a: 1\n.b: 2\n[+].id: 2\n.b: 3\n.a: 4");
+    expect(encode([{ id: 1, a: 1 }, { id: 2, a: { b: 1 } }])).toBe("[+].id: 1\n.a: 1\n[+].id: 2\n.a.b: 1");
+    // Five keys for rows of two: more than twice as wide.
+    expect(encode([{ id: 1, a: 1 }, { id: 2, b: 1 }, { id: 3, c: 1 }, { id: 4, d: 1 }])).toBe(
+      "[+].id: 1\n.a: 1\n[+].id: 2\n.b: 1\n[+].id: 3\n.c: 1\n[+].id: 4\n.d: 1",
+    );
+    expect(encode([{ id: 1, a: 1 }, { id: 2, b: 1 }, { id: 3, c: 1 }])).toBe("[3]{id,a?,b?,c?}:\n  1, 1, ,\n  2, , 1,\n  3, , , 1");
+    // New keys go at the end, or before the next key of their row.
+    expect(encode([{ id: 1 }, { id: 2, a: 1 }, { id: 3, b: 1 }])).toBe("[3]{id,a?,b?}:\n  1, ,\n  2, 1,\n  3, , 1");
+    expect(encode([{ id: 1, z: 1 }, { id: 2, a: 1, z: 2 }])).toBe("[2]{id,a?,z}:\n  1, , 1\n  2, 1, 2");
+  });
+
+  it("writes 1.0 text with target 1.0", () => {
+    expect(encode({ a: [{ x: 1 }, { y: 2 }, 3] }, { target: "1.0" })).toBe("a[0].x: 1\na[1].y: 2\na[2]: 3");
+    expect(encode([{ id: 1, a: 1 }, { id: 2 }], { target: "1.0" })).toBe("[0].id: 1\n[0].a: 1\n[1].id: 2");
   });
 
   it("can turn tables off", () => {
-    expect(encode([{ a: 1 }, { a: 2 }], { tabular: "off" })).toBe("[0].a: 1\n[1].a: 2");
+    expect(encode([{ a: 1 }, { a: 2 }], { tabular: "off" })).toBe("[+].a: 1\n[+].a: 2");
   });
 
   it("encodes roots that are not objects", () => {

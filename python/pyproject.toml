@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flattype"
-version = "1.13.0"
+version = "1.14.0"
 description = "JSON <-> Flat Notation: compact key: value text for APIs and LLM prompts. The Python side of @flattype/* on npm."
 readme = "README.md"
 license = "MIT"

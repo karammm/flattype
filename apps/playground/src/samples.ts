@@ -17,10 +17,15 @@ export const samples: Record<string, unknown> = {
     tags: ["admin", "beta"],
   },
   mixed: {
+    contacts: [
+      { id: 1, name: "Ana", phone: "+1-555-0100" },
+      { id: 2, name: "Ben" },
+      { id: 3, name: "Chen", phone: "+1-555-0102", city: "Tokyo" },
+    ],
     events: [
       { type: "push", repo: "org/api", commits: [{ sha: "a1b2", message: "fix: typo" }] },
       { type: "star", repo: "org/web", user: { login: "zoe" } },
     ],
-    note: "Mixed arrays use indexed paths instead of tables.",
+    note: "Keys some objects lack are optional fields (phone?). Lists that can't be tables are written item by item: [+] starts an item, . lines continue it.",
   },
 };

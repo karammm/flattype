@@ -21,6 +21,9 @@ from ._encode import encode
 class FlatResponse(Response):
     media_type = "text/x-flat"
     charset = "utf-8"
+    #: The Flat Notation version written. 1.0, because this class can't see which version the client reads (every
+    #: client can read 1.0). Subclass with ``target = "1.1"`` when all clients are on 1.14 or later.
+    target = "1.0"
 
     def render(self, content: Any) -> bytes:
-        return encode(content).encode("utf-8")
+        return encode(content, target=self.target).encode("utf-8")

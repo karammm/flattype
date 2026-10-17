@@ -1,10 +1,11 @@
 # Conformance suite
 
-These files check that an implementation of [Flat Notation 1.0](../spec/SPEC.md) reads and writes exactly what the reference implementation does, in any language.
+These files check that an implementation of [Flat Notation](../spec/SPEC.md) reads and writes exactly what the reference implementation does, in any language.
 
 | File | What it is |
 | --- | --- |
-| [`cases.json`](cases.json) | About 4,500 cases: what to write for a value, and what to read from a text (a value, warnings or an error) |
+| [`cases.json`](cases.json) | The Flat Notation 1.1 suite, about 5,600 cases: what to write for a value, and what to read from a text (a value, warnings or an error) |
+| [`1.0/cases.json`](1.0/cases.json) | The Flat Notation 1.0 suite, frozen. For implementations of 1.0; CI checks that 1.1 still reads every 1.0 document the same way |
 | [`run.mjs`](run.mjs) | The runner. It sends every case to your implementation and reports each [level](../spec/SPEC.md#14-conformance) |
 | [`grammar.mjs`](grammar.mjs) | Checks documents against [`spec/grammar.abnf`](../spec/grammar.abnf) |
 | [`adapters/`](adapters) | The adapters for the JavaScript and Python packages, as examples |
@@ -18,15 +19,15 @@ The runner and the grammar checker need Node.js 21 or later, and nothing else: n
 ```console
 $ node conformance/run.mjs -- python3 my_adapter.py
 
-Flat Notation 1.0 conformance: python3 my_adapter.py
+Flat Notation 1.1 conformance: python3 my_adapter.py
 
-  Decoder               1613 / 1613   ✓
-  Encoder                960 / 960    ✓
+  Decoder               2615 / 2615   ✓
+  Encoder               1944 / 1944   ✓
   Exact integers         200 / 200    ✓
-  Lenient               1306 / 1306   ✓
-  References            1446 / 1446   ✓
-  Messages              2614 / 2614   ✓
-  Unpaired surrogates     60 / 60     ✓
+  Lenient               1342 / 1342   ✓
+  References            1484 / 1484   ✓
+  Messages              2636 / 2636   ✓
+  Unpaired surrogates    156 / 156    ✓
 
 Passes: Decoder, Encoder, Exact integers, Lenient, References, Messages, Unpaired surrogates.
 ```
@@ -38,7 +39,7 @@ Everything after `--` is the command that starts your adapter. Failures are prin
 | `--only decoder,encoder` | Run only these levels (messages are checked on the decode cases of the levels that run) |
 | `--skip surrogates` | Skip levels, for example where strings can't hold unpaired surrogates (Go, Rust, Swift) |
 | `--show 20` | Print up to 20 failures per level (default 3) |
-| `--cases file.json` | Use another case file |
+| `--cases file.json` | Use another case file, such as `conformance/1.0/cases.json` for a 1.0 implementation |
 
 The two reference implementations run it in CI:
 
@@ -69,17 +70,19 @@ Each warning is `{"message": "Missing value: read as null", "line": 1, "column":
 **Encode** a value:
 
 ```json
-{"id": 2, "op": "encode", "value": {"a": [1, 2]}, "options": {"delimiter": ",", "indent": 2, "tabular": true, "refs": false}}
+{"id": 2, "op": "encode", "value": {"a": [1, 2]}, "options": {"delimiter": ",", "indent": 2, "tabular": true, "refs": false, "target": "1.1"}}
 ```
 
 ```json
 {"id": 2, "text": "a[]: 1, 2"}
 ```
 
+`target` is the Flat Notation version to write: `"1.0"` or `"1.1"`. An implementation of 1.0 runs the 1.0 suite, which always asks for `"1.0"`.
+
 **Re-encode** a document with references: decode it with references enabled, encode the result with references enabled, and answer with the text. This checks that shared objects come back as the same object, because only then does the encoder write the references again:
 
 ```json
-{"id": 3, "op": "reencode", "text": "a.x: 1\nb = a", "options": {"refs": true}}
+{"id": 3, "op": "reencode", "text": "a.x: 1\nb = a", "options": {"refs": true, "target": "1.1"}}
 ```
 
 ```json
@@ -96,12 +99,12 @@ Answer `{"id": 4, "unsupported": true}` to any request your implementation can't
 
 ## The case file
 
-`cases.json` is generated from `@flattype/core` by [`packages/core/test/conformance.test.ts`](../packages/core/test/conformance.test.ts), from handwritten documents and seeded random ones, and CI fails if it is stale. Its four sections are described by [`cases.schema.json`](cases.schema.json):
+`cases.json` is generated from `@flattype/core` by [`packages/core/test/conformance.test.ts`](../packages/core/test/conformance.test.ts), from handwritten documents and seeded random ones, and CI fails if it is stale. It has a `version` (`"1.1"`; the 1.0 file has none) and four sections, described by [`cases.schema.json`](cases.schema.json):
 
 | Section | Cases | Each case |
 | --- | ---: | --- |
-| `encode` | 990 | `value`, `options` and the `text` the encoder writes |
-| `decode` | 3,255 | `text`, `options`, and the `value` (with `warnings` in lenient mode) or the `error`, as `"reason (line L, column C)"` |
+| `encode` | 2,022 | `value`, `options` and the `text` the encoder writes |
+| `decode` | 3,345 | `text`, `options`, and the `value` (with `warnings` in lenient mode) or the `error`, as `"reason (line L, column C)"` |
 | `refs` | 150 | a `text` with references that re-encodes to itself |
 | `bigint` | 100 | a `value` with integers beyond 2⁵³ and its `text` |
 

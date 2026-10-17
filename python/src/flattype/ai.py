@@ -29,8 +29,9 @@ __all__ = [
 
 #: One line that teaches a model the format. It is a ``#`` comment, so a block that includes it is still valid.
 LEGEND = (
-    "# Flat Notation: one `path: value` per line. `a.b` is a nested key, `a[0]` an array index, `a[]: x, y` a list. "
-    "`t[N]{f,g}:` is a table: N rows follow, one per line, values in field order. Quoted values are JSON strings."
+    "# Flat Notation: one `path: value` per line. `a.b` nests, `a[0]` indexes, `a[]: x, y` is a list, `a[+]` the next item "
+    "(`.k` lines continue it). `t[N]{f,g?}:` is a table of N rows, values in field order; an empty `?` cell means no key. "
+    "Quoted values are JSON strings."
 )
 
 
@@ -56,8 +57,8 @@ def output_instructions(example: Any = None) -> str:
     lines = [
         "Reply with the data only, in Flat Notation, inside <data> and </data> tags.",
         LEGEND[2:],
-        "Write a list of objects with the same keys as a table. Quote a string value if it contains a comma "
-        "or could be read as a number, true, false or null.",
+        "Write a list of objects as a table, marking keys that some objects lack with `?`. Quote a string value if "
+        "it contains a comma or could be read as a number, true, false or null.",
     ]
     if example is not None:
         lines += ["Example of the expected shape:", to_prompt(example, legend=False)]

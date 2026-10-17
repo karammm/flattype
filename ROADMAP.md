@@ -142,6 +142,11 @@ A release of the format, not of the packages: no package changes, so nothing new
 - Conformance levels (Decoder, Encoder, Exact integers, Lenient, References, Messages) and a [runner](conformance/README.md) that tests an implementation in any language through a small adapter
 - [Writing a port](spec/PORTING.md), the [implementations page](spec/IMPLEMENTATIONS.md) and an issue template to get listed
 - CI checks the grammar against every case and the decoder on random documents, the spec's examples, and both reference implementations through the runner
+
+## v1.14.0: Irregular lists (Flat Notation 1.1) ✅
+- Optional table fields (`phone?`) and `[+]` items with `.` lines, for lists whose objects have different keys
+- `target: "1.0"` to write 1.0 text for older readers; HTTP servers pick the version from `Accept: text/x-flat; version=1.1`
+- Spec 1.1 with the amended versioning rule, regenerated suite, frozen 1.0 suite, Python port
 ---
 
 Have an idea or a use case that isn't covered? [Open an issue](https://github.com/karammm/flattype/issues).

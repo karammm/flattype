@@ -1,4 +1,4 @@
-; Flat Notation 1.0: the syntax of a line.
+; Flat Notation 1.1: the syntax of a line.
 ; ABNF (RFC 5234), with %s"..." (RFC 7405) for case-sensitive text.
 ; Terminals are Unicode code points. A document is split into lines at LF.
 ; Which lines are table rows is in the specification (section 3.3).
@@ -10,29 +10,35 @@ line-body       = blank / comment / entry
 row-line-comma  = cells-comma [ CR ]     ; the lines after a table header are its rows
 row-line-pipe   = cells-pipe [ CR ]
 row-line-tab    = cells-tab [ CR ]
+row-line-comma-optional = rows-comma [ CR ]   ; rows of a table with optional fields (name?):
+row-line-pipe-optional  = rows-pipe [ CR ]    ; a cell may be empty
+row-line-tab-optional   = rows-tab [ CR ]
 
 blank           = *sptab
 comment         = *sptab "#" *char
 entry           = *sptab ( pair / inline / header / reference )
 
 ; Entries
-pair            = [ path ] ":" value
-inline          = [ path ] "[" "]" ":" cells-comma
-                / [ path ] "[" "|" "]" ":" cells-pipe
-                / [ path ] "[" HTAB "]" ":" cells-tab
+pair            = [ lead ] ":" value
+inline          = [ lead ] "[" "]" ":" cells-comma
+                / [ lead ] "[" "|" "]" ":" cells-pipe
+                / [ lead ] "[" HTAB "]" ":" cells-tab
 header          = header-comma / header-pipe / header-tab
-header-comma    = [ path ] "[" count "]" "{" field *( "," field ) "}" ":" *ws
-header-pipe     = [ path ] "[" count "|" "]" "{" field *( "|" field ) "}" ":" *ws
-header-tab      = [ path ] "[" count HTAB "]" "{" field *( HTAB field ) "}" ":" *ws
-reference       = path *SP "=" *SP ( path / "~" ) *SP
+header-comma    = [ lead ] "[" count "]" "{" field *( "," field ) "}" ":" *ws
+header-pipe     = [ lead ] "[" count "|" "]" "{" field *( "|" field ) "}" ":" *ws
+header-tab      = [ lead ] "[" count HTAB "]" "{" field *( HTAB field ) "}" ":" *ws
+reference       = path *SP "=" *SP ( target / "~" ) *SP   ; never a "." path
 
 ; Paths
+lead            = path / "." key *( "." key / index )  ; "." goes on with the last [+] item
 path            = ( key / index ) *( "." key / index )
+target          = ( key / number-index ) *( "." key / number-index )
 key             = bare-key / string
 bare-key        = 1*( ALPHA / DIGIT / "_" / "$" / "-" )
-index           = "[" 1*DIGIT "]"
+index           = number-index / "[+]"                 ; [+] is the next element
+number-index    = "[" 1*DIGIT "]"
 count           = 1*DIGIT
-field           = *SP key *( "." key ) *SP
+field           = *SP key *( "." key ) [ "?" ] *SP     ; "?" makes the field optional
 
 ; Values: one token, with the whitespace around it ignored
 value           = *ws scalar *ws
@@ -57,6 +63,9 @@ cell-pipe       = *sptab string *sptab
                 / *sptab ws-other *ws ( string-no-pipe / text-no-pipe ) *ws
                 / *sptab text-no-pipe *ws
 cells-tab       = cell-tab *( HTAB cell-tab )        ; a tab separates cells, so it is not whitespace here
+rows-comma      = ( cell-comma / *ws ) *( "," ( cell-comma / *ws ) )
+rows-pipe       = ( cell-pipe / *ws ) *( "|" ( cell-pipe / *ws ) )
+rows-tab        = ( cell-tab / *ws-no-tab ) *( HTAB ( cell-tab / *ws-no-tab ) )
 cell-tab        = *SP string *SP
                 / *SP ws-other *ws-no-tab ( string / text-no-tab ) *ws-no-tab
                 / *SP text-no-tab *ws-no-tab

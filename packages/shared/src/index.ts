@@ -28,7 +28,16 @@ export interface EncodeOptions {
    * Default `false`.
    */
   refs?: boolean;
+  /**
+   * The Flat Notation version to write. `"1.1"` (the default) writes lists whose objects have different keys
+   * compactly: tables with optional fields (`phone?`) and `[+]` items. `"1.0"` writes text that every decoder
+   * before 1.14 can read. The HTTP servers pick this from the client's `Accept` header.
+   */
+  target?: FlatVersion;
 }
+
+/** A version of the Flat Notation specification. */
+export type FlatVersion = "1.0" | "1.1";
 
 /** A problem lenient decoding repaired, and where it was. */
 export interface FlatWarning {

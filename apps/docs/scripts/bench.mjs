@@ -58,6 +58,7 @@ ${speed.join("\n")}
 ## What these numbers mean
 
 - **The savings come from lists of objects.** Keys are written once per table instead of once per row, and nested fields go into the header. A single small object is about the size of its JSON.
+- **Lists whose objects have different keys** (the contacts, the activity feed and the mixed events) use Flat Notation 1.1: tables with optional fields such as \`phone?\`, and \`[+]\` items for what can't be a table. Before v1.14 they were written with an index on every line, larger than JSON and twice its size after gzip.
 - **Gzip removes most of JSON's repetition,** so over a compressed connection the difference is small. The big wins are where text isn't compressed: LLM prompts and tool results (billed per token), logs, caches and local storage.
 - **\`JSON.parse\` is native code** and stays faster. FlatType's decoder is plain TypeScript and runs in time linear in the input size, which the [hardening tests](/guide/security) check on every push.
 - **TOON** is the [Token-Oriented Object Notation](https://github.com/toon-format/toon) reference implementation, measured with the same fixtures. It doesn't flatten nested objects into table headers, so on the list payloads here it comes out larger than JSON.

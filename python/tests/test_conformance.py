@@ -73,3 +73,36 @@ def test_integers_of_any_size_are_exact(case: dict[str, Any]) -> None:
     # Compared with ==, not same(): every digit has to match.
     assert flattype.encode(case["value"]) == case["text"]
     assert flattype.decode(case["text"]) == case["value"]
+
+
+FROZEN = json.loads((Path(__file__).parents[2] / "conformance" / "1.0" / "cases.json").read_text("utf-8"))
+_RENAMED = ("A '.' path needs a [+] item before it", "Expected ':' after path")
+
+
+def test_target_1_0_writes_the_frozen_1_0_text() -> None:
+    for case in FROZEN["encode"]:
+        assert flattype.encode(case["value"], **_encode_options(case["options"]), target="1.0") == case["text"]
+    for case in FROZEN["bigint"]:
+        assert flattype.encode(case["value"], target="1.0") == case["text"]
+
+
+def test_every_1_0_document_means_the_same() -> None:
+    # 1.1 only adds syntax. Lines starting with "." were errors and still are, with a clearer message.
+    for case in FROZEN["decode"]:
+        o = case["options"]
+        kwargs = {
+            "strict": o.get("strict", True),
+            "refs": o.get("refs", False),
+            "skip_invalid_lines": o.get("skipInvalidLines", False),
+        }
+        warnings: list[flattype.FlatWarning] = []
+        try:
+            value = flattype.decode(case["text"], **kwargs, on_warning=warnings.append)
+        except flattype.FlatDecodeError as e:
+            assert str(e).replace(*_RENAMED) == case["error"]
+            continue
+        assert "error" not in case and same(value, case["value"])
+        if "warnings" in case:
+            assert [{"message": w.message.replace(*_RENAMED), "line": w.line, "column": w.column} for w in warnings] == case[
+                "warnings"
+            ]

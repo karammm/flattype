@@ -10,8 +10,20 @@ from ._syntax import FlatDecodeError, Warn, format_key, format_number, is_key_ch
 
 #: A key (str) or an array index (int; a float only for indexes too large to be valid).
 Segment = Union[str, int, float]
-#: ("value",) | ("inline", delimiter) | ("table", count, delimiter, fields)
+#: ("value",) | ("inline", delimiter) | ("table", count, delimiter, fields, optional)
 Terminal = tuple[Any, ...]
+
+
+class _Append:
+    """``[+]`` in a path: the next element of the list (Flat Notation 1.1). Resolved to an int before assigning."""
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return "[+]"
+
+
+APPEND: Any = _Append()
 
 VALUE: Terminal = ("value",)
 _DIGITS = re.compile(r"[0-9]+")
@@ -33,9 +45,15 @@ def show_number(n: int | float) -> str:
     return str(n) if isinstance(n, int) else format_number(n)
 
 
-def parse_path(s: str, pos: int, line: int) -> tuple[list[Segment], Terminal, int]:
-    """Reads a path starting at ``pos``. Stops at the first character that can't continue a path (normally ``:``)."""
-    segments: list[Segment] = []
+def is_key_start(c: str) -> bool:
+    """Whether a path can start with ``c``: a bare key character or the quote of a quoted key."""
+    return c == '"' or (c != "" and is_key_char(c))
+
+
+def parse_path(s: str, pos: int, line: int) -> tuple[list[Any], Terminal, int]:
+    """Reads a path starting at ``pos``. Stops at the first character that can't continue a path (normally ``:``).
+    The segments can include :data:`APPEND` for ``[+]``."""
+    segments: list[Any] = []
 
     def fail(msg: str, at: int) -> NoReturn:
         raise FlatDecodeError(msg, line, at + 1)
@@ -62,6 +80,13 @@ def parse_path(s: str, pos: int, line: int) -> tuple[list[Segment], Terminal, in
         inner = s[pos + 1 : close]
         if inner in ("", "|", "\t"):
             return segments, ("inline", inner or ","), close + 1
+        if inner == "+":
+            segments.append(APPEND)
+            pos = close + 1
+            if _at(s, pos) == ".":
+                pos += 1
+                need_key = True
+            continue
         digits, mark = inner, ""
         if inner[-1] in "|\t":
             digits, mark = inner[:-1], inner[-1]
@@ -71,8 +96,8 @@ def parse_path(s: str, pos: int, line: int) -> tuple[list[Segment], Terminal, in
         pos = close + 1
         if _at(s, pos) == "{":
             delimiter = mark or ","
-            fields, end = _read_fields(s, pos + 1, delimiter, fail)
-            return segments, ("table", n, delimiter, fields), end
+            fields, optional, end = _read_fields(s, pos + 1, delimiter, fail)
+            return segments, ("table", n, delimiter, fields, optional), end
         if mark != "":
             fail("A delimiter mark is only allowed on inline arrays and tables", pos - 1)
         segments.append(n)
@@ -100,9 +125,12 @@ def _read_key(s: str, pos: int, out: list[Segment], fail: Callable[[str, int], N
     return end
 
 
-def _read_fields(s: str, pos: int, delimiter: str, fail: Callable[[str, int], NoReturn]) -> tuple[list[list[Segment]], int]:
-    """Reads ``id,user.name}`` (after the ``{``) into one key path per field."""
+def _read_fields(
+    s: str, pos: int, delimiter: str, fail: Callable[[str, int], NoReturn]
+) -> tuple[list[list[Segment]], list[bool], int]:
+    """Reads ``id,user.name,phone?}`` (after the ``{``) into one key path per field, and which are optional."""
     fields: list[list[Segment]] = []
+    optional: list[bool] = []
     while True:
         while _at(s, pos) == " ":
             pos += 1
@@ -116,11 +144,15 @@ def _read_fields(s: str, pos: int, delimiter: str, fail: Callable[[str, int], No
                 break
             pos += 1
         fields.append(field)
+        opt = _at(s, pos) == "?"
+        optional.append(opt)
+        if opt:
+            pos += 1
         while _at(s, pos) == " ":
             pos += 1
         c = _at(s, pos)
         if c == "}":
-            return fields, pos + 1
+            return fields, optional, pos + 1
         if c != delimiter:
             fail(f"Expected '{chr(92) + 't' if delimiter == chr(9) else delimiter}' or '}}' in table header", pos)
         pos += 1
@@ -137,13 +169,43 @@ class Ref:
         self.line = line
 
 
+def resolve_appends(start: Any, segments: list[Any]) -> list[Segment]:
+    """Replaces each ``[+]`` with the index it appends at: the length of the list it is in, or 0 where that list
+    doesn't exist yet (``start`` is the value the path starts from). Nothing is created or changed; :func:`assign`
+    then reports any conflict as usual."""
+    cur: Any = start
+    out: list[Segment] = []
+    for seg in segments:
+        if seg is APPEND:
+            i = len(cur) if isinstance(cur, list) else 0
+            cur = _MISSING
+            out.append(i)
+            continue
+        if isinstance(seg, str):
+            cur = cur.get(seg, _MISSING) if isinstance(cur, dict) else _MISSING
+        else:
+            cur = cur[int(seg)] if isinstance(cur, list) and 0 <= seg < len(cur) else _MISSING
+        out.append(seg)
+    return out
+
+
+#: A place a value is or will be: ``parent[key]``.
+Slot = tuple[Any, Segment]
+
+
 def assign(
-    holder: dict[str, Any], segments: list[Segment], value: Any, strict: bool, line: int, warn: Warn | None = None
+    holder: dict[str, Any],
+    segments: list[Segment],
+    value: Any,
+    strict: bool,
+    line: int,
+    warn: Warn | None = None,
+    start: Slot | None = None,
 ) -> None:
-    """Writes ``value`` at ``segments`` under ``holder["root"]``, creating dicts and lists on the way. In lenient
-    mode, what it repairs (duplicates, skipped indexes) goes to ``warn``."""
-    parent: Any = holder
-    key: Segment = "root"
+    """Writes ``value`` at ``segments`` under ``holder["root"]`` (or from ``start``, for a ``.path`` line), creating
+    dicts and lists on the way. In lenient mode, what it repairs (duplicates, skipped indexes) goes to ``warn``."""
+    parent: Any = holder if start is None else start[0]
+    key: Segment = "root" if start is None else start[1]
 
     def fail(msg: str) -> NoReturn:
         raise FlatDecodeError(msg, line, 1)
@@ -193,7 +255,7 @@ def assign(
     slot(lambda: value, True)
 
 
-def check(holder: dict[str, Any], segments: list[Segment], strict: bool, line: int) -> None:
+def check(holder: dict[str, Any], segments: list[Segment], strict: bool, line: int, start: Slot | None = None) -> None:
     """Raises exactly the error :func:`assign` would, without changing anything, so a line that fails leaves no
     trace (used when lenient decoding skips lines it can't read)."""
 
@@ -201,8 +263,8 @@ def check(holder: dict[str, Any], segments: list[Segment], strict: bool, line: i
         raise FlatDecodeError(msg, line, 1)
 
     # What sits at `key` in `parent`; `fresh` means `parent` doesn't exist yet (it would be created empty).
-    parent: Any = holder
-    key: Segment = "root"
+    parent: Any = holder if start is None else start[0]
+    key: Segment = "root" if start is None else start[1]
     fresh = False
 
     def lookup(leaf: bool) -> Any:

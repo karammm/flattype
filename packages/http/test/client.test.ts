@@ -37,7 +37,7 @@ afterAll(() => server.close());
 describe("flatFetch", () => {
   it("asks for Flat Notation and decodes it", async () => {
     expect(await flatFetch(`${server.url}/users`)).toEqual(users);
-    expect(seen.at(-1)!.accept).toBe("text/x-flat, application/json;q=0.9, */*;q=0.1");
+    expect(seen.at(-1)!.accept).toBe("text/x-flat; version=1.1, application/json;q=0.9, */*;q=0.1");
   });
 
   it("falls back to JSON", async () => {

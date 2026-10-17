@@ -236,10 +236,14 @@ function walk(node, f) {
 }
 
 const HELPERS = `
-x-lead        = *sptab [ path ]
+x-lead        = *sptab [ lead ]
 x-header-comma = *sptab header-comma [ CR ]
 x-header-pipe  = *sptab header-pipe [ CR ]
 x-header-tab   = *sptab header-tab [ CR ]
+x-field       = *SP key *( "." key ) *SP
+x-strict-comma = *sptab [ lead ] "[" count "]" "{" x-field *( "," x-field ) "}" ":" *ws [ CR ]
+x-strict-pipe  = *sptab [ lead ] "[" count "|" "]" "{" x-field *( "|" x-field ) "}" ":" *ws [ CR ]
+x-strict-tab   = *sptab [ lead ] "[" count HTAB "]" "{" x-field *( HTAB x-field ) "}" ":" *ws [ CR ]
 `;
 
 export function loadGrammar() {
@@ -248,29 +252,32 @@ export function loadGrammar() {
 
 /**
  * Checks a document line by line: the line grammar, plus the table rule (the `count` lines after a header are
- * rows, in that header's delimiter). Returns `{ ok: true }`, or the first line that doesn't match.
- * `upTo` stops after that line. A document that ends inside a table is reported with `unfinished`.
+ * rows, in that header's delimiter, and may have empty cells if it has optional fields). Returns `{ ok: true }`,
+ * or the first line that doesn't match. `upTo` stops after that line. A document that ends inside a table is
+ * reported with `unfinished`. `optionalRows` lists the lines that are rows of a table with optional fields.
  */
 export function checkDocument(g, text, upTo = Infinity) {
   const lines = text.split("\n");
   let rows = 0;
-  let delimiter = "comma";
+  let rowRule = "";
+  const optionalRows = new Set();
   for (let n = 1; n <= lines.length && n <= upTo; n++) {
     const cps = Array.from(lines[n - 1], (ch) => ch.codePointAt(0));
     if (rows > 0) {
-      if (!g.matches("row-line-" + delimiter, cps)) return { ok: false, line: n, rule: "row-line-" + delimiter };
+      if (rowRule.endsWith("-optional")) optionalRows.add(n);
+      if (!g.matches(rowRule, cps)) return { ok: false, line: n, rule: rowRule, optionalRows };
       rows--;
       continue;
     }
-    if (!g.matches("line", cps)) return { ok: false, line: n, rule: "line" };
+    if (!g.matches("line", cps)) return { ok: false, line: n, rule: "line", optionalRows };
     for (const d of ["comma", "pipe", "tab"]) {
       if (!g.matches("x-header-" + d, cps)) continue;
       rows = headerCount(g, cps, d);
-      delimiter = d;
+      rowRule = "row-line-" + d + (g.matches("x-strict-" + d, cps) ? "" : "-optional");
       break;
     }
   }
-  return rows > 0 && upTo === Infinity ? { ok: true, unfinished: rows } : { ok: true };
+  return rows > 0 && upTo === Infinity ? { ok: true, unfinished: rows, optionalRows } : { ok: true, optionalRows };
 }
 
 /** The row count of a header line: the first "[digits" where the path before it and the rest both match. */
@@ -312,6 +319,7 @@ const SYNTAX = [
   "Expected a path or '~' after '='",
   "Unexpected text after reference",
   "The root can't be a reference",
+  "A reference can't start with '.'",
 ];
 
 /**
@@ -326,8 +334,11 @@ export function disagreement(g, text, error) {
     return undefined;
   }
   const { reason, line } = error;
-  if (reason === "References need { refs: true }") {
-    // Refused before its syntax is read: only the lines before it are checked.
+  // In a table with optional fields, the grammar allows any cell to be empty: which ones may be is meaning. But
+  // the line can still have a syntax error after that cell, so it isn't checked either way.
+  const optionalRow = reason === "Missing value" && checkDocument(g, text, line).optionalRows?.has(line);
+  if (reason === "References need { refs: true }" || reason === "A '.' path needs a [+] item before it" || optionalRow) {
+    // Refused before the rest of its syntax is read: only the lines before it are checked.
     const r = checkDocument(g, text, line - 1);
     return r.ok ? undefined : `lines before "${reason}" rejected: line ${r.line} doesn't match ${r.rule}`;
   }

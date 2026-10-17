@@ -26,10 +26,10 @@ def answer(req: dict[str, Any]) -> dict[str, Any]:
             )
             return {"value": value, "warnings": [{"message": w.message, "line": w.line, "column": w.column} for w in warnings]}
         if req["op"] == "encode":
-            options = {"delimiter": o["delimiter"], "indent": o["indent"], "tabular": o["tabular"], "refs": o["refs"]}
+            options = {"delimiter": o["delimiter"], "indent": o["indent"], "tabular": o["tabular"], "refs": o["refs"], "target": o["target"]}
             return {"text": flattype.encode(req["value"], **options)}
         if req["op"] == "reencode":
-            return {"text": flattype.encode(flattype.decode(req["text"], refs=True), refs=True)}
+            return {"text": flattype.encode(flattype.decode(req["text"], refs=True), refs=True, target=o["target"])}
         return {"unsupported": True}
     except flattype.FlatDecodeError as e:
         return {"error": {"message": e.reason, "line": e.line, "column": e.column}}

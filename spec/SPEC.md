@@ -1,21 +1,21 @@
-# Flat Notation 1.0
+# Flat Notation 1.1
 
-- **Version:** 1.0, 17 October 2026
+- **Version:** 1.1, 17 October 2026. [Changes from 1.0](#appendix-f-changes) are additions: [1.0](https://github.com/karammm/flattype/blob/spec-v1.0/spec/SPEC.md) documents mean the same.
 - **Status:** stable. Within 1.x, a valid document never changes meaning ([section 15](#15-versioning)).
 - **Media type:** `text/x-flat; charset=utf-8`. **File extension:** `.flat`
 - **Grammar:** [`grammar.abnf`](grammar.abnf), also in [appendix A](#appendix-a-grammar)
 - **Test suite:** [`conformance/`](../conformance/README.md), with thousands of cases and a runner for any language
 - **Reference implementations:** [`@flattype/core`](https://www.npmjs.com/package/@flattype/core) (JavaScript) and [`flattype`](https://pypi.org/project/flattype/) (Python)
 
-Flat Notation is a line-based text format for JSON values. Each line sets one value at a path, and a list of objects with the same keys becomes a table, with the keys written once:
+Flat Notation is a line-based text format for JSON values. Each line sets one value at a path, and a list of objects becomes a table, with the keys written once (`?` marks a key that some objects lack):
 
 ```text
 page: 1
 user.name: Alice
 tags[]: admin, editor
-orders[2]{id,total,status}:
-  1001, 25.5, shipped
-  1002, 9.99, pending
+orders[2]{id,total,status,coupon?}:
+  1001, 25.5, shipped, SPRING
+  1002, 9.99, pending,
 ```
 
 ```json
@@ -24,8 +24,27 @@ orders[2]{id,total,status}:
   "user": { "name": "Alice" },
   "tags": ["admin", "editor"],
   "orders": [
-    { "id": 1001, "total": 25.5, "status": "shipped" },
+    { "id": 1001, "total": 25.5, "status": "shipped", "coupon": "SPRING" },
     { "id": 1002, "total": 9.99, "status": "pending" }
+  ]
+}
+```
+
+A list that can't be a table is written item by item. `[+]` starts the next item, and the lines after it that start with `.` continue it:
+
+```text
+events[+].type: push
+.commits[1]{sha,message}:
+  a1f, fix typo
+events[+].type: star
+.user.login: ann
+```
+
+```json
+{
+  "events": [
+    { "type": "push", "commits": [{ "sha": "a1f", "message": "fix typo" }] },
+    { "type": "star", "user": { "login": "ann" } }
   ]
 }
 ```
@@ -52,7 +71,7 @@ This document defines the syntax, what a document means, the canonical text an e
 14. [Conformance](#14-conformance)
 15. [Versioning](#15-versioning)
 
-Appendices: [A. Grammar](#appendix-a-grammar), [B. Whitespace](#appendix-b-whitespace), [C. Number formatting](#appendix-c-number-formatting), [D. Messages](#appendix-d-messages), [E. Notes on the reference implementations](#appendix-e-notes-on-the-reference-implementations)
+Appendices: [A. Grammar](#appendix-a-grammar), [B. Whitespace](#appendix-b-whitespace), [C. Number formatting](#appendix-c-number-formatting), [D. Messages](#appendix-d-messages), [E. Notes on the reference implementations](#appendix-e-notes-on-the-reference-implementations), [F. Changes](#appendix-f-changes)
 
 ## 1. Conventions
 
@@ -63,6 +82,7 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**, **SHOULD NOT**, 
 - **Code point:** a Unicode code point. Text is a sequence of code points, and every length, position and column in this document counts code points.
 - **Whitespace:** the code points listed in [appendix B](#appendix-b-whitespace), exactly those that JavaScript's `String.prototype.trim` removes. **Trimming** text removes whitespace from both ends.
 - `SP` is U+0020 (space), `HTAB` is U+0009 (tab), `LF` is U+000A and `CR` is U+000D. In examples, `⇥` stands for HTAB.
+- **1.1:** marks what this version adds to [Flat Notation 1.0](https://github.com/karammm/flattype/blob/spec-v1.0/spec/SPEC.md). A decoder for 1.0 rejects these documents rather than misreading them.
 - Grammar rules are written in ABNF ([RFC 5234](https://www.rfc-editor.org/rfc/rfc5234), with `%s` from [RFC 7405](https://www.rfc-editor.org/rfc/rfc7405)) and refer to [appendix A](#appendix-a-grammar).
 
 ## 2. Documents
@@ -86,7 +106,7 @@ Each line is one of the following, decided in this order:
 1. **A table row,** if a table header ([section 3.3](#33-tables)) is still waiting for rows. Every line is then a row, read verbatim: blank lines and lines starting with `#` are rows too.
 2. **Blank:** nothing but SP and HTAB. It is skipped.
 3. **A comment:** the first code point that isn't SP or HTAB is `#`. It is skipped. There are no comments at the end of a line: in `url: http://x.io/a#b`, the `#b` is part of the value.
-4. **An entry:** anything else. Leading SP and HTAB are skipped (and only those: any other whitespace starts the path and fails it).
+4. **An entry:** anything else. Leading SP and HTAB are skipped (and only those: any other whitespace starts the path and fails it). An entry whose path starts with `.` continues an item ([section 3.4](#34-items)).
 
 ### 3.2 Entries
 
@@ -101,7 +121,7 @@ An entry is a [path](#4-paths) followed by one of these, with the path's last pa
 
 - **The colon follows the path directly.** `a : 1` is an error, not the key `a`.
 - **The text after the colon** is the value (for a pair) or the cells (for an inline array). For a table header, only whitespace may follow the colon.
-- **The empty path** is the root, which is how a document whose value isn't an object is written: `: 42`, `: x`, `[]: 1, 2`, `[2]{id}:`, `[0].id: 1`.
+- **The empty path** is the root, which is how a document whose value isn't an object is written: `: 42`, `: x`, `[]: 1, 2`, `[2]{id}:`, `[+].id: 1`.
 
 ### 3.3 Tables
 
@@ -109,10 +129,27 @@ A table header `path[N]{f1,f2,…}:` declares an array of N objects at `path`. T
 
 - **The count** N is one or more ASCII digits. Leading zeros are allowed (`[02]`). A count of 0 declares an empty array with no rows.
 - **The fields** are written between `{` and `}`. Each is one or more keys joined by `.`, never an index: `{id,user.name,"first name"}`. SP may surround each field (not HTAB, and no other whitespace).
+- **Optional fields** (1.1) have a `?` right after their last key: `{id,phone?,address.city?}`. In a row, an empty cell of an optional field means the row object doesn't have that key. Fields without `?` must have a value in every row.
 - **The delimiter** separates both the fields and the cells of every row. It is `,` by default. A table with a different delimiter has it after the count: `[N|]{a|b}:` uses `|`, and `[N⇥]{a⇥b}:` uses HTAB.
 - **Indentation is cosmetic.** Rows are counted, not recognized by their indent. Encoders indent them by 2 spaces by default.
 - **A short table,** one that the document ends before its N rows have been read, is an error (lenient decoders repair it, [section 10](#10-lenient-decoding)).
 
+### 3.4 Items
+
+1.1. An array can be written one element at a time. A path segment `[+]` stands for the next element of an array: the index equal to its length when the line is read (0 if the array doesn't exist yet). A line whose path contains `[+]` **opens an item**: the element at its last `[+]`. A following entry whose path starts with `.` **continues** that item: its path is the item's path followed by what comes after the `.`, which starts with a key.
+
+```text
+list[+].id: 1          list[0].id: 1
+.name: Ann             list[0].name: Ann
+.tags[]: a, b          list[0].tags[]: a, b
+list[+].id: 2          list[1].id: 2
+.n[+]: x               list[1].n[0]: x, and the item is now list[1].n[0]
+```
+
+- **What ends an item:** any entry whose path doesn't start with `.`, unless it opens a new item. Blank lines, comments and table rows don't end it. A `.` line with no open item is the error `A '.' path needs a [+] item before it`.
+- **A `.` line with `[+]` in it** opens a new item, inside the current one. The encoder never writes one.
+- **Any entry can start with `.`,** except a reference ([section 8.1](#81-syntax)): `.k: v`, `.k[]: a, b`, `.k[2]{x}:`. A line that fails, or that lenient decoding skips, opens and ends nothing.
+- **Reading a `.` line takes time proportional to its own length**, however long the item's path is ([section 13](#13-security-considerations)). Implementations keep where the item is, rather than its path.
 ## 4. Paths
 
 A path is a sequence of **segments**, each a key (into an object) or an index (into an array). The first segment has no prefix, every later key is preceded by `.`, and an index is written in brackets directly after the previous segment:
@@ -129,6 +166,7 @@ a."b.c"                keys "a", "b.c"
 - **Bare keys** are one or more of `A`–`Z`, `a`–`z`, `0`–`9`, `_`, `$` and `-`. A bare key of digits is still a key: `a.0` is the key `"0"`, while `a[0]` is index 0.
 - **Quoted keys** are JSON strings (RFC 8259, section 7), with JSON escapes. Any key can be quoted, and a key that isn't bare must be: `""`, `"a b"`, `"a.b"`, `"@type"`, `"[0]"`, `"é"`.
 - **Indexes** are one or more ASCII digits in brackets. Leading zeros are allowed and ignored (`[007]` is 7). The index is the nearest IEEE 754 double to the decimal number the digits form (so absurdly long indexes round, and are then out of range anyway).
+- **`[+]`** (1.1) is the next element of an array ([section 3.4](#34-items)). Before a line is applied, every `[+]` in its path is replaced by that number. It can't be used in a reference target, in a table field, or in `unflatten`.
 - **Terminals:** the brackets of an inline array (`[]`, `[|]`, `[⇥]`) and of a table header (`[N]{…}`, `[N|]{…}`, `[N⇥]{…}`) can only end a path. `[1|]` anywhere else is an error.
 
 The grammar is the `path` rule. Reading stops at the first code point that can't continue the path, and the entry decides what must come next ([section 3.2](#32-entries)).
@@ -158,7 +196,7 @@ The text after an inline array's colon, and every table row, is a list of **cell
 
 1. Skip SP and HTAB (only SP when the delimiter is HTAB).
 2. **If the next code point is `"`,** the cell is a quoted string. It ends at the first `"` not preceded by an escaping `\`, and the quoted text MUST be a valid JSON string (`Invalid quoted string` otherwise, or `Unterminated string` if there is no closing quote). After it, only SP and HTAB may come (only SP for the HTAB delimiter) before the delimiter or the end of the text (`Expected delimiter after quoted string` otherwise). The delimiter can appear inside the quotes.
-3. **Otherwise,** the cell is the text up to the next delimiter (or the end), trimmed, read as a token ([section 5.1](#51-tokens)). An empty cell is `Missing value`. Such a token can still be a quoted string, when other whitespace (a no-break space, say) comes before its `"`, but then it can't contain the delimiter.
+3. **Otherwise,** the cell is the text up to the next delimiter (or the end), trimmed, read as a token ([section 5.1](#51-tokens)). An empty cell is `Missing value`, except in a table row, for an optional field (1.1): there it is **absent**. Such a token can still be a quoted string, when other whitespace (a no-break space, say) comes before its `"`, but then it can't contain the delimiter.
 4. If a delimiter follows, skip it and read the next cell. A delimiter at the very end means one more cell, which is empty: `a[]: x,` is `Missing value`.
 
 There is always at least one cell, so `a[]:` with nothing after it is `Missing value`. An empty array is written `a: []`.
@@ -167,7 +205,7 @@ There is always at least one cell, so `a[]:` with nothing after it is `Missing v
 
 ### 6.1 Assignment
 
-A decoder reads entries in document order and builds the value as it goes. It starts with a **holder**: an object with one slot, `root`, that is empty. Each pair, inline array, finished table and reference **assigns** a value at its path:
+A decoder reads entries in document order and builds the value as it goes. It starts with a **holder**: an object with one slot, `root`, that is empty. Each pair, inline array, finished table and reference **assigns** a value at its path, once each `[+]` in it has been replaced by its index ([section 3.4](#34-items)). A `.` line assigns from the slot of its item, which gives the same result as assigning its whole path from the holder:
 
 ```text
 assign(holder, segments, value):
@@ -216,7 +254,7 @@ What follows from this:
 A table header opens a table. Each of the next N lines is a row:
 
 1. Split the row into cells ([section 5.2](#52-cells)). If there are not exactly as many cells as fields, that is the problem `Expected F values, got C` (lenient: missing cells are null, extra cells are dropped).
-2. Build the row object: starting from an empty object, assign each cell at its field's path, in field order, with the rules of [section 6.1](#61-assignment) (so `{a,a.b}` is `Path conflict at 'a'` and `{a.b,a}` is `Duplicate key 'a'`).
+2. Build the row object: starting from an empty object, assign each cell at its field's path, in field order, with the rules of [section 6.1](#61-assignment) (so `{a,a.b}` is `Path conflict at 'a'` and `{a.b,a}` is `Duplicate key 'a'`). An absent cell is skipped, so if every field under `address` is absent, the row has no `address`.
 3. Add the row object to the table's array.
 
 When the last row has been read, or at once for a count of 0, the array is assigned at the header's path. Errors from that assignment carry the header's line number. If the document ends first, the table is short: `Expected N rows, got R`, reported for the header's line (lenient: the array has the rows that were read, and is assigned).
@@ -251,7 +289,8 @@ decodes to an object whose `members[0]` is the very same object as `lead`, and w
 A reference is `path = target`: a path that doesn't end in an inline array or table header, any number of SP, `=`, any number of SP, then either `~` (the root) or a path that doesn't end in an inline array or table header, and nothing after it but SP. The rule is `reference`. A line is a reference when `=` follows its path (after any SP).
 
 - **Disabled** (the default): the line is the problem `References need { refs: true }`, at the column of `=`, found before the rest of the line is read (lenient: the line is skipped).
-- **Enabled:** `= target` with an empty path is the error `The root can't be a reference`. Anything after `=` that isn't `~` or a plain path is `Expected a path or '~' after '='`, and anything after the target but SP is `Unexpected text after reference`.
+- **Enabled:** `= target` with an empty path is the error `The root can't be a reference`. Anything after `=` that isn't `~` or a plain path (without `[+]`) is `Expected a path or '~' after '='`, and anything after the target but SP is `Unexpected text after reference`.
+- **A reference is a whole path** (1.1): one whose path starts with `.` is the error `A reference can't start with '.'`, at the column of the `.`. Its path may open an item with `[+]` (`list[+] = list[0]`).
 
 ### 8.2 Meaning
 
@@ -310,7 +349,7 @@ In lenient mode, the problems below are not errors. The decoder makes the repair
 
 Every other problem (a malformed path, a conflict, a gap over 1,000) is still an error.
 
-**Skipping invalid lines.** With this second option, an error on a line doesn't stop decoding. The line is dropped as if it weren't there, and its other warnings are replaced by a single one, `reason: the line is skipped`. A dropped line changes nothing: a decoder MUST check a line fully before applying it. A table row that is dropped doesn't count as a row, and a table whose assignment fails is dropped with the warning `reason: the table is dropped`.
+**Skipping invalid lines.** With this second option, an error on a line doesn't stop decoding. The line is dropped as if it weren't there, and its other warnings are replaced by a single one, `reason: the line is skipped`. A dropped line changes nothing, not even which item is open: a decoder MUST check a line fully before applying it. A table row that is dropped doesn't count as a row, and a table whose assignment fails is dropped with the warning `reason: the table is dropped`. If its header opened an item, there is then no open item.
 
 Warnings are reported in the order their problems are found ([section 9](#9-errors)).
 
@@ -336,17 +375,19 @@ Writing a value `v` at a path `p`:
   - empty: `p: []`;
   - every item a primitive: one line, the **inline array** `p[]: c1, c2, …`, with each item written as a cell ([section 12.4](#124-cells));
   - otherwise, if a **table** can be written ([section 12.5](#125-tables)), the table;
-  - otherwise, each item `i` written at `p[i]` (decimal, no leading zeros).
+  - otherwise, **item by item**: each item `i` is written at `p[i]` (decimal, no leading zeros). Then, unless this array is inside an item already, its lines are rewritten as an item ([section 3.4](#34-items)): the first line's `p[i]` becomes `p[+]`, and in every later line (except table rows) the leading `p[i]` is removed, so it starts with `.`. That rewrite is not made for an item whose later lines would continue with `[` (an array written item by item, such as `[[1, {"a": 1}]]`), nor for an item of two or more lines that include a reference ([section 12.8](#128-references)). Those keep `p[i]` on every line.
 
 ```text
-{"a": {"b": 1}, "e": {}, "f": [], "g": [1, "x y"], "h": [[1], {"k": 2}]}
+{"a": {"b": 1}, "e": {}, "f": [], "g": [1, "x y"], "h": [[1], {"k": 2, "m": [{"x": 1}, 2]}]}
 
 a.b: 1
 e: {}
 f: []
 g[]: 1, x y
-h[0][]: 1
-h[1].k: 2
+h[+][]: 1
+h[+].k: 2
+.m[0].x: 1
+.m[1]: 2
 ```
 
 ### 12.2 Paths and keys
@@ -378,13 +419,13 @@ tags[|]: a | b, c | d
 
 ### 12.5 Tables
 
-An array (that isn't all primitives) is written as a table when the `tabular` option is on (the default) and every item is an object whose **leaf paths** are the same, in the same order, as the first item's. The leaf paths of an object are found by walking its keys in order:
+An array (that isn't all primitives) is written as a table when the `tabular` option is on (the default), every item is an object, and the items' **leaf paths** fit one header. The leaf paths of an object are found by walking its keys in order:
 
 - a primitive value is a leaf, at its key's path;
 - an object value is walked in turn, its paths below its key's path (`user.name`);
 - an array value, or an object (at any depth, including the item itself) with no keys, means the array can't be a table.
 
-The table is the header line `p[N]{f1,f2,…}:`, where N is the number of items and each field is a leaf path ([section 12.2](#122-paths-and-keys)), joined by the delimiter with no spaces. Then one row per item: `indent` spaces (2 by default) and the item's leaf values as cells in field order. With delimiter `|` the header is `p[N|]{f1|f2}:`, and with HTAB it is `p[N⇥]{f1⇥f2}:`.
+**When every item has the same leaf paths in the same order,** they are the fields. The table is the header line `p[N]{f1,f2,…}:`, where N is the number of items and each field is a leaf path ([section 12.2](#122-paths-and-keys)), joined by the delimiter with no spaces. Then one row per item: `indent` spaces (2 by default) and the item's leaf values as cells in field order. With delimiter `|` the header is `p[N|]{f1|f2}:`, and with HTAB it is `p[N⇥]{f1⇥f2}:`.
 
 ```text
 [{"id": 1, "user": {"name": "Alice"}}, {"id": 2, "user": {"name": "Bob"}}]
@@ -392,6 +433,23 @@ The table is the header line `p[N]{f1,f2,…}:`, where N is the number of items 
 [2]{id,user.name}:
   1, Alice
   2, Bob
+```
+
+**Otherwise** (1.1), the fields are merged from the items' leaf paths, item by item and path by path:
+
+1. A path already in the fields must come after the previous path of the same item. If not, no table.
+2. A new path goes just before the next path of the same item that is already in the fields, or at the end if there is none.
+3. No table if the fields would become more than twice as many as the most leaf paths of any one item.
+
+A field that some item lacks is **optional**, and is written with `?` after it in the header. There is no table if every field is optional, or if a field is a prefix of another at a `.` (`a` and `a.b`). In a row, a field the item lacks is an empty cell, and SP at the end of the row is removed.
+
+```text
+[{"id": 1, "name": "Ann", "phone": "555"}, {"id": 2, "name": "Bo"}, {"id": 3, "email": "c@x.io", "name": "Cy"}]
+
+[3]{id,email?,name,phone?}:
+  1, , Ann, "555"
+  2, , Bo,
+  3, c@x.io, Cy,
 ```
 
 ### 12.6 Numbers
@@ -412,6 +470,7 @@ An encoder MAY offer these options. With any of them set to a value other than i
 | indent | an integer ≥ 0 | 2 | Spaces before each table row. |
 | tabular | on, off | on | Off: arrays are never written as tables. |
 | refs | on, off | off | Write shared objects once ([section 12.8](#128-references)). |
+| target | 1.0, 1.1 | 1.1 | 1.0: write Flat Notation 1.0, which decoders for 1.0 read. It turns off optional fields (a table needs identical leaf paths) and `[+]` items (every item keeps `p[i]`). The output is exactly what a 1.0 encoder writes. |
 
 ### 12.8 References
 
@@ -421,6 +480,7 @@ With it, the encoder remembers each object and array it writes, and the path it 
 
 - **Seen before:** when the encoder is about to write an object or array it has already written (or started writing, as with a cycle back to a parent), it writes the line `p = first` instead, where `first` is the path of the first time, or `~` for the root.
 - **Tables:** an array is written as a table only if, in addition to [section 12.5](#125-tables), none of the objects in its rows (the row objects and the objects inside them) has been written before, or appears twice in the table. A row object is then remembered at `p[i]`, and an object inside it at `p[i].path`.
+- **Items:** paths are remembered as they are before the [section 12.1](#121-document) rewrite, `p[i]` and not `p[+]`, so a reference target is always a whole path. An item that is a single reference line is still rewritten (`list[+] = list[0]`).
 
 ```text
 lead.id: 1
@@ -437,7 +497,7 @@ Decoders often read text from the network or from a language model, so these req
 - **No prototype pollution.** Keys are data ([section 6.2](#62-keys)). No key may change anything but the object it is in.
 - **References are opt-in.** Without them, a decoded value is a tree whose size is bounded by the document's size. With them, a few lines can describe a graph whose naive traversal never ends, so they MUST be off by default ([section 8](#8-references)).
 - **Bounded gap filling.** Lenient decoding fills at most 1,000 missing array entries for one line, so `a[999999999]: 1` can't allocate a billion entries ([section 10](#10-lenient-decoding)).
-- **Linear time.** A decoder SHOULD take time and memory proportional to the size of the document, for every input. The cases to watch are long lines delivered in small chunks, long digit runs, many dots in one path, and lines that fail one way after another. The reference implementations test this in CI.
+- **Linear time.** A decoder SHOULD take time and memory proportional to the size of the document, for every input. The cases to watch are long lines delivered in small chunks, long digit runs, many dots in one path, lines that fail one way after another, and many `.` lines after an item with a very long path: a decoder that rebuilds the item's whole path for each `.` line takes time proportional to the square of the input ([section 3.4](#34-items)). The reference implementations test all of these in CI.
 - **Long integers.** Converting a decimal integer of n digits to binary takes more than linear time in many libraries. That is why an integer token longer than 4,300 characters is read as a double (Python's limit for `int()`, for the same reason).
 - **Deep values.** One line such as `a.a.a.…: 1` creates a value as deep as the line is long. A decoder SHOULD NOT build or walk values with recursion that such a line could exhaust.
 
@@ -445,7 +505,7 @@ Encoders face trusted values, but SHOULD reject cycles ([section 12.8](#128-refe
 
 ## 14. Conformance
 
-An implementation **conforms** to Flat Notation 1.0 at one or more of these levels. The conformance suite checks each level separately, and an implementation's claims SHOULD name the levels it passes.
+An implementation **conforms** to Flat Notation 1.1 (or 1.0) at one or more of these levels. The conformance suite checks each level separately, and an implementation's claims SHOULD name the levels it passes.
 
 | Level | Requires | Suite cases |
 | --- | --- | --- |
@@ -459,17 +519,18 @@ An implementation **conforms** to Flat Notation 1.0 at one or more of these leve
 
 Streaming ([section 11](#11-streaming)) has no level of its own: a streaming decoder must pass the same cases with any chunking.
 
-The [conformance suite](../conformance/README.md) is generated from the JavaScript reference implementation and is the final word: if this document and the suite disagree, one of them has a bug, and both are fixed. Report it in an [issue](https://github.com/karammm/flattype/issues).
+The [conformance suite](../conformance/README.md) is generated from the JavaScript reference implementation and is the final word. The 1.1 suite includes encode cases with `target: 1.0`. The 1.0 suite is kept, unchanged, in `conformance/1.0/`, for implementations of 1.0; a 1.1 implementation passes it at every level but Messages (lines starting with `.` now have their own message). If this document and the suite disagree, one of them has a bug, and both are fixed. if this document and the suite disagree, Report it in an [issue](https://github.com/karammm/flattype/issues).
 
 ## 15. Versioning
 
 This specification has a version of its own, `major.minor`, independent of the packages that implement it.
 
-- **Minor versions** only add. Every document that is valid in 1.0 decodes to the same value in every 1.x, and the canonical form of a value doesn't change. A minor version MAY give meaning to text that is an error in 1.0 (a 1.0 decoder rejects such a document rather than misreading it), and MAY add encoder options, which are off by default.
+- **Minor versions** only add. Every document that is valid in 1.0 decodes to the same value in every 1.x. A minor version MAY give meaning to text that is an error in earlier versions (their decoders reject such a document rather than misreading it), and MAY change the canonical form to use it.
+- **Every 1.x encoder can write 1.0** (the `target` option, [section 12.7](#127-options)), byte for byte as a 1.0 encoder does. That is what keeps old readers working: write 1.0 for a reader that may be older, such as an HTTP client that didn't say which version it reads.
 - **Messages** (reasons and repairs) MAY change in a minor version, with the suite. Lines and columns don't.
 - **A major version** would be needed for anything else, and isn't planned.
 
-Documents carry no version number. A 1.x document is read by a 1.x decoder whose minor version is the same or later.
+Documents carry no version number. A 1.x document is read by a 1.x decoder whose minor version is the same or later. Over HTTP, a client says which version it reads with a `version` parameter: `Accept: text/x-flat; version=1.1`. A server that sees no version, or a lower one, writes 1.0.
 
 ## Appendix A. Grammar
 
@@ -477,7 +538,7 @@ This is [`grammar.abnf`](grammar.abnf). [`conformance/grammar.mjs`](../conforman
 
 <!-- grammar:start -->
 ```abnf
-; Flat Notation 1.0: the syntax of a line.
+; Flat Notation 1.1: the syntax of a line.
 ; ABNF (RFC 5234), with %s"..." (RFC 7405) for case-sensitive text.
 ; Terminals are Unicode code points. A document is split into lines at LF.
 ; Which lines are table rows is in the specification (section 3.3).
@@ -489,29 +550,35 @@ line-body       = blank / comment / entry
 row-line-comma  = cells-comma [ CR ]     ; the lines after a table header are its rows
 row-line-pipe   = cells-pipe [ CR ]
 row-line-tab    = cells-tab [ CR ]
+row-line-comma-optional = rows-comma [ CR ]   ; rows of a table with optional fields (name?):
+row-line-pipe-optional  = rows-pipe [ CR ]    ; a cell may be empty
+row-line-tab-optional   = rows-tab [ CR ]
 
 blank           = *sptab
 comment         = *sptab "#" *char
 entry           = *sptab ( pair / inline / header / reference )
 
 ; Entries
-pair            = [ path ] ":" value
-inline          = [ path ] "[" "]" ":" cells-comma
-                / [ path ] "[" "|" "]" ":" cells-pipe
-                / [ path ] "[" HTAB "]" ":" cells-tab
+pair            = [ lead ] ":" value
+inline          = [ lead ] "[" "]" ":" cells-comma
+                / [ lead ] "[" "|" "]" ":" cells-pipe
+                / [ lead ] "[" HTAB "]" ":" cells-tab
 header          = header-comma / header-pipe / header-tab
-header-comma    = [ path ] "[" count "]" "{" field *( "," field ) "}" ":" *ws
-header-pipe     = [ path ] "[" count "|" "]" "{" field *( "|" field ) "}" ":" *ws
-header-tab      = [ path ] "[" count HTAB "]" "{" field *( HTAB field ) "}" ":" *ws
-reference       = path *SP "=" *SP ( path / "~" ) *SP
+header-comma    = [ lead ] "[" count "]" "{" field *( "," field ) "}" ":" *ws
+header-pipe     = [ lead ] "[" count "|" "]" "{" field *( "|" field ) "}" ":" *ws
+header-tab      = [ lead ] "[" count HTAB "]" "{" field *( HTAB field ) "}" ":" *ws
+reference       = path *SP "=" *SP ( target / "~" ) *SP   ; never a "." path
 
 ; Paths
+lead            = path / "." key *( "." key / index )  ; "." goes on with the last [+] item
 path            = ( key / index ) *( "." key / index )
+target          = ( key / number-index ) *( "." key / number-index )
 key             = bare-key / string
 bare-key        = 1*( ALPHA / DIGIT / "_" / "$" / "-" )
-index           = "[" 1*DIGIT "]"
+index           = number-index / "[+]"                 ; [+] is the next element
+number-index    = "[" 1*DIGIT "]"
 count           = 1*DIGIT
-field           = *SP key *( "." key ) *SP
+field           = *SP key *( "." key ) [ "?" ] *SP     ; "?" makes the field optional
 
 ; Values: one token, with the whitespace around it ignored
 value           = *ws scalar *ws
@@ -536,6 +603,9 @@ cell-pipe       = *sptab string *sptab
                 / *sptab ws-other *ws ( string-no-pipe / text-no-pipe ) *ws
                 / *sptab text-no-pipe *ws
 cells-tab       = cell-tab *( HTAB cell-tab )        ; a tab separates cells, so it is not whitespace here
+rows-comma      = ( cell-comma / *ws ) *( "," ( cell-comma / *ws ) )
+rows-pipe       = ( cell-pipe / *ws ) *( "|" ( cell-pipe / *ws ) )
+rows-tab        = ( cell-tab / *ws-no-tab ) *( HTAB ( cell-tab / *ws-no-tab ) )
 cell-tab        = *SP string *SP
                 / *SP ws-other *ws-no-tab ( string / text-no-tab ) *ws-no-tab
                 / *SP text-no-tab *ws-no-tab
@@ -600,7 +670,8 @@ Every reason a decoder reports, with its column and its lenient repair. `F`, `C`
 | `Expected ':' after path` | where the path stops | – |
 | `Expected ':' after the table header` | where the header stops (only when nothing but whitespace follows) | `read as a table anyway` |
 | `Expected '.' or ':' before key` | the key that follows another segment directly | – |
-| `Expected a key after '.'` | the code point after the `.` | – |
+| `Expected a key after '.'` | the code point after the `.` (also at the start of a `.` line) | – |
+| `A '.' path needs a [+] item before it` | the `.` | – |
 | `Unclosed '['` | the `[` | – |
 | `Invalid index '[x]'` | the `[` | – |
 | `A delimiter mark is only allowed on inline arrays and tables` | the `]` | – |
@@ -627,6 +698,7 @@ Every reason a decoder reports, with its column and its lenient repair. `F`, `C`
 | `The root can't be a reference` | the `=` | – |
 | `Expected a path or '~' after '='` | the first code point after `=` and its spaces | – |
 | `Unexpected text after reference` | the first code point after the target and its spaces | – |
+| `A reference can't start with '.'` | the `.` | – |
 | `Reference target 'T' doesn't exist` | 1 | `read as null` |
 | `Reference target 'T' isn't an object or array` | 1 | `read as null` |
 | `Reference target 'T' is a reference that comes later` | 1 | `read as null` |
@@ -643,3 +715,16 @@ These are where `@flattype/core` (JavaScript) departs from this document because
 - **Integers** beyond 2^53 are rounded to the nearest double unless `{ bigint: true }` is set, as `JSON.parse` rounds them ([section 7](#7-numbers) allows this). The Python package is always exact.
 - **Key order:** JavaScript objects list integer-like keys first, in numeric order ([section 6.2](#62-keys) allows this).
 - **Encoding non-JSON values:** both packages follow their platform's JSON conventions (`toJSON` and a `replacer` in JavaScript; `default=` in Python), which this specification leaves to implementations.
+
+## Appendix F. Changes
+
+**1.1** (17 October 2026) adds two ways to write lists whose objects don't all have the same keys, which 1.0 could only write with an index on every line:
+
+- **Optional table fields** ([section 3.3](#33-tables), [12.5](#125-tables)): `{id,phone?}`, and an empty cell for a key a row lacks.
+- **Items** ([section 3.4](#34-items), [12.1](#121-document)): `[+]` for the next element, and `.` lines that continue it.
+- **The `target` encoder option** ([section 12.7](#127-options)) writes 1.0, and the versioning rules ([section 15](#15-versioning)) now say that the canonical form may change in a minor version, while 1.0 text stays available.
+- **New messages:** `A '.' path needs a [+] item before it` and `A reference can't start with '.'`.
+
+Every 1.0 document means the same in 1.1. On the benchmark lists whose objects have different keys, the 1.1 canonical form is 12% to 50% smaller than 1.0's, and 43% to 54% smaller after gzip.
+
+**1.0** (17 October 2026): [the first version](https://github.com/karammm/flattype/blob/spec-v1.0/spec/SPEC.md).

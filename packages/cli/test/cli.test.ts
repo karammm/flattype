@@ -32,7 +32,9 @@ describe("encode / decode", () => {
     expect((await cli(["encode"], { stdin: JSON.stringify(users) })).out).toBe(encode(users) + "\n");
     const r = await cli(["encode", "u.json", "--delimiter", "tab", "--indent", "1"], { files: { "u.json": JSON.stringify(users) } });
     expect(r.out).toBe("users[2\t]{id\tname}:\n 1\tAlice\n 2\tBob\n");
-    expect((await cli(["encode", "--no-tables"], { stdin: JSON.stringify(users) })).out).toContain("users[0].id: 1");
+    expect((await cli(["encode", "--no-tables"], { stdin: JSON.stringify(users) })).out).toContain("users[+].id: 1\n.name: Alice");
+    expect((await cli(["encode", "--no-tables", "--target", "1.0"], { stdin: JSON.stringify(users) })).out).toContain("users[0].id: 1");
+    expect((await cli(["encode", "--target", "2"], { stdin: "{}" })).err).toContain('--target must be "1.0" or "1.1"');
   });
 
   it("decodes to pretty or compact JSON, and writes files", async () => {

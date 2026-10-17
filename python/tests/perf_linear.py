@@ -46,6 +46,19 @@ CASES: dict[str, Callable[[int], object]] = {
     "one long line in tiny chunks": stream_one_long_line,
     "many references": lambda n: decode("a.x: 1\n" + "\n".join(f"b[{i}] = a" for i in range(n)), refs=True),
     "many shared objects": lambda n: encode({"l": [{"id": 1}] * n}, refs=True),
+    # Flat Notation 1.1: a ``.path`` line must cost its own length, not the length of the item's path.
+    "many . lines after a deep [+] item": lambda n: decode("a." * n + "b[+].x: 1\n" + "\n".join(f".k{i}: 1" for i in range(n))),
+    "a deep chain of . [+] items": lambda n: decode("a[+].x: 1\n" + ".k[+].x: 1\n" * n),
+    "many [+] items": lambda n: decode("\n".join(f"a[+].x: {i}\n.y: 1" for i in range(n))),
+    "many . tables in one deep item": lambda n: decode(
+        "a." * n + "b[+].x: 1\n" + "\n".join(f".t{i}[1]{{x}}:\n  1" for i in range(n))
+    ),
+    "encoding irregular lists": lambda n: encode(
+        [{"id": i, "a": {"b": i}} if i % 3 else {"id": i, "c": [1, {"d": 2}]} for i in range(n)]
+    ),
+    "encoding tables with optional fields": lambda n: encode(
+        [{f"k{k}": i for k in range(20) if k == 0 or (i + k) % 7} for i in range(n)]
+    ),
     "model reply: many prose lines": lambda n: from_model_output("this is prose\n" * n + "a: 1"),
     "model reply: many <data openers": lambda n: from_model_output("<data>" * n),
     "model reply: many openers, one closer": lambda n: from_model_output("<data " * n + "a: 1</data>"),
@@ -56,4 +69,11 @@ CASES: dict[str, Callable[[int], object]] = {
 
 @pytest.mark.parametrize("name", CASES)
 def test_linear(name: str) -> None:
-    expect_linear(CASES[name], 2_000 if name in ("deep path", "long integer") else 20_000)
+    small = (
+        "deep path",
+        "long integer",
+        "many . lines after a deep [+] item",
+        "a deep chain of . [+] items",
+        "many . tables in one deep item",
+    )
+    expect_linear(CASES[name], 2_000 if name in small else 20_000)

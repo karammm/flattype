@@ -5,8 +5,9 @@ from typing import Any
 
 import pytest
 
+import flattype
 from flattype.asgi import FlatMiddleware
-from flattype.negotiate import ACCEPT, add_vary, prefers_flat
+from flattype.negotiate import ACCEPT, add_vary, flat_version, prefers_flat
 
 
 def test_negotiation_rules() -> None:
@@ -102,3 +103,50 @@ async def test_fastapi() -> None:
         assert plain.json() == USERS
         always = await client.get("/always")
         assert always.text == "name: John" and always.headers["content-type"].startswith("text/x-flat")
+
+
+@pytest.mark.parametrize(
+    ("accept", "version"),
+    [
+        (ACCEPT, "1.1"),
+        ("text/x-flat; version=1.1", "1.1"),
+        ('text/x-flat;version="1.2"', "1.1"),
+        ("text/x-flat; version=2.0", "1.1"),
+        ("text/x-flat; version=1.0", "1.0"),
+        # What clients before 1.14 send.
+        ("text/x-flat, application/json;q=0.9, */*;q=0.1", "1.0"),
+        ("application/json; version=1.1", "1.0"),
+        ("text/x-flat; version=x", "1.0"),
+        (None, "1.0"),
+    ],
+)
+def test_flat_version(accept: str | None, version: str) -> None:
+    assert flat_version(accept) == version
+
+
+CONTACTS = {"contacts": [{"id": 1, "phone": "5"}, {"id": 2}]}
+
+
+@pytest.mark.anyio
+async def test_writes_the_version_the_client_reads() -> None:
+    _, new = await call(FlatMiddleware(json_app(CONTACTS)), ACCEPT)
+    assert new == b'contacts[2]{id,phone?}:\n  1, "5"\n  2,'
+    _, old = await call(FlatMiddleware(json_app(CONTACTS)), "text/x-flat")
+    assert old == b'contacts[0].id: 1\ncontacts[0].phone: "5"\ncontacts[1].id: 2'
+    _, pinned = await call(FlatMiddleware(json_app(CONTACTS), target="1.0"), ACCEPT)
+    assert pinned == old
+
+
+def test_flat_response_writes_1_0_unless_told() -> None:
+    from flattype.starlette import FlatResponse
+
+    class Newer(FlatResponse):
+        target = "1.1"
+
+    assert FlatResponse(CONTACTS).body == b'contacts[0].id: 1\ncontacts[0].phone: "5"\ncontacts[1].id: 2'
+    assert Newer(CONTACTS).body == b'contacts[2]{id,phone?}:\n  1, "5"\n  2,'
+
+
+def test_encode_rejects_unknown_targets() -> None:
+    with pytest.raises(ValueError, match="target"):
+        flattype.encode({}, target="2.0")

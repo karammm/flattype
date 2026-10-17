@@ -3,16 +3,19 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { DecodeOptions, EncodeOptions, FlatWarning } from "../src/index.js";
 import { decode, encode, FlatDecodeError } from "../src/index.js";
-import { stringifyJson } from "../src/types.js";
+import { parseJson, stringifyJson } from "../src/types.js";
 
 /**
  * conformance/cases.json: what this implementation writes and reads, for other implementations (the Python
  * package) to match exactly. Regenerate with `UPDATE_CONFORMANCE=1 pnpm --filter @flattype/core test`.
+ * conformance/1.0/cases.json is the suite of Flat Notation 1.0, frozen: it is checked here, never regenerated.
  */
 const FILE = new URL("../../../conformance/cases.json", import.meta.url);
+const FROZEN = new URL("../../../conformance/1.0/cases.json", import.meta.url);
 const SEED = 20261016;
+const VERSION = "1.1";
 
-const encodeOptions: EncodeOptions[] = [{}, { tabular: "off" }, { delimiter: "|" }, { delimiter: "\t" }, { indent: 0 }];
+const encodeOptions: EncodeOptions[] = [{}, { tabular: "off" }, { delimiter: "|" }, { delimiter: "\t" }, { indent: 0 }, { target: "1.0" }];
 
 const scalar = fc.oneof(
   fc.string(),
@@ -34,10 +37,25 @@ const table = fc
   );
 const value = fc.oneof(fc.jsonValue({ maxDepth: 3 }), fc.dictionary(key, scalar), table, fc.dictionary(key, table, { maxKeys: 3 }));
 
+// Lists whose objects have different keys (1.1): optional table fields, and [+] items where a table can't be.
+const field = fc.constantFrom("id", "name", "a", "x y", "__proto__", "a.b");
+const irregularItem = fc.oneof(
+  { weight: 4, arbitrary: fc.dictionary(field, fc.oneof(scalar, scalar, fc.record({ inner: scalar }, { requiredKeys: [] })), { maxKeys: 4 }) },
+  { weight: 1, arbitrary: fc.dictionary(field, fc.array(fc.oneof(scalar, fc.record({ p: scalar })), { maxLength: 2 }), { maxKeys: 2 }) },
+  { weight: 1, arbitrary: scalar },
+  { weight: 1, arbitrary: fc.array(fc.oneof(scalar, fc.record({ q: scalar })), { maxLength: 2 }) },
+);
+const withId = fc.tuple(fc.integer(), fc.dictionary(field, scalar, { maxKeys: 3 })).map(([id, rest]) => ({ id, ...rest }));
+const irregular = fc.oneof(
+  fc.array(irregularItem, { minLength: 1, maxLength: 5 }),
+  fc.array(withId, { minLength: 2, maxLength: 5 }),
+  fc.record({ list: fc.array(withId, { minLength: 2, maxLength: 4 }), mixed: fc.array(irregularItem, { maxLength: 4 }) }),
+);
+
 const flatish = fc
   .array(
     fc.oneof(
-      fc.constantFrom("a", "b.c", "__proto__", "[0]", "[1]", "[]", "[2]{x,y}", "[1|]{x|y}", "{", "}", ":", ": ", ", ", "|", "\t", '"', '\\"', "\\", "#", " ", "\n", "\r\n", "null", "true", "1", "-0.5e3", "1e400", "[", "]", ".", " = ", "~", "a = b", "b = ~", " "),
+      fc.constantFrom("[+]", ".", "?", "a[+].x: 1", ".y: 2", "{x,y?}", "?}", "?,", "a", "b.c", "__proto__", "[0]", "[1]", "[]", "[2]{x,y}", "[1|]{x|y}", "{", "}", ":", ": ", ", ", "|", "\t", '"', '\\"', "\\", "#", " ", "\n", "\r\n", "null", "true", "1", "-0.5e3", "1e400", "[", "]", ".", " = ", "~", "a = b", "b = ~", " "),
       fc.string({ maxLength: 4 }),
     ),
     { maxLength: 30 },
@@ -108,6 +126,25 @@ const handwritten = [
   "t[2]{a,b}:\n  1\n  1, 2, 3",
   "t[1]{a,a}:\n  1, 2",
   "a[0]: 1\na[0]: 2\na[3]: 4",
+  // 1.1
+  "e[+].type: push\n.repo: r\n.c[1]{sha}:\n  a1\ne[+].type: star\n.user.login: u",
+  "[+]: 1\n[+][]: 2, 3\n[+]: {}\n[+][+]: 4",
+  "a[+].x: 1\nb: 2\n.y: 3",
+  ".x: 1",
+  "a[+].x: 1\n.[0]: 1",
+  "a[+].x: 1\n.x: 2",
+  "a[+].k[+].x: 1\n.y: 2",
+  "a[+].x: 1\nb = a[+]",
+  "a[+].x: 1\n.self = ~\n.peer = a[0]",
+  "a[+]{x}: 1",
+  'u[3]{id,name?,phone?}:\n  1, Ann, "555"\n  2, ,\n  3, "", null',
+  "u[2|]{id|a.b?|a.c?}:\n  1 |  | 2\n  2 | |",
+  "u[1\t]{id\ta?}:\n  1\t",
+  "u[1]{id,a?}:\n  , 1",
+  "u[1]{id?,a}:\n  1",
+  "u[1]{a ?}:\n  1",
+  "u[1]{a?,a?}:\n  1, 2",
+  "a[+].x: 1\nnot a line\n.y: 2",
 ];
 
 function decodeCase(text: string, options: DecodeOptions): Record<string, unknown> | undefined {
@@ -153,7 +190,12 @@ function build(): unknown {
     expect(decode(text, { bigint: true })).toEqual(normalize(v));
     return { value: v, text };
   });
-  return { encode: encodeCases, decode: decodeCases, refs: refCases, bigint: bigintCases };
+  const irregularCases = fc.sample(irregular, { seed: SEED + 1, numRuns: 200 }).flatMap((v) => {
+    const plain = JSON.parse(JSON.stringify(v)) as unknown;
+    if (!portable(plain)) return [];
+    return encodeOptions.map((options) => ({ value: plain, options, text: encode(plain, options) }));
+  });
+  return { version: VERSION, encode: [...encodeCases, ...irregularCases], decode: decodeCases, refs: refCases, bigint: bigintCases };
 }
 
 /** What `decode(text, { bigint: true })` gives for `v`: BigInts within 2^53 become numbers. */
@@ -165,6 +207,17 @@ function normalize(v: unknown): unknown {
 }
 
 describe("conformance cases", () => {
+  it("still reads and writes the frozen 1.0 suite", () => {
+    const frozen = parseJson(readFileSync(FROZEN, "utf8")) as Record<string, { text: string; value?: unknown; options?: Record<string, unknown>; error?: string }[]>;
+    for (const c of [...frozen.encode!, ...frozen.bigint!]) {
+      expect(encode(c.value, { ...(c.options as EncodeOptions), target: "1.0" })).toBe(c.text);
+    }
+    // 1.1 only adds syntax: every 1.0 document means the same. Lines starting with "." were errors and still
+    // are, at the same place, with a clearer message.
+    const renamed = (v: unknown): unknown => JSON.parse(JSON.stringify(v).replaceAll("A '.' path needs a [+] item before it", "Expected ':' after path"));
+    for (const c of frozen.decode!) expect(renamed(decodeCase(c.text, c.options as DecodeOptions))).toEqual(c);
+  });
+
   it("conformance/cases.json is up to date", () => {
     // BigInts are written as plain JSON digits: Python's json module reads them exactly.
     const next = stringifyJson(build(), 1) + "\n";

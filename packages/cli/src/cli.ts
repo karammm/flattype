@@ -31,6 +31,7 @@ Options
   --delimiter <d>       encode: "," (default), "|" or "tab"
   --indent <n>          encode: spaces before table rows; decode: JSON indent (default 2)
   --no-tables           encode: never write arrays as tables
+  --target <version>    encode: "1.1" (default) or "1.0", for readers older than FlatType 1.14
   --compact             decode: minified JSON
   --lenient             decode: recover from malformed input instead of failing, with a warning
                         (line and column) for every repair
@@ -57,6 +58,7 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         delimiter: { type: "string" },
         indent: { type: "string" },
         "no-tables": { type: "boolean" },
+        target: { type: "string" },
         compact: { type: "boolean" },
         lenient: { type: "boolean" },
         refs: { type: "boolean" },
@@ -104,11 +106,14 @@ export async function run(argv: string[], io: IO, version = "0.0.0"): Promise<nu
         const delimiter = values.delimiter === "tab" ? "\t" : (values.delimiter ?? ",");
         if (![",", "|", "\t"].includes(delimiter)) throw new Error(`--delimiter must be ",", "|" or "tab"`);
         const indent = values.indent === undefined ? undefined : Number(values.indent);
+        const target = values.target ?? "1.1";
+        if (target !== "1.0" && target !== "1.1") throw new Error(`--target must be "1.0" or "1.1"`);
         await output(
           encode(json(await input(), file ?? "stdin"), {
             delimiter: delimiter as Delimiter,
             ...(indent === undefined ? {} : { indent }),
             tabular: values["no-tables"] ? "off" : "auto",
+            target,
           }),
         );
         return 0;

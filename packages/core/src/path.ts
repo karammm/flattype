@@ -1,16 +1,21 @@
 import type { Delimiter } from "@flattype/shared";
 import { FlatDecodeError, formatKey, isKeyChar, scanString, type Warn } from "./syntax.js";
 
-/** A key (string) or an array index (number). */
+/** `[+]` in a path: the next element of the array (Flat Notation 1.1). Resolved to a number before assigning. */
+export const APPEND: unique symbol = Symbol("[+]");
+
+/** A key (string) or an array index (number), or `[+]` until it is resolved. */
 export type Segment = string | number;
+export type RawSegment = Segment | typeof APPEND;
 
 export type Terminal =
   | { kind: "value" }
   | { kind: "inline"; delimiter: Delimiter }
-  | { kind: "table"; count: number; delimiter: Delimiter; fields: Segment[][] };
+  // `optional[i]`: field i was written `name?`, so an empty cell means the key is absent.
+  | { kind: "table"; count: number; delimiter: Delimiter; fields: Segment[][]; optional: boolean[] };
 
 export interface ParsedPath {
-  segments: Segment[];
+  segments: RawSegment[];
   terminal: Terminal;
   /** Index just after the path. */
   end: number;
@@ -22,12 +27,17 @@ function delimiterOf(mark: string): Delimiter {
   return mark === "" ? "," : (mark as Delimiter);
 }
 
+/** Whether a path can start with this character: a bare key character or the quote of a quoted key. */
+export function isKeyStart(code: number): boolean {
+  return code === 34 || isKeyChar(code);
+}
+
 /**
  * Reads a path such as `user.address.zip`, `users[0]."first name"`, `tags[]` or `rows[2]{id,name}`,
  * starting at `pos`. Stops at the first character that can't continue a path (normally `:`).
  */
 export function parsePath(s: string, pos: number, line: number): ParsedPath {
-  const segments: Segment[] = [];
+  const segments: RawSegment[] = [];
   const fail = (msg: string, at: number): never => {
     throw new FlatDecodeError(msg, line, at + 1);
   };
@@ -53,6 +63,15 @@ export function parsePath(s: string, pos: number, line: number): ParsedPath {
     if (inner === "" || inner === "|" || inner === "\t") {
       return { segments, terminal: { kind: "inline", delimiter: delimiterOf(inner) }, end: close + 1 };
     }
+    if (inner === "+") {
+      segments.push(APPEND);
+      pos = close + 1;
+      if (s.charCodeAt(pos) === 46) {
+        pos++;
+        needKey = true;
+      }
+      continue;
+    }
     let digits = inner;
     let mark = "";
     const last = inner.charCodeAt(inner.length - 1);
@@ -65,8 +84,8 @@ export function parsePath(s: string, pos: number, line: number): ParsedPath {
     pos = close + 1;
     if (s.charCodeAt(pos) === 123) {
       const delimiter = delimiterOf(mark);
-      const { fields, end } = readFields(s, pos + 1, delimiter, fail);
-      return { segments, terminal: { kind: "table", count: n, delimiter, fields }, end };
+      const { fields, optional, end } = readFields(s, pos + 1, delimiter, fail);
+      return { segments, terminal: { kind: "table", count: n, delimiter, fields, optional }, end };
     }
     if (mark !== "") fail("A delimiter mark is only allowed on inline arrays and tables", pos - 1);
     segments.push(n);
@@ -78,7 +97,7 @@ export function parsePath(s: string, pos: number, line: number): ParsedPath {
   return { segments, terminal: VALUE, end: pos };
 }
 
-function readKey(s: string, pos: number, out: Segment[], fail: (msg: string, at: number) => never): number {
+function readKey(s: string, pos: number, out: RawSegment[], fail: (msg: string, at: number) => never): number {
   if (s.charCodeAt(pos) === 34) {
     const close = scanString(s, pos);
     if (close < 0) fail("Unterminated quoted key", pos);
@@ -95,14 +114,15 @@ function readKey(s: string, pos: number, out: Segment[], fail: (msg: string, at:
   return end;
 }
 
-/** Reads `id,user.name}` (after the `{`) into one key path per field. */
+/** Reads `id,user.name,phone?}` (after the `{`) into one key path per field, and which are optional. */
 function readFields(
   s: string,
   pos: number,
   delimiter: Delimiter,
   fail: (msg: string, at: number) => never,
-): { fields: Segment[][]; end: number } {
+): { fields: Segment[][]; optional: boolean[]; end: number } {
   const fields: Segment[][] = [];
+  const optional: boolean[] = [];
   for (;;) {
     while (s.charCodeAt(pos) === 32) pos++;
     const field: Segment[] = [];
@@ -114,15 +134,24 @@ function readFields(
       pos++;
     }
     fields.push(field);
+    const opt = s.charCodeAt(pos) === 63;
+    optional.push(opt);
+    if (opt) pos++;
     while (s.charCodeAt(pos) === 32) pos++;
     const c = s[pos];
-    if (c === "}") return { fields, end: pos + 1 };
+    if (c === "}") return { fields, optional, end: pos + 1 };
     if (c !== delimiter) fail(`Expected '${delimiter === "\t" ? "\\t" : delimiter}' or '}' in table header`, pos);
     pos++;
   }
 }
 
 const hasOwn = Object.prototype.hasOwnProperty;
+
+/** A place a value is or will be: `parent[key]`. */
+export interface Slot {
+  parent: Record<string, unknown> | unknown[];
+  key: Segment;
+}
 
 /** Placeholder for a `path = target` line until the whole document has been read. */
 export class Ref {
@@ -150,6 +179,24 @@ function setOwn(obj: Record<string, unknown>, key: string, value: unknown): void
 }
 
 /**
+ * Replaces each `[+]` with the index it appends at: the current length of the array it is in, or 0 where that
+ * array doesn't exist yet. Nothing is created or changed; `assign` then reports any conflict as usual.
+ */
+export function resolveAppends(start: unknown, segments: RawSegment[]): Segment[] {
+  let cur: unknown = start;
+  return segments.map((seg) => {
+    if (seg === APPEND) {
+      const i = Array.isArray(cur) ? cur.length : 0;
+      cur = undefined;
+      return i;
+    }
+    if (typeof seg === "number") cur = Array.isArray(cur) ? cur[seg] : undefined;
+    else cur = isObject(cur) && !(cur instanceof Ref) && hasOwn.call(cur, seg) ? cur[seg] : undefined;
+    return seg;
+  });
+}
+
+/**
  * Writes `value` at `segments` under `holder.root`, creating objects and arrays on the way. In lenient mode,
  * what it repairs (duplicates, skipped indexes) goes to `warn`.
  * With `dry`, nothing is written and nothing is reported, but every error is still thrown: containers it would
@@ -163,9 +210,11 @@ export function assign(
   line: number,
   dry = false,
   warn?: Warn,
+  from?: Slot,
 ): void {
-  let parent: Record<string, unknown> | unknown[] = holder as Record<string, unknown>;
-  let key: Segment = "root";
+  // From `holder.root`, or for a `.path` line, from the item it continues.
+  let parent: Record<string, unknown> | unknown[] = from ? from.parent : (holder as Record<string, unknown>);
+  let key: Segment = from ? from.key : "root";
   const fail = (msg: string): never => {
     throw new FlatDecodeError(msg, line, 1);
   };

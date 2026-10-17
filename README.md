@@ -23,7 +23,7 @@
   <a href="https://www.npmjs.com/package/@flattype/ai"><img src="https://img.shields.io/npm/v/@flattype/ai?label=%40flattype%2Fai&color=8b6cff" alt="npm @flattype/ai"></a>
   <a href="https://www.npmjs.com/package/@flattype/cli"><img src="https://img.shields.io/npm/v/@flattype/cli?label=%40flattype%2Fcli&color=8b6cff" alt="npm @flattype/cli"></a>
   <a href="https://github.com/karammm/flattype/actions/workflows/ci.yml"><img src="https://github.com/karammm/flattype/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/core-5.2_KB_min%2Bgz-2fd4b2" alt="5.2 KB min+gz">
+  <img src="https://img.shields.io/badge/core-6.2_KB_min%2Bgz-2fd4b2" alt="6.2 KB min+gz">
   <img src="https://img.shields.io/badge/dependencies-0-2fd4b2" alt="No third-party dependencies">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
@@ -143,7 +143,7 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 - **Typed models without boilerplate.** Declare the fields you want and get full TypeScript types. snake_case keys, numeric strings, ISO dates, defaults and nullable fields are handled for you, and every problem is reported with its path.
 - **Drop-in for your API.** One middleware for Express, Fastify, Hono or any fetch-API server. Clients that ask get Flat Notation, everyone else still gets JSON, and big lists can be streamed row by row.
 - **Lossless.** `decode(encode(x))` always equals `JSON.parse(JSON.stringify(x))`. Thousands of random values check this on every test run.
-- **Small and safe.** The core is 5.2 KB min+gz, with no third-party dependencies. It's ESM + CJS with full types, works in the browser and Node 18+, and guards against `__proto__` pollution.
+- **Small and safe.** The core is 6.2 KB min+gz, with no third-party dependencies. It's ESM + CJS with full types, works in the browser and Node 18+, and guards against `__proto__` pollution.
 
 ### When JSON is the better choice
 
@@ -155,7 +155,7 @@ const [users] = createFlatResource(() => "/api/users", { model: User, list: true
 
 | Package | What it does | Size (min+gz) |
 | --- | --- | ---: |
-| [`@flattype/core`](packages/core) | `encode`, `decode`, `createDecoder`, `flatten`, `unflatten`, `stats`, and a `<script>` build for CDNs | 5.2 KB |
+| [`@flattype/core`](packages/core) | `encode`, `decode`, `createDecoder`, `flatten`, `unflatten`, `stats`, and a `<script>` build for CDNs | 6.2 KB |
 | [`@flattype/models`](packages/models) | `defineModel`, `infer`, `toSource`: typed models from JSON or Flat Notation | +3.2 KB |
 | [`@flattype/http`](packages/http) | `flatFetch`, `createClient`, `flatAxios`, `streamRows`, and `flatExpress` / `flatFastify` / `flatHono` | +2.3 KB |
 | [`@flattype/react`](packages/react) | `useFlat`, `useFlatSuspense`, `useFlatStream`, `useModel`, `FlatProvider` | +1.4 KB |
@@ -179,21 +179,25 @@ zip: "10001"
 user.address.city: Paris
 "first name": John
 tags[]: admin, editor
-items[0].id: 1
-items[1]: 2
 empty: {}
 none: []
-users[2]{id,name}:
-  1, Alice
-  2, Bob
+users[2]{id,name,phone?}:
+  1, Alice, 555-0100
+  2, Bob,
+events[+].type: push
+.commits[1]{sha}:
+  a1f
+events[+].type: star
+.user: ann
 ```
 
 | Rule | Example |
 | --- | --- |
 | Nested objects become dot paths | `user.address.city: Paris` |
 | Arrays of primitives go inline | `tags[]: admin, editor` |
-| Arrays of same-shaped objects become a table: count, fields, then one row per line | `users[2]{id,name}:` |
-| Other arrays use indexed paths | `items[0].id: 1` |
+| Arrays of objects become a table: count, fields, then one row per line | `users[2]{id,name}:` |
+| A field that some objects lack is marked `?`, and its cell is left empty where the key is missing | `{id,name,phone?}` |
+| Other arrays are written item by item: `[+]` starts the next item, and lines starting with `.` continue it | `events[+].type: push` |
 | `null`, `true`, `false` and numbers are written as in JSON | `age: 30` |
 | Strings are bare unless they could be misread, then JSON-quoted | `zip: "10001"`, `note: ""` |
 | Keys that aren't `[A-Za-z0-9_$-]+` are quoted | `"first name": John` |
@@ -214,9 +218,9 @@ const text = encode(team, { refs: true });
 // lead.id: 1
 // lead.name: Alice
 // lead.team = ~
-// members[0] = lead
-// members[1].id: 2
-// members[1].name: Bob
+// members[+] = lead
+// members[+].id: 2
+// .name: Bob
 
 const back = decode(text, { refs: true });
 back.members[0] === back.lead; // true: the same object, not a copy
@@ -305,12 +309,12 @@ Each row of a table is one line, so a slip stays in its line. A missing separato
 
 ### Specification and other languages
 
-[Flat Notation 1.0](spec/SPEC.md) is a complete specification, with the grammar, every error message, and the exact text an encoder writes. Any language can implement it. The [conformance suite](conformance/README.md) tests an implementation through a small adapter, so a port can show that it reads and writes exactly what this one does:
+[Flat Notation 1.1](spec/SPEC.md) is a complete specification, with the grammar, every error message, and the exact text an encoder writes. Any language can implement it. The [conformance suite](conformance/README.md) tests an implementation through a small adapter, so a port can show that it reads and writes exactly what this one does:
 
 ```console
 $ node conformance/run.mjs -- python3 my_adapter.py
-  Decoder               1613 / 1613   ✓
-  Encoder                960 / 960    ✓
+  Decoder               2615 / 2615   ✓
+  Encoder               1944 / 1944   ✓
   ...
 ```
 
@@ -320,6 +324,8 @@ $ node conformance/run.mjs -- python3 my_adapter.py
 | Python | [`flattype`](https://pypi.org/project/flattype/) | every level |
 
 To build one for Go, Rust, Java or another language, start with [writing a port](spec/PORTING.md), then [get it listed](spec/IMPLEMENTATIONS.md#add-yours).
+
+**1.1 and older readers.** Since v1.14, `encode` writes Flat Notation 1.1, which adds optional table fields and `[+]` items. Every 1.0 document still means the same, but a decoder older than 1.14 can't read the new syntax. For such readers, `encode(value, { target: "1.0" })` (and `--target 1.0` in the CLI) writes exactly the text older versions wrote. The HTTP servers choose for you (see [HTTP](#http)).
 
 ## Typed models
 
@@ -415,6 +421,8 @@ for await (const { path, index, value } of streamRows("/api/export")) {  // rows
 ```
 
 A JSON-only server works with every client helper: the response is just read as JSON.
+
+**Mixed versions.** Clients from 1.14 send `Accept: text/x-flat; version=1.1`, and the servers write Flat Notation 1.1 only for them. A client on an older version asks without a version and gets 1.0 text, which it can read, so the server and its clients can be upgraded in any order.
 
 ## React
 
@@ -711,12 +719,14 @@ So a FastAPI backend and a React frontend using `useFlat` talk Flat Notation wit
 
 `pnpm compare` on the fixtures in [`fixtures/`](fixtures/index.mjs) (Node 24, Apple Silicon):
 
-| Payload | JSON (minified) | [TOON](https://github.com/toon-format/toon) | **Flat Notation** | vs JSON |
-| --- | ---: | ---: | ---: | ---: |
-| List of 100 users | 16,691 B | 18,589 B | **9,151 B** | **−45%** |
-| List of 1,000 users | 169,545 B | 188,544 B | **93,606 B** | **−45%** |
-| Single profile object | 146 B | 133 B | 151 B | +3% |
-| Mixed-shape events | 3,606 B | 3,785 B | 3,599 B | 0% |
+| Payload | JSON (minified) | [TOON](https://github.com/toon-format/toon) | **Flat Notation** | vs JSON | gzip vs JSON |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| List of 100 users | 16,691 B | 18,589 B | **9,151 B** | **−45%** | −6% |
+| List of 1,000 users | 169,545 B | 188,544 B | **93,606 B** | **−45%** | −2% |
+| 1,000 contacts, some keys missing | 101,947 B | 110,753 B | **59,707 B** | **−41%** | −5% |
+| Activity feed, 500 events of 4 kinds | 162,440 B | 184,935 B | 169,092 B | +4% | −3% |
+| Mixed-shape events | 3,606 B | 3,785 B | **3,179 B** | **−12%** | −4% |
+| Single profile object | 146 B | 133 B | 151 B | +3% | −5% |
 
 | Decode 1,000 users | Time |
 | --- | ---: |
@@ -726,7 +736,8 @@ So a FastAPI backend and a React frontend using `useFlat` talk Flat Notation wit
 
 Numbers measured on every docs build are on the [benchmarks page](https://karammm.github.io/flattype/docs/guide/benchmarks). Some honest notes on them:
 
-- **The savings come from lists.** A single small object is about the same size as JSON.
+- **The savings come from lists.** A single small object is about the same size as JSON. Lists whose objects have different keys became tables with optional fields (`phone?`) and `[+]` items in v1.14: before that, the contacts list was 18% *larger* than JSON, and 96% larger after gzip.
+- **Deeply nested, varied objects are about even with JSON.** In the activity feed, each event repeats paths like `actor.login` where JSON nests them once.
 - **Gzip already removes most of JSON's repeated keys,** so gzipped network sizes come out close. FlatType makes the biggest difference where text isn't compressed: LLM prompts and tool results, logs, caches and local storage.
 - **`JSON.parse` is native code, so it's still faster.** FlatType decodes at about half its speed and about 8× faster than the TOON reference decoder.
 - **MessagePack is binary, and bigger than you'd think.** It saves 5% before compression on the Edge files below but comes out 11% *larger* than JSON after gzip, because it repeats every key like JSON does. Flat Notation is text you can read, log and put in a prompt.

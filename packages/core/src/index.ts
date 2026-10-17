@@ -4,6 +4,7 @@ export type {
   DecodeOptions,
   Delimiter,
   EncodeOptions,
+  FlatVersion,
   Replacer,
   Reviver,
   FlatLeaf,

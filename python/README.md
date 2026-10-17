@@ -90,6 +90,7 @@ users[2]{id,name,role}:
 ```
 
 - **How it decides:** only JSON responses (`application/json` or `+json`) are converted, and only when the request's `Accept` header names `text/x-flat` and prefers it to JSON. A browser's `*/*` never counts. These are the same rules as `@flattype/http`.
+- **Which version:** clients from 1.14 send `text/x-flat; version=1.1` and get Flat Notation 1.1. Older clients get 1.0 text, which they can read, so servers and clients can be upgraded in any order.
 - **Caching:** `Vary: Accept` is added to every response, so caches keep the two formats apart.
 - **Dependencies:** none. It's plain ASGI, so it also works with Litestar, Quart or a raw ASGI app.
 - **Clients:** on the JavaScript side, `flatFetch` from [`@flattype/http`](https://www.npmjs.com/package/@flattype/http) or the React, Vue, Angular and Svelte hooks send that header for you.
@@ -195,11 +196,13 @@ revive_dates(flattype.decode(text))  # {'at': datetime.datetime(2026, 1, 1, 9, 0
 
 **Big integers** need nothing: Python ints are written and read exactly, however large. JavaScript reads them exactly with `decode(text, { bigint: true })` or a `"bigint"` model field, so 64-bit IDs survive the trip to the browser.
 
+**Lists of dicts with different keys** become tables with optional fields (`phone?`, empty where a dict lacks the key), or are written item by item with `[+]` and `.` lines. That's Flat Notation 1.1, since 1.14. `encode(x, target="1.0")` writes what older versions wrote, for readers that haven't been upgraded; `FlatResponse`, which can't see the client's version, writes 1.0 unless you subclass it with `target = "1.1"`.
+
 Tuples are written as lists. `encode`, `decode`, `delimiter="|"` / `"\t"`, `indent`, `tabular=False`, `flatten` / `unflatten` and `stats` match the JavaScript options.
 
 ## Same text as JavaScript
 
-Every case in [`conformance/`](https://github.com/karammm/flattype/tree/main/conformance) is generated from `@flattype/core` and `@flattype/ai`, and the Python package must match it exactly. That's 990 encode cases, 3,255 decode cases (1,973 of them errors, compared message, line and column), 150 object graphs, 100 big-integer cases, and 430 prompt and model-reply cases. It passes every level of the [Flat Notation 1.0 specification](https://github.com/karammm/flattype/blob/main/spec/SPEC.md). A few things follow from that:
+Every case in [`conformance/`](https://github.com/karammm/flattype/tree/main/conformance) is generated from `@flattype/core` and `@flattype/ai`, and the Python package must match it exactly. That's 2,022 encode cases, 3,345 decode cases (1,985 of them errors, compared message, line and column), 150 object graphs, 100 big-integer cases, and 437 prompt and model-reply cases. It passes every level of the [Flat Notation 1.1 specification](https://github.com/karammm/flattype/blob/main/spec/SPEC.md), and the frozen 1.0 suite with `target="1.0"`. A few things follow from that:
 
 - **Floats are written the way JavaScript writes them**, with `1e+21`, `1e-7` and `100`. So a float with no fractional part (`30.0`) decodes as the int `30`. Floats of 1e16 or more come back as an int with JavaScript's digits: the same number once converted to float, but not exactly equal to it.
 - **Ints are exact, however large.** JavaScript would round anything past 2⁵³. A literal longer than 4,300 digits is read as a float, so it can't hit Python's slow and limited `int()` path.

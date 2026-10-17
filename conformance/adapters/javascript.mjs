@@ -15,9 +15,9 @@ function answer(req) {
         return { value, warnings };
       }
       case "encode":
-        return { text: encode(req.value, { delimiter: o.delimiter, indent: o.indent, tabular: o.tabular ? "auto" : "off", refs: o.refs }) };
+        return { text: encode(req.value, { delimiter: o.delimiter, indent: o.indent, tabular: o.tabular ? "auto" : "off", refs: o.refs, target: o.target }) };
       case "reencode":
-        return { text: encode(decode(req.text, { refs: true, bigint: true }), { refs: true }) };
+        return { text: encode(decode(req.text, { refs: true, bigint: true }), { refs: true, target: o.target }) };
       default:
         return { unsupported: true };
     }

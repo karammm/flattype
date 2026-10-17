@@ -46,6 +46,20 @@ const deep = (n: number): unknown => {
   return v;
 };
 
+describe("Flat Notation 1.1 is linear", () => {
+  // A `.path` line must cost its own length, not the length of the item's path.
+  it("many . lines after a deep [+] item", () =>
+    expectLinear("anchor", (n) => decode(`${"a.".repeat(n)}b[+].x: 1\n${Array.from({ length: n }, (_, i) => `.k${i}: 1`).join("\n")}`), 5_000));
+  it("a deep chain of . [+] items", () => expectLinear("chain", (n) => decode(`a[+].x: 1\n${".k[+].x: 1\n".repeat(n)}`), 5_000));
+  it("many [+] items", () => expectLinear("items", (n) => decode(Array.from({ length: n }, (_, i) => `a[+].x: ${i}\n.y: 1`).join("\n"))));
+  it("many . tables in one deep item", () =>
+    expectLinear("tables", (n) => decode(`${"a.".repeat(n)}b[+].x: 1\n${Array.from({ length: n }, (_, i) => `.t${i}[1]{x}:\n  1`).join("\n")}`), 5_000));
+  it("encoding irregular lists", () =>
+    expectLinear("irregular", (n) => encode(Array.from({ length: n }, (_, i) => (i % 3 ? { id: i, a: { b: i } } : { id: i, c: [1, { d: 2 }] })))));
+  it("encoding tables with optional fields", () =>
+    expectLinear("sparse", (n) => encode(Array.from({ length: n }, (_, i) => Object.fromEntries(Array.from({ length: 20 }, (_, k) => [`k${k}`, i]).filter((_, k) => k === 0 || (i + k) % 7))))));
+});
+
 describe("encoding is linear", () => {
   it("deeply nested objects", () => expectLinear("deep encode", (n) => encode(deep(n)), 250));
   it("deeply nested objects with refs", () => expectLinear("deep refs", (n) => encode(deep(n), { refs: true }), 250));

@@ -37,8 +37,8 @@ describe("references", () => {
 
   it("drops the table when a row repeats or was already written", () => {
     const a = { id: 1 };
-    expect(encode({ list: [a, a] }, opts)).toBe("list[0].id: 1\nlist[1] = list[0]");
-    expect(encode({ first: a, list: [a, { id: 2 }] }, opts)).toBe("first.id: 1\nlist[0] = first\nlist[1].id: 2");
+    expect(encode({ list: [a, a] }, opts)).toBe("list[+].id: 1\nlist[+] = list[0]");
+    expect(encode({ first: a, list: [a, { id: 2 }] }, opts)).toBe("first.id: 1\nlist[+] = first\nlist[+].id: 2");
     const back = decode(encode({ list: [a, a] }, opts), opts) as { list: Node[] };
     expect(back.list[1]).toBe(back.list[0]);
   });

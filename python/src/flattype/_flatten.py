@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from ._path import assign, parse_path
+from ._path import APPEND, assign, parse_path
 from ._syntax import FlatDecodeError, join_key
 
 
@@ -48,7 +48,7 @@ def unflatten(record: dict[str, Any]) -> Any:
     holder: dict[str, Any] = {}
     for n, path in enumerate(record, 1):
         segments, terminal, end = parse_path(path, 0, n)
-        if terminal[0] != "value" or end != len(path):
+        if terminal[0] != "value" or end != len(path) or any(seg is APPEND for seg in segments):
             raise FlatDecodeError(f"Invalid path '{path}'", n, end + 1)
         leaf = record[path]
         assign(holder, segments, [] if isinstance(leaf, list) else {} if isinstance(leaf, dict) else leaf, True, n)

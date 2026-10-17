@@ -35,7 +35,12 @@ test("options change the output", async ({ page }) => {
   await page.getByLabel("Delimiter").selectOption({ label: "pipe" });
   await expect(page.locator("#output")).toContainText("data[3|]{");
   await page.getByLabel("Tables").uncheck();
-  await expect(page.locator("#output")).toContainText("data[0].id:");
+  await expect(page.locator("#output")).toContainText("data[+].id:");
+  await page.getByLabel("Tables").check();
+  await page.getByLabel("Delimiter").selectOption({ label: "comma" });
+  await page.getByRole("button", { name: "Mixed shapes" }).click();
+  await expect(page.locator("#output")).toContainText("contacts[3]{id,name,phone?,city?}:");
+  await expect(page.locator("#output")).toContainText("events[+].type: push");
 });
 
 for (const scheme of ["light", "dark"] as const) {

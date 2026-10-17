@@ -1,5 +1,17 @@
 # @flattype/ai
 
+## 1.14.0
+
+### Minor Changes
+
+- Flat Notation 1.1: lists whose objects have different keys become tables with optional fields (`phone?`) or `[+]` items, about half the size of before and no longer larger than JSON after gzip. `target: "1.0"` writes text that older versions read, and HTTP servers choose it from the client's `Accept` header.
+
+### Patch Changes
+
+- Updated dependencies
+  - @flattype/shared@1.14.0
+  - @flattype/core@1.14.0
+
 ## 1.13.0
 
 ### Patch Changes

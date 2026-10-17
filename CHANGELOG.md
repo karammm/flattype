@@ -2,6 +2,35 @@
 
 All `@flattype/*` packages share one version number.
 
+## 1.14.0
+
+Flat Notation 1.1: lists whose objects don't all have the same keys are now compact. Before, one missing key turned a table into indexed paths (`users[0].id`, `users[1].id`…), which came out larger than JSON and twice its size after gzip.
+
+### Optional table fields
+
+- A field that some objects lack is marked `?` in the header, and its cell is empty where the key is missing: `users[2]{id,name,phone?}:`. `null` and `""` are still values
+- On 1,000 contacts where some lack a phone or an address: 59.7 KB instead of 120.3 KB, and 10.7 KB instead of 22.1 KB gzipped. JSON is 101.9 KB (11.3 KB gzipped)
+
+### `[+]` items
+
+- A list that still can't be a table is written one item at a time: `events[+].type: push` starts the next item, and the lines after it that start with `.` continue it (`.repo: org/app`). The lines repeat instead of counting up, which is what gzip needs
+- On a 500-event activity feed: 12.1 KB gzipped instead of 26.5 KB, slightly smaller than JSON's 12.4 KB. On the mixed-shape benchmark: 3,179 B instead of 3,599 B, and 367 B instead of 643 B gzipped
+
+### Older readers keep working
+
+- Every document written by an earlier version decodes exactly as before. But a decoder older than 1.14 can't read the new syntax, so `encode(value, { target: "1.0" })` (Python: `target="1.0"`, CLI: `--target 1.0`) writes exactly what 1.13 wrote
+- `@flattype/http` and the Python `FlatMiddleware` choose for you: clients from 1.14 send `Accept: text/x-flat; version=1.1`, and only they get 1.1 text. Older clients get 1.0. New helpers: `flatVersion(accept)` and `responseOptions(accept, options)`
+- Python's `FlatResponse`, which can't see the client, writes 1.0 unless subclassed with `target = "1.1"`
+
+### Specification and tooling
+
+- [Flat Notation 1.1](https://github.com/karammm/flattype/blob/main/spec/SPEC.md): the grammar, items, optional fields and the encoder rules for them, and an amended versioning rule (a minor version may change the canonical form, and every 1.x encoder can still write 1.0)
+- The conformance suite is regenerated for 1.1, with 1,032 more encode cases (including `target: 1.0`). The 1.0 suite is frozen in `conformance/1.0/`, and CI checks that 1.1 reads every 1.0 document the same way and that `target: "1.0"` reproduces every 1.0 text byte for byte
+- New linear-time checks: a `.` line costs only its own length, even after an item with a 100,000-segment path
+- `toPrompt`'s legend and `outputInstructions` describe the new syntax; the playground's "Mixed shapes" sample shows it
+
+The core grew by 1 KB to 6.2 KB min+gz (budget raised to 6.5 KB).
+
 ## 1.13.0
 
 Ideas from comparing with [MessagePack](https://msgpack.org/): exact 64-bit integers and ready-made extension types, without changing the format.
